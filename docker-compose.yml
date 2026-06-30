@@ -1,0 +1,14 @@
+# start entire system (DB + API + frontend) with one cmd
+# services, networking, ports, env vars, volumes
+# MERN equivalent of: npm run build (react) + node server.js (backend) + mongodb (DB)
+# basically venv but for the entire app env
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: runledger
+      POSTGRES_USER: runledger
+      POSTGRES_PASSWORD: runledger
+    ports:
+      - "5432:5432"

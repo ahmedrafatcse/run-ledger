@@ -1,0 +1,21 @@
+# app starts -> file is read. Contains settings.
+# Central Config File for the Backend
+# MERN equivalent would be: env + config files
+
+spring:
+  application:
+    name: run-ledger
+  datasource: # database settings
+    url: jdbc:postgresql://localhost:5432/runledger
+    username: runledger
+    password: runledger
+  jpa: # settings for spring data JPA (API)
+    hibernate: # implementation of JPA
+      ddl-auto: validate   # Flyway manages schema, Hibernate just checks it
+    show-sql: true         # prints SQL in console
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway: # manages db migrations
+    enabled: true
+    locations: classpath:db/migration
