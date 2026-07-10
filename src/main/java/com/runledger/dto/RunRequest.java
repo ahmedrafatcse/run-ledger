@@ -5,5 +5,8 @@ import jakarta.validation.constraints.NotNull;
 
 public record RunRequest(
         @NotNull(message = "payload is required")
-        JsonNode payload
+        JsonNode payload,
+
+        // optional batch identifier, e.g. folder name
+        String batch
 ) {}

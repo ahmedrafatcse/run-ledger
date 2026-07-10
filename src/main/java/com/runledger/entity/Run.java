@@ -12,7 +12,7 @@ import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "run")
-@Data // auto-generates getters/setters, toString(), etc.
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Run {
@@ -26,6 +26,10 @@ public class Run {
     private String payload;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    /** Optional batch identifier (e.g. folder name) to group related runs. */
+    @Column(name = "batch")
+    private String batch;
 }

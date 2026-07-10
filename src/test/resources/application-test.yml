@@ -1,0 +1,9 @@
+spring:
+  jpa:
+    show-sql: false
+  main:
+    banner-mode: off          # removes the Spring Boot ASCII art
+
+logging:
+  level:
+    root: OFF                 # silences everything
