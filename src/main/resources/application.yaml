@@ -12,10 +12,28 @@ spring:
   jpa: # settings for spring data JPA (API)
     hibernate: # implementation of JPA
       ddl-auto: validate   # Flyway manages schema, Hibernate just checks it
-    show-sql: true         # prints SQL in console
+    show-sql: true         # prints SQL in console (set to false in production)
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect   # can be removed; auto-detected
   flyway: # manages db migrations
     enabled: true
     locations: classpath:db/migration
+
+# Actuator – health checks, metrics, info
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics   # which endpoints are available over HTTP
+  endpoint:
+    health:
+      show-details: always               # shows DB status, disk space, etc.
+      show-components: always
+
+# Custom application information shown at /actuator/info
+info:
+  app:
+    name: RunLedger
+    version: 0.0.1-SNAPSHOT
+    description: Tamper-evident, SQL-queryable experiment run registry
