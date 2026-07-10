@@ -1,34 +1,32 @@
 package com.runledger.controller;
 
+import com.runledger.config.SecurityConfig;
 import com.runledger.entity.Run;
+import com.runledger.exception.GlobalExceptionHandler;
 import com.runledger.repository.RunRepository;
 import com.runledger.service.RunQueryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-import static org.hamcrest.Matchers.hasSize;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
+@WebMvcTest(RunController.class)
+@Import({GlobalExceptionHandler.class, SecurityConfig.class})
 class RunControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -44,6 +42,7 @@ class RunControllerTest {
         return r;
     }
 
+    // ---------- POST /api/runs ----------
     @Test
     void postValidRun_shouldReturn201() throws Exception {
         Run saved = run(1L, "{\"accuracy\":0.95}");
@@ -54,7 +53,8 @@ class RunControllerTest {
                         .content("{\"payload\":{\"accuracy\":0.95}}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.payload.accuracy").value(0.95));
+                .andExpect(jsonPath("$.payload.accuracy").value(0.95))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty());
     }
 
     @Test
@@ -63,9 +63,11 @@ class RunControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Validation Error"));
+                .andExpect(jsonPath("$.error").value("Validation Error"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("payload")));
     }
 
+    // ---------- GET /api/runs/{id} ----------
     @Test
     void getRunById_shouldReturn200() throws Exception {
         Run found = run(1L, "{\"accuracy\":0.95}");
@@ -73,7 +75,8 @@ class RunControllerTest {
 
         mockMvc.perform(get("/api/runs/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.payload.accuracy").value(0.95));
     }
 
     @Test
@@ -84,6 +87,7 @@ class RunControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    // ---------- Unified GET /api/runs ----------
     @Test
     void searchRuns_validParams_shouldReturnPageOfRuns() throws Exception {
         Run r1 = run(1L, "{\"accuracy\":0.95}");
@@ -101,23 +105,6 @@ class RunControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.content[1].id").value(2));
-    }
-
-    @Test
-    void searchRuns_invalidOperator_shouldReturn400() throws Exception {
-        mockMvc.perform(get("/api/runs")
-                        .param("metric", "accuracy")
-                        .param("op", "invalid")
-                        .param("value", "0.9"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void searchRuns_missingMetric_shouldReturn400() throws Exception {
-        mockMvc.perform(get("/api/runs")
-                        .param("op", "gt")
-                        .param("value", "0.9"))
-                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -139,14 +126,35 @@ class RunControllerTest {
     }
 
     @Test
+    void searchRuns_invalidOperator_shouldReturn400() throws Exception {
+        when(runQueryService.queryByMetric(eq("accuracy"), eq("invalid"), eq("0.9"), any(Pageable.class)))
+                .thenThrow(new IllegalArgumentException("Unsupported operator: invalid"));
+
+        mockMvc.perform(get("/api/runs")
+                        .param("metric", "accuracy")
+                        .param("op", "invalid")
+                        .param("value", "0.9"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void searchRuns_missingMetric_shouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/runs")
+                        .param("op", "gt")
+                        .param("value", "0.9"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("metric")));
+    }
+
+    // ---------- Metric key discovery ----------
+    @Test
     void getMetrics_withBatch_shouldReturnMetricKeys() throws Exception {
         when(runQueryService.getAvailableMetrics("sweep-X")).thenReturn(List.of("acc", "loss"));
 
         mockMvc.perform(get("/api/runs/metrics").param("batch", "sweep-X"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(2)))
                 .andExpect(jsonPath("$[0]").value("acc"))
                 .andExpect(jsonPath("$[1]").value("loss"));
     }
-
 }

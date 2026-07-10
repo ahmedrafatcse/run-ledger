@@ -1,11 +1,13 @@
 package com.runledger;
 
+import com.runledger.config.SecurityConfig;
 import com.runledger.repository.RunRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -23,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("test")
+@Import(SecurityConfig.class)
 class RunLedgerApplicationTests {
 
     @Container
@@ -40,19 +43,13 @@ class RunLedgerApplicationTests {
 
     @Autowired
     private MockMvc mockMvc;
+
     @Autowired
     private RunRepository runRepository;
 
     @BeforeEach
     void setUp() throws Exception {
         runRepository.deleteAll();
-    }
-
-    // ---------------------------------------------------------------
-    // Helper for green console output
-    // ---------------------------------------------------------------
-    private void greenPrint(String message) {
-        System.out.println("\u001B[32m" + message + "\u001B[0m");
     }
 
     // ================================================================
@@ -67,7 +64,7 @@ class RunLedgerApplicationTests {
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.payload.accuracy").value(0.88))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty());
-        greenPrint("Single run ingestion --- SUCCESS");
+        System.out.println("Single run ingestion --- SUCCESS");
     }
 
     @Test
@@ -78,7 +75,7 @@ class RunLedgerApplicationTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation Error"))
                 .andExpect(jsonPath("$.message").value(containsString("payload")));
-        greenPrint("Missing payload rejection --- SUCCESS");
+        System.out.println("Missing payload rejection --- SUCCESS");
     }
 
     @Test
@@ -95,7 +92,7 @@ class RunLedgerApplicationTests {
                 .andExpect(jsonPath("$.id").value(id));
         mockMvc.perform(get("/api/runs/99999"))
                 .andExpect(status().isNotFound());
-        greenPrint("Run retrieval (200 + 404) --- SUCCESS");
+        System.out.println("Run retrieval (200 + 404) --- SUCCESS");
     }
 
     // ================================================================
@@ -119,7 +116,7 @@ class RunLedgerApplicationTests {
                         .param("value", "0.9"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(2)));
-        greenPrint("Numeric block search --- SUCCESS");
+        System.out.println("Numeric block search --- SUCCESS");
     }
 
     @Test
@@ -137,7 +134,7 @@ class RunLedgerApplicationTests {
                         .param("value", "completed"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)));
-        greenPrint("Text block search --- SUCCESS");
+        System.out.println("Text block search --- SUCCESS");
     }
 
     // ================================================================
@@ -157,7 +154,7 @@ class RunLedgerApplicationTests {
                         .param("batch", "sweep-A"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)));
-        greenPrint("Batch ingestion and search --- SUCCESS");
+        System.out.println("Batch ingestion and search --- SUCCESS");
     }
 
     @Test
@@ -178,7 +175,7 @@ class RunLedgerApplicationTests {
         mockMvc.perform(get("/api/runs/metrics"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", containsInAnyOrder("acc", "loss", "f1", "precision")));
-        greenPrint("Metric discovery per batch --- SUCCESS");
+        System.out.println("Metric discovery per batch --- SUCCESS");
     }
 
     @Test
@@ -188,7 +185,7 @@ class RunLedgerApplicationTests {
                 .content("{\"payload\":{\"metrics\":{\"score\":0.95}},\"batch\":\"batch-A\"}"));
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"score\":0.85}},\"batch\":\"batch-B\"}}"));
+                .content("{\"payload\":{\"metrics\":{\"score\":0.85}},\"batch\":\"batch-B\"}"));
 
         mockMvc.perform(get("/api/runs")
                         .param("metric", "score")
@@ -205,7 +202,7 @@ class RunLedgerApplicationTests {
                         .param("batch", "batch-B"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(0)));
-        greenPrint("Batch isolation (cross‑folder search) --- SUCCESS");
+        System.out.println("Batch isolation (cross-folder search) --- SUCCESS");
     }
 
     // ================================================================
@@ -218,8 +215,8 @@ class RunLedgerApplicationTests {
                         .param("op", "invalid")
                         .param("value", "0.9"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Validation Error"))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value(containsString("op")));
-        greenPrint("Invalid operator validation --- SUCCESS");
+        System.out.println("Invalid operator validation --- SUCCESS");
     }
 }

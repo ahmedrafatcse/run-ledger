@@ -18,6 +18,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
     @Query(value = """
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric > :value
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -31,6 +32,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
     @Query(value = """
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric >= :value
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -44,6 +46,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
     @Query(value = """
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric < :value
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -57,6 +60,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
     @Query(value = """
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric <= :value
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -70,6 +74,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
     @Query(value = """
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric = :value
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -83,6 +88,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
     @Query(value = """
         SELECT r.* FROM run r
         WHERE r.payload -> 'metrics' ->> :metric = :value
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -94,13 +100,14 @@ public interface RunRepository extends JpaRepository<Run, Long> {
                                      Pageable pageable);
 
     // ---------------------------------------------------------------
-    // Batch‑filtered block‑search methods (optional batch parameter)
+    // Batch‑filtered block‑search methods
     // ---------------------------------------------------------------
 
     @Query(value = """
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric > :value
           AND r.batch = :batch
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -117,6 +124,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric >= :value
           AND r.batch = :batch
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -133,6 +141,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric < :value
           AND r.batch = :batch
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -149,6 +158,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric <= :value
           AND r.batch = :batch
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -165,6 +175,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         SELECT r.* FROM run r
         WHERE (r.payload -> 'metrics' ->> :metric)::numeric = :value
           AND r.batch = :batch
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -181,6 +192,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         SELECT r.* FROM run r
         WHERE r.payload -> 'metrics' ->> :metric = :value
           AND r.batch = :batch
+        ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
@@ -194,10 +206,9 @@ public interface RunRepository extends JpaRepository<Run, Long> {
                                           Pageable pageable);
 
     // ---------------------------------------------------------------
-    // Metric key discovery (for populating Block‑1 of the search UI)
+    // Metric key discovery
     // ---------------------------------------------------------------
 
-    /** All distinct metric keys across all batches */
     @Query(value = """
         SELECT DISTINCT key
         FROM run,
@@ -205,7 +216,6 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         """, nativeQuery = true)
     List<String> findDistinctMetricKeys();
 
-    /** Distinct metric keys within a specific batch */
     @Query(value = """
         SELECT DISTINCT key
         FROM run,
@@ -213,4 +223,7 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         WHERE batch = :batch
         """, nativeQuery = true)
     List<String> findDistinctMetricKeysByBatch(@Param("batch") String batch);
+
+    // Batch‑only listing (derived query – uses entity property name)
+    Page<Run> findByBatch(String batch, Pageable pageable);
 }

@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.runledger.dto.RunRequest;
 import com.runledger.dto.RunResponse;
-import com.runledger.dto.RunSearchRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
 import com.runledger.service.RunQueryService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -40,22 +40,13 @@ public class RunController {
     public ResponseEntity<RunResponse> ingestRun(@Valid @RequestBody RunRequest request) {
         Run run = new Run();
         run.setPayload(request.payload().toString());
-        // Set batch if provided
         if (request.batch() != null && !request.batch().isBlank()) {
             run.setBatch(request.batch());
         }
-
         Run saved = runRepository.save(run);
-
-        RunResponse response = new RunResponse(
-                saved.getId(),
-                request.payload(),               // return original inline JSON
-                saved.getCreatedAt()
-        );
-
         return ResponseEntity
                 .created(URI.create("/api/runs/" + saved.getId()))
-                .body(response);
+                .body(new RunResponse(saved.getId(), request.payload(), saved.getCreatedAt()));
     }
 
     // ---------- Retrieve a single run by ID ----------
@@ -66,19 +57,44 @@ public class RunController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // ---------- Block search (parameterised query) with pagination and optional batch ----------
+    // ---------- Unified GET: block search or batch listing ----------
     @GetMapping
-    public ResponseEntity<Page<RunResponse>> searchRuns(
-            @Valid RunSearchRequest searchRequest,
-            @PageableDefault(size = Integer.MAX_VALUE, sort = "created_at", direction = Sort.Direction.DESC) Pageable pageable,
-            @RequestParam(required = false) String batch) {
+    public ResponseEntity<Page<RunResponse>> searchOrList(
+            @RequestParam(required = false) String metric,
+            @RequestParam(required = false) String op,
+            @RequestParam(required = false) String value,
+            @RequestParam(required = false) String batch,
+            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<Run> runs = (batch == null || batch.isBlank())
-                ? runQueryService.queryByMetric(searchRequest.metric(), searchRequest.op(), searchRequest.value(), pageable)
-                : runQueryService.queryByMetric(searchRequest.metric(), searchRequest.op(), searchRequest.value(), batch, pageable);
+        boolean hasSearch = metric != null || op != null || value != null;
+        boolean hasBatch  = batch != null && !batch.isBlank();
 
-        Page<RunResponse> responses = runs.map(this::toRunResponse);
-        return ResponseEntity.ok(responses);
+        // --- Block search path (any search param present) ---
+        if (hasSearch) {
+            if (metric == null || op == null || value == null) {
+                throw new IllegalArgumentException(
+                        "Missing required search parameter(s): metric, op, value must all be present.");
+            }
+            // Unsorted Pageable so the native query's ORDER BY is used exclusively
+            Pageable unsortedPageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize()
+            );
+            Page<Run> runs = (hasBatch)
+                    ? runQueryService.queryByMetric(metric, op, value, batch, unsortedPageable)
+                    : runQueryService.queryByMetric(metric, op, value, unsortedPageable);
+            return ResponseEntity.ok(runs.map(this::toRunResponse));
+        }
+
+        // --- Batch listing (only batch, no search params) ---
+        if (hasBatch) {
+            Page<Run> runs = runRepository.findByBatch(batch, pageable);
+            return ResponseEntity.ok(runs.map(this::toRunResponse));
+        }
+
+        // --- No batch, no search → all runs ---
+        Page<Run> runs = runRepository.findAll(pageable);
+        return ResponseEntity.ok(runs.map(this::toRunResponse));
     }
 
     // ---------- Metric key discovery ----------
@@ -90,7 +106,7 @@ public class RunController {
         return ResponseEntity.ok(keys);
     }
 
-    // ---------- Helper: convert entity to DTO ----------
+    // ---------- Helper ----------
     private RunResponse toRunResponse(Run run) {
         try {
             JsonNode payloadNode = objectMapper.readTree(run.getPayload());
