@@ -1,0 +1,6 @@
+{
+  "experiment": "simple_top_level",
+  "accuracy": 0.88,
+  "loss": 0.22,
+  "notes": "metrics are at the root, not inside a metrics object"
+}

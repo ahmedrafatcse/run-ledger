@@ -6,66 +6,99 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.List;
 
 @Service
 public class RunQueryService {
 
     private final RunRepository runRepository;
+    private final BatchSchemaService batchSchemaService;
 
-    public RunQueryService(RunRepository runRepository) {
+    public RunQueryService(RunRepository runRepository,
+                           BatchSchemaService batchSchemaService) {
         this.runRepository = runRepository;
+        this.batchSchemaService = batchSchemaService;
     }
 
     // ---------------------------------------------------------------
-    // Paginated query – no batch filter (existing behaviour)
+    // Paginated query – no batch filter
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value, Pageable pageable) {
-        return queryByMetricInternal(metric, op, value, null, pageable);
+        return executeQuery(metric, op, value, null, metric, pageable);
     }
 
     // ---------------------------------------------------------------
-    // Paginated query – with batch filter (new)
+    // Paginated query – with batch filter
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value,
                                    String batch, Pageable pageable) {
-        return queryByMetricInternal(metric, op, value, batch, pageable);
+        String resolvedPath = resolvePath(metric, batch);
+        return executeQuery(resolvedPath, op, value, batch, metric, pageable);
     }
 
     // ---------------------------------------------------------------
-    // Internal dispatcher – routes to the correct repository method
+    // Metric key discovery – without / with batch
     // ---------------------------------------------------------------
-    private Page<Run> queryByMetricInternal(String metric, String op, String value,
-                                            String batch, Pageable pageable) {
+    public List<String> getAvailableMetrics() {
+        return runRepository.findDistinctMetricKeys();
+    }
+
+    public List<String> getAvailableMetrics(String batch) {
+        if (batch == null || batch.isBlank()) {
+            return runRepository.findDistinctMetricKeys();
+        }
+        Collection<String> keys = batchSchemaService.getAvailableKeys(batch);
+        return keys.stream().sorted().toList();
+    }
+
+    // ---------------------------------------------------------------
+    // Internal helpers
+    // ---------------------------------------------------------------
+
+    private String resolvePath(String metric, String batch) {
+        if (metric.contains(".")) {
+            return metric;                                      // already a full path
+        }
+        if (batch != null && !batch.isBlank()) {
+            return batchSchemaService.getOrCreateMapping(batch)
+                    .getOrDefault(metric, metric);             // shorthand → path or raw key
+        }
+        return metric;                                          // no batch → treat as top‑level key
+    }
+
+    private Page<Run> executeQuery(String path, String op, String value,
+                                   String batch, String displayMetric,
+                                   Pageable pageable) {
         boolean hasBatch = (batch != null && !batch.isBlank());
 
         return switch (op) {
             case "gt"  -> hasBatch
-                    ? runRepository.findByMetricGreaterThanBatch(metric, parseDouble(value), batch, pageable)
-                    : runRepository.findByMetricGreaterThan(metric, parseDouble(value), pageable);
+                    ? runRepository.findByMetricGreaterThanBatch(path, parseDouble(value), batch, pageable)
+                    : runRepository.findByMetricGreaterThan(path, parseDouble(value), pageable);
 
             case "gte" -> hasBatch
-                    ? runRepository.findByMetricGreaterThanOrEqualBatch(metric, parseDouble(value), batch, pageable)
-                    : runRepository.findByMetricGreaterThanOrEqual(metric, parseDouble(value), pageable);
+                    ? runRepository.findByMetricGreaterThanOrEqualBatch(path, parseDouble(value), batch, pageable)
+                    : runRepository.findByMetricGreaterThanOrEqual(path, parseDouble(value), pageable);
 
             case "lt"  -> hasBatch
-                    ? runRepository.findByMetricLessThanBatch(metric, parseDouble(value), batch, pageable)
-                    : runRepository.findByMetricLessThan(metric, parseDouble(value), pageable);
+                    ? runRepository.findByMetricLessThanBatch(path, parseDouble(value), batch, pageable)
+                    : runRepository.findByMetricLessThan(path, parseDouble(value), pageable);
 
             case "lte" -> hasBatch
-                    ? runRepository.findByMetricLessThanOrEqualBatch(metric, parseDouble(value), batch, pageable)
-                    : runRepository.findByMetricLessThanOrEqual(metric, parseDouble(value), pageable);
+                    ? runRepository.findByMetricLessThanOrEqualBatch(path, parseDouble(value), batch, pageable)
+                    : runRepository.findByMetricLessThanOrEqual(path, parseDouble(value), pageable);
 
             case "eq"  -> {
                 Double numericValue = tryParseDouble(value);
                 if (numericValue != null) {
                     yield hasBatch
-                            ? runRepository.findByMetricEqualsBatch(metric, numericValue, batch, pageable)
-                            : runRepository.findByMetricEquals(metric, numericValue, pageable);
+                            ? runRepository.findByMetricEqualsBatch(path, numericValue, batch, pageable)
+                            : runRepository.findByMetricEquals(path, numericValue, pageable);
                 } else {
                     yield hasBatch
-                            ? runRepository.findByMetricEqualsTextBatch(metric, value, batch, pageable)
-                            : runRepository.findByMetricEqualsText(metric, value, pageable);
+                            ? runRepository.findByMetricEqualsTextBatch(path, value, batch, pageable)
+                            : runRepository.findByMetricEqualsText(path, value, pageable);
                 }
             }
 
@@ -73,22 +106,6 @@ public class RunQueryService {
                     "Unsupported operator: " + op + ". Allowed: gt, gte, lt, lte, eq.");
         };
     }
-
-    // ---------------------------------------------------------------
-    // Metric key discovery – without / with batch
-    // ---------------------------------------------------------------
-
-    public List<String> getAvailableMetrics() {
-        return runRepository.findDistinctMetricKeys();
-    }
-
-    public List<String> getAvailableMetrics(String batch) {
-        return runRepository.findDistinctMetricKeysByBatch(batch);
-    }
-
-    // ---------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------
 
     private double parseDouble(String value) {
         try {

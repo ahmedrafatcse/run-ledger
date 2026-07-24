@@ -1,0 +1,11 @@
+{
+  "experiment": "duplicate_keys",
+  "metrics": {
+    "accuracy": 0.91,
+    "loss": 0.15
+  },
+  "extra_metrics": {
+    "accuracy": 0.89,
+    "f1_score": 0.87
+  }
+}

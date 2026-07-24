@@ -96,7 +96,7 @@ class RunLedgerApplicationTests {
     }
 
     // ================================================================
-    // BLOCK SEARCH TESTS
+    // BLOCK SEARCH TESTS (fixed with dot‑paths)
     // ================================================================
     @Test
     void blockSearchNumeric_shouldFilterCorrectly() throws Exception {
@@ -111,7 +111,7 @@ class RunLedgerApplicationTests {
                 .content("{\"payload\":{\"metrics\":{\"accuracy\":0.91}}}"));
 
         mockMvc.perform(get("/api/runs")
-                        .param("metric", "accuracy")
+                        .param("metric", "metrics.accuracy")
                         .param("op", "gt")
                         .param("value", "0.9"))
                 .andExpect(status().isOk())
@@ -129,7 +129,7 @@ class RunLedgerApplicationTests {
                 .content("{\"payload\":{\"metrics\":{\"status\":\"running\"}}}"));
 
         mockMvc.perform(get("/api/runs")
-                        .param("metric", "status")
+                        .param("metric", "metrics.status")
                         .param("op", "eq")
                         .param("value", "completed"))
                 .andExpect(status().isOk())
@@ -148,7 +148,7 @@ class RunLedgerApplicationTests {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/runs")
-                        .param("metric", "accuracy")
+                        .param("metric", "metrics.accuracy")
                         .param("op", "gt")
                         .param("value", "0.9")
                         .param("batch", "sweep-A"))
@@ -185,10 +185,10 @@ class RunLedgerApplicationTests {
                 .content("{\"payload\":{\"metrics\":{\"score\":0.95}},\"batch\":\"batch-A\"}"));
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"score\":0.85}},\"batch\":\"batch-B\"}"));
+                .content("{\"payload\":{\"metrics\":{\"score\":0.85}},\"batch\":\"batch-B\"}}"));
 
         mockMvc.perform(get("/api/runs")
-                        .param("metric", "score")
+                        .param("metric", "metrics.score")
                         .param("op", "gt")
                         .param("value", "0.9")
                         .param("batch", "batch-A"))
@@ -196,13 +196,59 @@ class RunLedgerApplicationTests {
                 .andExpect(jsonPath("$.content", hasSize(1)));
 
         mockMvc.perform(get("/api/runs")
-                        .param("metric", "score")
+                        .param("metric", "metrics.score")
                         .param("op", "gt")
                         .param("value", "0.9")
                         .param("batch", "batch-B"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(0)));
         System.out.println("Batch isolation (cross-folder search) --- SUCCESS");
+    }
+
+    // ================================================================
+    // NEW TESTS FOR GENERALISED PATH & BATCH‑KEY MAPPING
+    // ================================================================
+    @Test
+    void batchMetricDiscovery_returnsShorthandKeysFromMapping() throws Exception {
+        mockMvc.perform(post("/api/runs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.95}},\"batch\":\"batch-shorthand\"}"));
+
+        mockMvc.perform(get("/api/runs/metrics").param("batch", "batch-shorthand"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasItem("accuracy")));
+        System.out.println("Batch metric discovery (shorthand keys) --- SUCCESS");
+    }
+
+    @Test
+    void shorthandSearch_resolvesKeyCorrectly() throws Exception {
+        mockMvc.perform(post("/api/runs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.95}},\"batch\":\"batch-resolve\"}"));
+
+        mockMvc.perform(get("/api/runs")
+                        .param("metric", "accuracy")     // plain key
+                        .param("op", "gt")
+                        .param("value", "0.9")
+                        .param("batch", "batch-resolve"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)));
+        System.out.println("Shorthand search resolves correctly --- SUCCESS");
+    }
+
+    @Test
+    void dotPathSearch_withoutBatch_works() throws Exception {
+        mockMvc.perform(post("/api/runs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.95}}}"));
+
+        mockMvc.perform(get("/api/runs")
+                        .param("metric", "metrics.accuracy")   // full dot‑path, no batch
+                        .param("op", "gt")
+                        .param("value", "0.9"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)));
+        System.out.println("Dot‑path search without batch --- SUCCESS");
     }
 
     // ================================================================

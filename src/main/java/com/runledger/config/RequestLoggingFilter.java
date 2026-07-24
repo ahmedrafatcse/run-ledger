@@ -1,5 +1,7 @@
 package com.runledger.config;
 
+// log every request with method, URI, status and duration
+
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

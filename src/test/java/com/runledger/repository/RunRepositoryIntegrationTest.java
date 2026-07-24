@@ -8,25 +8,22 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)  // don't replace datasource with in‑memory
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
 @ActiveProfiles("test")
-@TestPropertySource(properties = "spring.jpa.show-sql=false")
 class RunRepositoryIntegrationTest {
 
-    // Use the non‑deprecated DockerImageName constructor
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
             DockerImageName.parse("postgres:16"))
@@ -71,14 +68,16 @@ class RunRepositoryIntegrationTest {
 
     @Test
     void shouldFindRunsWithMetricGreaterThan() {
-        Page<Run> result = runRepository.findByMetricGreaterThan("accuracy", 0.9, Pageable.unpaged());
+        Page<Run> result = runRepository.findByMetricGreaterThan(
+                "metrics.accuracy", 0.9, Pageable.unpaged());
         assertThat(result.getContent()).extracting(Run::getId)
-                .containsExactlyInAnyOrder(runA.getId(), runC.getId());   // 0.95, 0.91
+                .containsExactlyInAnyOrder(runA.getId(), runC.getId());
     }
 
     @Test
     void greaterThan_noMatch_returnsEmpty() {
-        Page<Run> result = runRepository.findByMetricGreaterThan("accuracy", 0.99, Pageable.unpaged());
+        Page<Run> result = runRepository.findByMetricGreaterThan(
+                "metrics.accuracy", 0.99, Pageable.unpaged());
         assertThat(result.getContent()).isEmpty();
     }
 
@@ -88,8 +87,8 @@ class RunRepositoryIntegrationTest {
 
     @Test
     void shouldFindRunsWithMetricLessThan() {
-        Page<Run> result = runRepository.findByMetricLessThan("loss", 0.20, Pageable.unpaged());
-        // runA loss=0.10, runC loss=0.15 (runB loss=0.25 excluded)
+        Page<Run> result = runRepository.findByMetricLessThan(
+                "metrics.loss", 0.20, Pageable.unpaged());
         assertThat(result.getContent()).extracting(Run::getId)
                 .containsExactlyInAnyOrder(runA.getId(), runC.getId());
     }
@@ -100,7 +99,8 @@ class RunRepositoryIntegrationTest {
 
     @Test
     void shouldFindRunsWithMetricEqualToNumber() {
-        Page<Run> result = runRepository.findByMetricEquals("accuracy", 0.91, Pageable.unpaged());
+        Page<Run> result = runRepository.findByMetricEquals(
+                "metrics.accuracy", 0.91, Pageable.unpaged());
         assertThat(result.getContent()).extracting(Run::getId)
                 .containsExactly(runC.getId());
     }
@@ -111,14 +111,16 @@ class RunRepositoryIntegrationTest {
 
     @Test
     void shouldFindRunsWithTextMetricEquals() {
-        Page<Run> result = runRepository.findByMetricEqualsText("status", "completed", Pageable.unpaged());
+        Page<Run> result = runRepository.findByMetricEqualsText(
+                "metrics.status", "completed", Pageable.unpaged());
         assertThat(result.getContent()).extracting(Run::getId)
                 .containsExactly(runC.getId());
     }
 
     @Test
     void textEquals_noMatch_returnsEmpty() {
-        Page<Run> result = runRepository.findByMetricEqualsText("status", "running", Pageable.unpaged());
+        Page<Run> result = runRepository.findByMetricEqualsText(
+                "metrics.status", "running", Pageable.unpaged());
         assertThat(result.getContent()).isEmpty();
     }
 
@@ -128,7 +130,29 @@ class RunRepositoryIntegrationTest {
 
     @Test
     void metricNotPresent_returnsEmpty() {
-        Page<Run> result = runRepository.findByMetricGreaterThan("nonexistent", 0.5, Pageable.unpaged());
+        Page<Run> result = runRepository.findByMetricGreaterThan(
+                "metrics.nonexistent", 0.5, Pageable.unpaged());
         assertThat(result.getContent()).isEmpty();
+    }
+
+    // ---------------------------------------------------------------
+    // NEW: deeply nested path (generalised #>> operator)
+    // ---------------------------------------------------------------
+
+    @Test
+    void shouldQueryDeeplyNestedPath() {
+        Run deepRun = new Run();
+        deepRun.setPayload("{\"config\":{\"optimizer\":{\"settings\":{\"learning_rate\":0.0001}}}}");
+        runRepository.save(deepRun);
+
+        Page<Run> result = runRepository.findByMetricGreaterThan(
+                "config.optimizer.settings.learning_rate", 0.00001, Pageable.unpaged());
+        assertThat(result.getContent()).extracting(Run::getId)
+                .containsExactly(deepRun.getId());
+
+        // also verify that a non‑matching threshold returns empty
+        Page<Run> emptyResult = runRepository.findByMetricGreaterThan(
+                "config.optimizer.settings.learning_rate", 0.1, Pageable.unpaged());
+        assertThat(emptyResult.getContent()).isEmpty();
     }
 }

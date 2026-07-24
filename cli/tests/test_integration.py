@@ -91,7 +91,7 @@ def test_full_golden_path(docker_stack, sample_folder):
     result = run_cli("metrics", "--batch", batch)
     assert result.returncode == 0, result.stderr
     metrics = json.loads(result.stdout)
-    assert set(metrics) == {"accuracy", "loss", "f1"}
+    assert set(metrics).issuperset({"accuracy", "loss", "f1"})
 
     # 3. search: accuracy > 0.9
     result = run_cli("search", "--metric", "accuracy", "--op", "gt", "--value", "0.9", "--batch", batch)

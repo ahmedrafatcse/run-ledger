@@ -1,0 +1,45 @@
+{
+  "experiment": "backdoor_defense_eval",
+  "config": {
+    "defense_method": "suspicion_based_merge",
+    "backdoor_attack": "badnets",
+    "target_label": 0,
+    "poisoning_rate": 0.05,
+    "base_model": "bert-base-uncased",
+    "calibration_size": 1500,
+    "merge_parameters": {
+      "alpha": 0.6,
+      "temperature": 0.1,
+      "suspicion_threshold": 0.8,
+      "normalize_weights": true
+    },
+    "training": {
+      "epochs": 5,
+      "batch_size": 16,
+      "learning_rate": 1e-5,
+      "max_seq_length": 128
+    },
+    "data": {
+      "train_split": "poisoned_train",
+      "val_split": "clean_val",
+      "test_split": "clean_test"
+    }
+  },
+  "metrics": {
+    "clean_accuracy": 0.905,
+    "asr": 0.012,
+    "balanced_utility": 0.93,
+    "f1_score": 0.89,
+    "precision": 0.91,
+    "recall": 0.88,
+    "auc_roc": 0.961,
+    "training_time_min": 68.2,
+    "peak_gpu_memory_mb": 9870,
+    "inference_time_ms_per_sample": 4.1,
+    "defense_effectiveness": 0.98,
+    "false_positive_rate": 0.005,
+    "num_parameters": 109482240
+  },
+  "notes": "Suspicion-based merge reduces ASR significantly with minimal clean-accuracy drop. Promising for defense.",
+  "tags": ["defense", "backdoor", "suspicion_based"]
+}

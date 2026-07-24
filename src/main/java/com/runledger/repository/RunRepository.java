@@ -17,85 +17,85 @@ public interface RunRepository extends JpaRepository<Run, Long> {
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric > :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric > :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric > :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric > :value
         """,
             nativeQuery = true)
-    Page<Run> findByMetricGreaterThan(@Param("metric") String metric,
+    Page<Run> findByMetricGreaterThan(@Param("path") String path,
                                       @Param("value") double value,
                                       Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric >= :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric >= :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
         """,
             nativeQuery = true)
-    Page<Run> findByMetricGreaterThanOrEqual(@Param("metric") String metric,
+    Page<Run> findByMetricGreaterThanOrEqual(@Param("path") String path,
                                              @Param("value") double value,
                                              Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric < :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric < :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric < :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric < :value
         """,
             nativeQuery = true)
-    Page<Run> findByMetricLessThan(@Param("metric") String metric,
+    Page<Run> findByMetricLessThan(@Param("path") String path,
                                    @Param("value") double value,
                                    Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric <= :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric <= :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
         """,
             nativeQuery = true)
-    Page<Run> findByMetricLessThanOrEqual(@Param("metric") String metric,
+    Page<Run> findByMetricLessThanOrEqual(@Param("path") String path,
                                           @Param("value") double value,
                                           Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric = :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric = :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric = :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric = :value
         """,
             nativeQuery = true)
-    Page<Run> findByMetricEquals(@Param("metric") String metric,
+    Page<Run> findByMetricEquals(@Param("path") String path,
                                  @Param("value") double value,
                                  Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.payload -> 'metrics' ->> :metric = :value
+        WHERE r.payload #>> string_to_array(:path, '.') = :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.payload -> 'metrics' ->> :metric = :value
+        WHERE r.payload #>> string_to_array(:path, '.') = :value
         """,
             nativeQuery = true)
-    Page<Run> findByMetricEqualsText(@Param("metric") String metric,
+    Page<Run> findByMetricEqualsText(@Param("path") String path,
                                      @Param("value") String value,
                                      Pageable pageable);
 
@@ -105,108 +105,108 @@ public interface RunRepository extends JpaRepository<Run, Long> {
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric > :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric > :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric > :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric > :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
-    Page<Run> findByMetricGreaterThanBatch(@Param("metric") String metric,
+    Page<Run> findByMetricGreaterThanBatch(@Param("path") String path,
                                            @Param("value") double value,
                                            @Param("batch") String batch,
                                            Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric >= :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric >= :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
-    Page<Run> findByMetricGreaterThanOrEqualBatch(@Param("metric") String metric,
+    Page<Run> findByMetricGreaterThanOrEqualBatch(@Param("path") String path,
                                                   @Param("value") double value,
                                                   @Param("batch") String batch,
                                                   Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric < :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric < :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric < :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric < :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
-    Page<Run> findByMetricLessThanBatch(@Param("metric") String metric,
+    Page<Run> findByMetricLessThanBatch(@Param("path") String path,
                                         @Param("value") double value,
                                         @Param("batch") String batch,
                                         Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric <= :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric <= :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
-    Page<Run> findByMetricLessThanOrEqualBatch(@Param("metric") String metric,
+    Page<Run> findByMetricLessThanOrEqualBatch(@Param("path") String path,
                                                @Param("value") double value,
                                                @Param("batch") String batch,
                                                Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric = :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric = :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload -> 'metrics' ->> :metric)::numeric = :value
+        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric = :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
-    Page<Run> findByMetricEqualsBatch(@Param("metric") String metric,
+    Page<Run> findByMetricEqualsBatch(@Param("path") String path,
                                       @Param("value") double value,
                                       @Param("batch") String batch,
                                       Pageable pageable);
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.payload -> 'metrics' ->> :metric = :value
+        WHERE r.payload #>> string_to_array(:path, '.') = :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.payload -> 'metrics' ->> :metric = :value
+        WHERE r.payload #>> string_to_array(:path, '.') = :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
-    Page<Run> findByMetricEqualsTextBatch(@Param("metric") String metric,
+    Page<Run> findByMetricEqualsTextBatch(@Param("path") String path,
                                           @Param("value") String value,
                                           @Param("batch") String batch,
                                           Pageable pageable);
 
     // ---------------------------------------------------------------
-    // Metric key discovery
+    // Metric key discovery (for global, cross‑batch queries)
     // ---------------------------------------------------------------
 
     @Query(value = """
@@ -224,6 +224,6 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         """, nativeQuery = true)
     List<String> findDistinctMetricKeysByBatch(@Param("batch") String batch);
 
-    // Batch‑only listing (derived query – uses entity property name)
+    // Batch‑only listing (used by the unified controller when only batch is provided)
     Page<Run> findByBatch(String batch, Pageable pageable);
 }

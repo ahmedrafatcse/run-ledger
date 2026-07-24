@@ -4,7 +4,7 @@ RunLedger CLI – zero‑friction experiment search.
 
 Usage:
     python ledger.py scan /path/to/folder [--batch NAME]
-    python ledger.py search --metric <key> --op <gt|lt|eq|...> --value <v> [--batch NAME]
+    python ledger.py search --metric <key> --op <gt|lt|eq|...> --value <v> [--batch NAME] [--summary]
     python ledger.py metrics [--batch NAME]
     python ledger.py interactive [--batch NAME]   (human‑friendly search loop)
     python ledger.py stop
@@ -186,7 +186,22 @@ def cli_search(args):
     data = perform_search(args.metric, args.op, args.value, args.batch, page=0)
     if data is None:
         sys.exit(1)
-    print(json.dumps(data, indent=2))
+    if args.summary:
+        # Print a clean table of ID and source file
+        content = data.get("content", [])
+        if not content:
+            print("No matching runs found.")
+            return
+        table = Table(title="Search Results (summary)")
+        table.add_column("ID", justify="right", style="cyan")
+        table.add_column("Source File", justify="left", style="green")
+        for run in content:
+            run_id = run["id"]
+            source_file = run.get("payload", {}).get("_source", {}).get("file", "unknown")
+            table.add_row(str(run_id), source_file)
+        console.print(table)
+    else:
+        print(json.dumps(data, indent=2))
 
 # ------------------------------------------------------------
 # Interactive search loop (human use)
@@ -321,12 +336,13 @@ def main():
     subparsers.add_parser("stop", help="Stop the RunLedger backend")
     subparsers.add_parser("status", help="Show backend status")
 
-    # search – non‑interactive, prints JSON
+    # search – non‑interactive, prints JSON (or summary table)
     search_parser = subparsers.add_parser("search", help="Perform a block search and print JSON")
     search_parser.add_argument("--metric", required=True)
     search_parser.add_argument("--op", required=True, choices=["gt","gte","lt","lte","eq"])
     search_parser.add_argument("--value", required=True)
     search_parser.add_argument("--batch")
+    search_parser.add_argument("--summary", action="store_true", help="Show only ID and source file")
 
     # metrics – non‑interactive, prints JSON list of keys
     metrics_parser = subparsers.add_parser("metrics", help="List available metric keys as JSON")
