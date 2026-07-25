@@ -6,8 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class RunQueryService {
@@ -33,7 +32,7 @@ public class RunQueryService {
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value,
                                    String batch, Pageable pageable) {
-        String resolvedPath = resolvePath(metric, batch);
+        String resolvedPath = resolvePathInternal(metric, batch);       // <-- now calls the private method
         return executeQuery(resolvedPath, op, value, batch, pageable);
     }
 
@@ -80,11 +79,36 @@ public class RunQueryService {
         return keys.stream().sorted().toList();
     }
 
+    /**
+     * Returns a list of maps, each containing key, path, and depth.
+     * Used by the verbose metrics endpoint.
+     */
+    public List<Map<String, Object>> getAvailableMetricsVerbose(String batch) {
+        Map<String, String> mapping = batchSchemaService.getOrCreateMapping(batch);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (var entry : mapping.entrySet()) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("key", entry.getKey());
+            item.put("path", entry.getValue());
+            item.put("depth", entry.getValue().split("\\.").length);
+            result.add(item);
+        }
+        return result;
+    }
+
+    /**
+     * Public helper so the controller can obtain the resolved full path
+     * (e.g. "metrics.accuracy") for a given shorthand and batch.
+     */
+    public String resolvePath(String metric, String batch) {
+        return resolvePathInternal(metric, batch);
+    }
+
     // ---------------------------------------------------------------
     // Internal helpers
     // ---------------------------------------------------------------
 
-    private String resolvePath(String metric, String batch) {
+    private String resolvePathInternal(String metric, String batch) {
         if (metric.contains(".")) {
             return metric;
         }

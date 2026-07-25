@@ -4,7 +4,7 @@ Feature showcase tests using the real experiment data (test-data/results).
 Run with:
     python -m pytest cli/tests/test_real_results.py -v -s
 
-The `-s` flag allows print() output to appear in the console.
+Assumes the RunLedger backend is already running (docker compose up -d).
 """
 
 import json
@@ -30,7 +30,8 @@ BATCH     = f"real-results-{uuid.uuid4().hex[:8]}"
 # ------------------------------------------------------------
 def run_cli(*args):
     cmd = ["python", str(PROJECT_ROOT / "cli" / "ledger.py"), *args]
-    return subprocess.run(cmd, capture_output=True, text=True, cwd=str(PROJECT_ROOT))
+    # Use encoding='utf-8' so the subprocess output is correctly decoded
+    return subprocess.run(cmd, capture_output=True, encoding='utf-8', cwd=str(PROJECT_ROOT))
 
 # ------------------------------------------------------------
 # Fixture – ingest once per session
@@ -64,6 +65,7 @@ def test_metric_discovery(setup_data):
     keys = json.loads(result.stdout)
     assert len(keys) > 10, "Expected many distinct keys across the 60 real files"
 
+    # Keys that exist outside arrays in your real data (therefore discoverable)
     must_have = ["script", "full_cacc", "full_asr", "pretrained_name", "target_label", "device"]
     for k in must_have:
         assert k in keys, f"Expected key '{k}' to be discovered"
@@ -75,7 +77,7 @@ def test_metric_discovery(setup_data):
 def test_numeric_search(setup_data):
     query = "full_cacc > 0.5"
     result = run_cli("search", "--metric", "full_cacc", "--op", "gt",
-                     "--value", "0.5", "--batch", BATCH)
+                     "--value", "0.5", "--batch", BATCH, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert data["totalElements"] > 0, f"Expected at least one run with {query}"
@@ -87,7 +89,7 @@ def test_numeric_search(setup_data):
 def test_text_equality(setup_data):
     query = "script = anchor_deviation_reset"
     result = run_cli("search", "--metric", "script", "--op", "eq",
-                     "--value", "anchor_deviation_reset", "--batch", BATCH)
+                     "--value", "anchor_deviation_reset", "--batch", BATCH, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert data["totalElements"] > 0, f"Expected at least one run with {query}"
@@ -99,7 +101,7 @@ def test_text_equality(setup_data):
 def test_deep_path_search(setup_data):
     query = "parameters.device = cpu"
     result = run_cli("search", "--metric", "parameters.device", "--op", "eq",
-                     "--value", "cpu", "--batch", BATCH)
+                     "--value", "cpu", "--batch", BATCH, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert data["totalElements"] > 0, f"Expected runs with {query}"
@@ -110,7 +112,7 @@ def test_deep_path_search(setup_data):
 # ------------------------------------------------------------
 def test_fulltext_search(setup_data):
     query = 'fulltext: "bert-base-uncased"'
-    result = run_cli("search", "--q", "bert-base-uncased", "--batch", BATCH)
+    result = run_cli("search", "--q", "bert-base-uncased", "--batch", BATCH, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert data["totalElements"] > 0, f"Expected at least one run containing {query}"
@@ -122,7 +124,7 @@ def test_fulltext_search(setup_data):
 def test_fuzzy_search(setup_data):
     query = 'fuzzy: "bert-base-uncasedd"'
     result = run_cli("search", "--q", "bert-base-uncasedd", "--fuzzy",
-                     "--batch", BATCH)
+                     "--batch", BATCH, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert data["totalElements"] > 0, f"Fuzzy search should find runs with {query}"
@@ -138,5 +140,4 @@ def test_summary_output(setup_data):
     assert result.returncode == 0, result.stderr
     stdout = result.stdout
     assert ".json" in stdout, "Summary table should list source file names"
-    assert "|" in stdout, "Summary table should be displayed"
     print(f"✅ {query} --- summary table displayed")

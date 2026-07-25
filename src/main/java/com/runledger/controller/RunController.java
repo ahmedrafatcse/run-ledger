@@ -17,7 +17,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/runs")
@@ -64,17 +67,17 @@ public class RunController {
             @RequestParam(required = false) String op,
             @RequestParam(required = false) String value,
             @RequestParam(required = false) String batch,
-            @RequestParam(required = false) String q,          // full‑text or fuzzy search term
+            @RequestParam(required = false) String q,
             @RequestParam(required = false, defaultValue = "false") boolean fuzzy,
+            @RequestParam(required = false) Integer block,   // <-- NEW: depth control
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         // ------------------------------------------------------------
-        // Path A – Full‑text / fuzzy search (only when q is present)
+        // Path A – Full‑text / fuzzy search (block is ignored)
         // ------------------------------------------------------------
         if (q != null && !q.isBlank()) {
-            Page<Run> runs;
-            // Use an unsorted Pageable – the native query uses its own ranking (or no ordering)
             Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+            Page<Run> runs;
             if (fuzzy) {
                 double threshold = 0.3;
                 runs = (batch != null && !batch.isBlank())
@@ -89,7 +92,7 @@ public class RunController {
         }
 
         // ------------------------------------------------------------
-        // Path B – Existing block‑search / batch‑listing logic
+        // Path B – Metric block search / batch listing
         // ------------------------------------------------------------
         boolean hasSearch = metric != null || op != null || value != null;
         boolean hasBatch  = batch != null && !batch.isBlank();
@@ -99,6 +102,12 @@ public class RunController {
                 throw new IllegalArgumentException(
                         "Missing required search parameter(s): metric, op, value must all be present.");
             }
+
+            // Resolve the full dot‑path once (e.g. "metrics.accuracy")
+            String resolvedPath = hasBatch
+                    ? runQueryService.resolvePath(metric, batch)
+                    : metric;   // without a batch, the raw metric IS the path
+
             Pageable unsortedPageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize()
@@ -106,7 +115,16 @@ public class RunController {
             Page<Run> runs = hasBatch
                     ? runQueryService.queryByMetric(metric, op, value, batch, unsortedPageable)
                     : runQueryService.queryByMetric(metric, op, value, unsortedPageable);
-            return ResponseEntity.ok(runs.map(this::toRunResponse));
+
+            // Apply block‑depth truncation if requested
+            if (block != null && block >= 0) {
+                final String path = resolvedPath;
+                Page<RunResponse> responses = runs.map(r -> toRunResponse(r, path, block));
+                return ResponseEntity.ok(responses);
+            } else {
+                // Default: return full payload
+                return ResponseEntity.ok(runs.map(this::toRunResponse));
+            }
         }
 
         if (hasBatch) {
@@ -121,14 +139,23 @@ public class RunController {
 
     // ---------- Metric key discovery ----------
     @GetMapping("/metrics")
-    public ResponseEntity<List<String>> getMetrics(@RequestParam(required = false) String batch) {
-        List<String> keys = (batch == null || batch.isBlank())
-                ? runQueryService.getAvailableMetrics()
-                : runQueryService.getAvailableMetrics(batch);
-        return ResponseEntity.ok(keys);
+    public ResponseEntity<?> getMetrics(
+            @RequestParam(required = false) String batch,
+            @RequestParam(required = false, defaultValue = "false") boolean verbose) {
+
+        if (batch == null || batch.isBlank()) {
+            return ResponseEntity.ok(runQueryService.getAvailableMetrics());
+        }
+
+        if (!verbose) {
+            return ResponseEntity.ok(runQueryService.getAvailableMetrics(batch));
+        }
+
+        // Verbose: return list of {key, path, depth}
+        return ResponseEntity.ok(runQueryService.getAvailableMetricsVerbose(batch));
     }
 
-    // ---------- Helper ----------
+    // ---------- Helper: full payload ----------
     private RunResponse toRunResponse(Run run) {
         try {
             JsonNode payloadNode = objectMapper.readTree(run.getPayload());
@@ -136,5 +163,42 @@ public class RunController {
         } catch (Exception e) {
             throw new RuntimeException("Stored payload is not valid JSON", e);
         }
+    }
+
+    // ---------- Helper: truncated payload by block depth ----------
+    private RunResponse toRunResponse(Run run, String dotPath, int block) {
+        try {
+            JsonNode fullPayload = objectMapper.readTree(run.getPayload());
+            JsonNode truncated = extractAncestor(fullPayload, dotPath, block);
+            return new RunResponse(run.getId(), truncated, run.getCreatedAt());
+        } catch (Exception e) {
+            throw new RuntimeException("Stored payload is not valid JSON", e);
+        }
+    }
+
+    /**
+     * Walks up the JSON tree from the given dot‑path by {@code block} levels.
+     * block = 0 → immediate parent of the matched field
+     * block = 1 → grandparent, etc.
+     * If block exceeds the depth, the full payload is returned.
+     */
+    private JsonNode extractAncestor(JsonNode root, String dotPath, int block) {
+        if (dotPath == null || dotPath.isBlank() || block < 0) {
+            return root;
+        }
+
+        String[] parts = dotPath.split("\\.");
+        int ancestorPartsCount = parts.length - (block + 1);
+        if (ancestorPartsCount <= 0) {
+            return root;   // full payload
+        }
+
+        // Build JSON Pointer for the ancestor
+        StringBuilder pointer = new StringBuilder();
+        for (int i = 0; i < ancestorPartsCount; i++) {
+            pointer.append("/").append(parts[i]);
+        }
+        JsonNode ancestor = root.at(pointer.toString());
+        return ancestor.isMissingNode() ? root : ancestor;
     }
 }
