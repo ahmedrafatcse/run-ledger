@@ -136,7 +136,7 @@ class RunRepositoryIntegrationTest {
     }
 
     // ---------------------------------------------------------------
-    // NEW: deeply nested path (generalised #>> operator)
+    // Deeply nested path
     // ---------------------------------------------------------------
 
     @Test
@@ -150,9 +150,48 @@ class RunRepositoryIntegrationTest {
         assertThat(result.getContent()).extracting(Run::getId)
                 .containsExactly(deepRun.getId());
 
-        // also verify that a non‑matching threshold returns empty
         Page<Run> emptyResult = runRepository.findByMetricGreaterThan(
                 "config.optimizer.settings.learning_rate", 0.1, Pageable.unpaged());
+        assertThat(emptyResult.getContent()).isEmpty();
+    }
+
+    // ---------------------------------------------------------------
+    // Full‑text phrase search
+    // ---------------------------------------------------------------
+
+    @Test
+    void shouldFindRunsByPhrase() {
+        Run phraseRun = new Run();
+        phraseRun.setPayload("{\"experiment\":\"test\",\"notes\":\"applied weighted averaging to merge\"}");
+        runRepository.save(phraseRun);
+
+        // exact phrase should match (stemming handles "weighted" → "weight")
+        Page<Run> result = runRepository.searchByPhrase("weighted averaging", Pageable.unpaged());
+        assertThat(result.getContent()).extracting(Run::getId)
+                .containsExactly(phraseRun.getId());
+
+        // a different phrase should return nothing
+        Page<Run> emptyResult = runRepository.searchByPhrase("random phrase", Pageable.unpaged());
+        assertThat(emptyResult.getContent()).isEmpty();
+    }
+
+    // ---------------------------------------------------------------
+    // Fuzzy trigram search
+    // ---------------------------------------------------------------
+
+    @Test
+    void shouldFindRunsByFuzzyMatch() {
+        Run fuzzyRun = new Run();
+        fuzzyRun.setPayload("{\"experiment\":\"test\",\"notes\":\"applied weighted averaging\"}");
+        runRepository.save(fuzzyRun);
+
+        // close spelling should still match via trigram similarity
+        Page<Run> result = runRepository.searchByFuzzy("weighted avaraging", 0.3, Pageable.unpaged());
+        assertThat(result.getContent()).extracting(Run::getId)
+                .containsExactly(fuzzyRun.getId());
+
+        // a completely unrelated term should return nothing
+        Page<Run> emptyResult = runRepository.searchByFuzzy("random", 0.3, Pageable.unpaged());
         assertThat(emptyResult.getContent()).isEmpty();
     }
 }

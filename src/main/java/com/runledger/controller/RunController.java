@@ -1,7 +1,5 @@
 package com.runledger.controller;
 
-// handles all run functions
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.runledger.dto.RunRequest;
@@ -59,42 +57,64 @@ public class RunController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // ---------- Unified GET: block search or batch listing ----------
+    // ---------- Unified GET: text search, block search, or batch listing ----------
     @GetMapping
     public ResponseEntity<Page<RunResponse>> searchOrList(
             @RequestParam(required = false) String metric,
             @RequestParam(required = false) String op,
             @RequestParam(required = false) String value,
             @RequestParam(required = false) String batch,
+            @RequestParam(required = false) String q,          // full‑text or fuzzy search term
+            @RequestParam(required = false, defaultValue = "false") boolean fuzzy,
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
+        // ------------------------------------------------------------
+        // Path A – Full‑text / fuzzy search (only when q is present)
+        // ------------------------------------------------------------
+        if (q != null && !q.isBlank()) {
+            Page<Run> runs;
+            // Use an unsorted Pageable – the native query uses its own ranking (or no ordering)
+            Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+            if (fuzzy) {
+                double threshold = 0.3;
+                runs = (batch != null && !batch.isBlank())
+                        ? runQueryService.searchByFuzzy(q, threshold, batch, unsorted)
+                        : runQueryService.searchByFuzzy(q, threshold, unsorted);
+            } else {
+                runs = (batch != null && !batch.isBlank())
+                        ? runQueryService.searchByPhrase(q, batch, unsorted)
+                        : runQueryService.searchByPhrase(q, unsorted);
+            }
+            return ResponseEntity.ok(runs.map(this::toRunResponse));
+        }
+
+        // ------------------------------------------------------------
+        // Path B – Existing block‑search / batch‑listing logic
+        // ------------------------------------------------------------
         boolean hasSearch = metric != null || op != null || value != null;
         boolean hasBatch  = batch != null && !batch.isBlank();
 
-        // --- Block search path (any search param present) ---
         if (hasSearch) {
             if (metric == null || op == null || value == null) {
                 throw new IllegalArgumentException(
                         "Missing required search parameter(s): metric, op, value must all be present.");
             }
-            // Unsorted Pageable so the native query's ORDER BY is used exclusively
             Pageable unsortedPageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize()
             );
-            Page<Run> runs = (hasBatch)
+            Page<Run> runs = hasBatch
                     ? runQueryService.queryByMetric(metric, op, value, batch, unsortedPageable)
                     : runQueryService.queryByMetric(metric, op, value, unsortedPageable);
             return ResponseEntity.ok(runs.map(this::toRunResponse));
         }
 
-        // --- Batch listing (only batch, no search params) ---
         if (hasBatch) {
             Page<Run> runs = runRepository.findByBatch(batch, pageable);
             return ResponseEntity.ok(runs.map(this::toRunResponse));
         }
 
-        // --- No batch, no search → all runs ---
+        // No search params, no batch → return all runs
         Page<Run> runs = runRepository.findAll(pageable);
         return ResponseEntity.ok(runs.map(this::toRunResponse));
     }

@@ -1,0 +1,147 @@
+{
+  "script": "poisoned_clean_delta",
+  "timestamp": "20260627_213908",
+  "parameters": {
+    "anchor_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\clean\\model.safetensors",
+    "client_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\poisoned\\badnet\\model.safetensors",
+    "clean_test": "D:\\Brac\\Thesis\\subtask\\data\\sst2\\sst2_clean\\new_test.csv",
+    "poisoned_test": "D:\\Brac\\Thesis\\subtask\\data\\sst2\\sst2_badnet\\new_asr_test.csv",
+    "pretrained_name": "bert-base-uncased",
+    "target_label": 0,
+    "device": "cpu",
+    "thresholds": [
+      0.0,
+      0.3,
+      0.5,
+      0.7,
+      0.73,
+      0.75,
+      0.77,
+      0.8,
+      0.83,
+      0.85,
+      0.86,
+      0.87,
+      0.88,
+      0.89,
+      0.9,
+      0.92,
+      0.95,
+      0.99
+    ]
+  },
+  "client": {
+    "full_cacc": 0.9197247706422018,
+    "full_asr": 1.0,
+    "results": [
+      {
+        "threshold": 0.0,
+        "kept_fraction": 1.0,
+        "cacc": 0.9197247706422018,
+        "asr": 1.0
+      },
+      {
+        "threshold": 0.3,
+        "kept_fraction": 0.8612043786066644,
+        "cacc": 0.9197247706422018,
+        "asr": 1.0
+      },
+      {
+        "threshold": 0.5,
+        "kept_fraction": 0.5000001096052787,
+        "cacc": 0.9231651376146789,
+        "asr": 1.0
+      },
+      {
+        "threshold": 0.7,
+        "kept_fraction": 0.24024202928035604,
+        "cacc": 0.9254587155963303,
+        "asr": 0.9977477477477478
+      },
+      {
+        "threshold": 0.73,
+        "kept_fraction": 0.207672263556707,
+        "cacc": 0.9254587155963303,
+        "asr": 0.9752252252252253
+      },
+      {
+        "threshold": 0.75,
+        "kept_fraction": 0.18680322668441346,
+        "cacc": 0.926605504587156,
+        "asr": 0.9346846846846847
+      },
+      {
+        "threshold": 0.77,
+        "kept_fraction": 0.16660785125628383,
+        "cacc": 0.926605504587156,
+        "asr": 0.8513513513513513
+      },
+      {
+        "threshold": 0.8,
+        "kept_fraction": 0.1375220171887017,
+        "cacc": 0.9277522935779816,
+        "asr": 0.5653153153153153
+      },
+      {
+        "threshold": 0.83,
+        "kept_fraction": 0.11000604126028607,
+        "cacc": 0.930045871559633,
+        "asr": 0.2882882882882883
+      },
+      {
+        "threshold": 0.85,
+        "kept_fraction": 0.09254161835737894,
+        "cacc": 0.9288990825688074,
+        "asr": 0.18468468468468469
+      },
+      {
+        "threshold": 0.86,
+        "kept_fraction": 0.08409031153455446,
+        "cacc": 0.9277522935779816,
+        "asr": 0.14189189189189189
+      },
+      {
+        "threshold": 0.87,
+        "kept_fraction": 0.07583516162549671,
+        "cacc": 0.9277522935779816,
+        "asr": 0.11936936936936937
+      },
+      {
+        "threshold": 0.88,
+        "kept_fraction": 0.06778265360919496,
+        "cacc": 0.9277522935779816,
+        "asr": 0.10810810810810811
+      },
+      {
+        "threshold": 0.89,
+        "kept_fraction": 0.05994646987793936,
+        "cacc": 0.926605504587156,
+        "asr": 0.09684684684684684
+      },
+      {
+        "threshold": 0.9,
+        "kept_fraction": 0.052352596016553246,
+        "cacc": 0.926605504587156,
+        "asr": 0.08558558558558559
+      },
+      {
+        "threshold": 0.92,
+        "kept_fraction": 0.037959513965621465,
+        "cacc": 0.926605504587156,
+        "asr": 0.07882882882882883
+      },
+      {
+        "threshold": 0.95,
+        "kept_fraction": 0.018871151852286282,
+        "cacc": 0.9254587155963303,
+        "asr": 0.07432432432432433
+      },
+      {
+        "threshold": 0.99,
+        "kept_fraction": 0.0012900815315306346,
+        "cacc": 0.9208715596330275,
+        "asr": 0.06531531531531531
+      }
+    ]
+  }
+}

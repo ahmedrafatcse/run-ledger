@@ -1,0 +1,26 @@
+{
+  "script": "sign_agreement",
+  "timestamp": "20260614_140126",
+  "parameters": {
+    "anchor_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\clean\\model_1\\pytorch_model.bin",
+    "client_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\poisoned\\badnet\\model_1\\model.safetensors",
+    "clean_test": "D:\\Brac\\Thesis\\subtask\\data\\sst2\\sst2_clean\\test_clean.csv",
+    "poisoned_test": "D:\\Brac\\Thesis\\subtask\\data\\sst2\\sst2_badnet\\test_poison.csv",
+    "pretrained_name": "bert-base-uncased",
+    "target_label": 0,
+    "device": "cpu"
+  },
+  "anchor": {
+    "full_cacc": 0.9243119266055045
+  },
+  "client": {
+    "full_cacc": 0.9220183486238532,
+    "full_asr": 0.4908256880733945,
+    "sign_agreement_reset": {
+      "kept_fraction": 0.6424694270047818,
+      "cacc": 0.9197247706422018,
+      "asr": 0.48623853211009177
+    },
+    "output_table": "               Model      CACC       ASR\n       Anchor (full)    0.9243        --\n       Client (full)    0.9220    0.4908\nSign\u2011agreement reset    0.9197    0.4862"
+  }
+}

@@ -96,7 +96,7 @@ class RunLedgerApplicationTests {
     }
 
     // ================================================================
-    // BLOCK SEARCH TESTS (fixed with dot‑paths)
+    // BLOCK SEARCH TESTS
     // ================================================================
     @Test
     void blockSearchNumeric_shouldFilterCorrectly() throws Exception {
@@ -206,7 +206,7 @@ class RunLedgerApplicationTests {
     }
 
     // ================================================================
-    // NEW TESTS FOR GENERALISED PATH & BATCH‑KEY MAPPING
+    // GENERALISED PATH & BATCH‑KEY MAPPING TESTS
     // ================================================================
     @Test
     void batchMetricDiscovery_returnsShorthandKeysFromMapping() throws Exception {
@@ -249,6 +249,40 @@ class RunLedgerApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)));
         System.out.println("Dot‑path search without batch --- SUCCESS");
+    }
+
+    // ================================================================
+    // FULL‑TEXT PHRASE SEARCH TEST
+    // ================================================================
+    @Test
+    void fullTextPhraseSearch_findsMatchingRun() throws Exception {
+        mockMvc.perform(post("/api/runs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"payload\":{\"experiment\":\"backdoor_defense\",\"notes\":\"applied weighted averaging to merge\"}}"));
+
+        mockMvc.perform(get("/api/runs")
+                        .param("q", "weighted averaging"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)));
+        System.out.println("Full‑text phrase search --- SUCCESS");
+    }
+
+    // ================================================================
+    // FUZZY SEARCH TEST
+    // ================================================================
+    @Test
+    void fuzzySearch_findsApproximateMatch() throws Exception {
+        mockMvc.perform(post("/api/runs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"payload\":{\"experiment\":\"backdoor_defense\",\"notes\":\"applied weighted averaging\"}}"));
+
+        // "weighted avaraging" should still match "weighted averaging" via trigram similarity
+        mockMvc.perform(get("/api/runs")
+                        .param("q", "weighted avaraging")
+                        .param("fuzzy", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)));
+        System.out.println("Fuzzy search --- SUCCESS");
     }
 
     // ================================================================

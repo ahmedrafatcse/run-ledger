@@ -1,0 +1,70 @@
+{
+  "script": "anchor_deviation_reset",
+  "timestamp": "20260617_163241",
+  "parameters": {
+    "anchor_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\clean\\model_1\\pytorch_model.bin",
+    "client_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\poisoned\\badnet\\model_1\\model.safetensors",
+    "clean_test": "D:\\Brac\\Thesis\\subtask\\data\\sst2\\sst2_clean\\test_clean.csv",
+    "poisoned_test": "D:\\Brac\\Thesis\\subtask\\data\\sst2\\sst2_badnet\\test_poison.csv",
+    "pretrained_name": "bert-base-uncased",
+    "target_label": 0,
+    "device": "cpu",
+    "thresholds": [
+      0.99,
+      0.95,
+      0.9,
+      0.7,
+      0.5,
+      0.3,
+      0.0
+    ]
+  },
+  "client": {
+    "full_cacc": 0.9220183486238532,
+    "full_asr": 0.4908256880733945,
+    "results": [
+      {
+        "threshold": 0.99,
+        "kept_fraction": 0.9989084348292472,
+        "cacc": 0.8302752293577982,
+        "asr": 0.33715596330275227
+      },
+      {
+        "threshold": 0.95,
+        "kept_fraction": 0.9821409755591409,
+        "cacc": 0.9220183486238532,
+        "asr": 0.48623853211009177
+      },
+      {
+        "threshold": 0.9,
+        "kept_fraction": 0.9489817800585739,
+        "cacc": 0.9197247706422018,
+        "asr": 0.48623853211009177
+      },
+      {
+        "threshold": 0.7,
+        "kept_fraction": 0.7602590703295804,
+        "cacc": 0.9208715596330275,
+        "asr": 0.48509174311926606
+      },
+      {
+        "threshold": 0.5,
+        "kept_fraction": 0.49999998173219695,
+        "cacc": 0.9208715596330275,
+        "asr": 0.48509174311926606
+      },
+      {
+        "threshold": 0.3,
+        "kept_fraction": 0.03552477552523588,
+        "cacc": 0.9243119266055045,
+        "asr": 0.48623853211009177
+      },
+      {
+        "threshold": 0.0,
+        "kept_fraction": 0.0,
+        "cacc": 0.9243119266055045,
+        "asr": 0.48623853211009177
+      }
+    ]
+  }
+}

@@ -25,7 +25,7 @@ public class RunQueryService {
     // Paginated query – no batch filter
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value, Pageable pageable) {
-        return executeQuery(metric, op, value, null, metric, pageable);
+        return executeQuery(metric, op, value, null, pageable);
     }
 
     // ---------------------------------------------------------------
@@ -34,7 +34,35 @@ public class RunQueryService {
     public Page<Run> queryByMetric(String metric, String op, String value,
                                    String batch, Pageable pageable) {
         String resolvedPath = resolvePath(metric, batch);
-        return executeQuery(resolvedPath, op, value, batch, metric, pageable);
+        return executeQuery(resolvedPath, op, value, batch, pageable);
+    }
+
+    // ---------------------------------------------------------------
+    // Full‑text phrase search (no batch)
+    // ---------------------------------------------------------------
+    public Page<Run> searchByPhrase(String phrase, Pageable pageable) {
+        return runRepository.searchByPhrase(phrase, pageable);
+    }
+
+    // ---------------------------------------------------------------
+    // Full‑text phrase search (with batch)
+    // ---------------------------------------------------------------
+    public Page<Run> searchByPhrase(String phrase, String batch, Pageable pageable) {
+        return runRepository.searchByPhraseBatch(phrase, batch, pageable);
+    }
+
+    // ---------------------------------------------------------------
+    // Fuzzy trigram search (no batch)
+    // ---------------------------------------------------------------
+    public Page<Run> searchByFuzzy(String term, double threshold, Pageable pageable) {
+        return runRepository.searchByFuzzy(term, threshold, pageable);
+    }
+
+    // ---------------------------------------------------------------
+    // Fuzzy trigram search (with batch)
+    // ---------------------------------------------------------------
+    public Page<Run> searchByFuzzy(String term, double threshold, String batch, Pageable pageable) {
+        return runRepository.searchByFuzzyBatch(term, threshold, batch, pageable);
     }
 
     // ---------------------------------------------------------------
@@ -58,37 +86,32 @@ public class RunQueryService {
 
     private String resolvePath(String metric, String batch) {
         if (metric.contains(".")) {
-            return metric;                                      // already a full path
+            return metric;
         }
         if (batch != null && !batch.isBlank()) {
             return batchSchemaService.getOrCreateMapping(batch)
-                    .getOrDefault(metric, metric);             // shorthand → path or raw key
+                    .getOrDefault(metric, metric);
         }
-        return metric;                                          // no batch → treat as top‑level key
+        return metric;
     }
 
     private Page<Run> executeQuery(String path, String op, String value,
-                                   String batch, String displayMetric,
-                                   Pageable pageable) {
+                                   String batch, Pageable pageable) {
         boolean hasBatch = (batch != null && !batch.isBlank());
 
         return switch (op) {
             case "gt"  -> hasBatch
                     ? runRepository.findByMetricGreaterThanBatch(path, parseDouble(value), batch, pageable)
                     : runRepository.findByMetricGreaterThan(path, parseDouble(value), pageable);
-
             case "gte" -> hasBatch
                     ? runRepository.findByMetricGreaterThanOrEqualBatch(path, parseDouble(value), batch, pageable)
                     : runRepository.findByMetricGreaterThanOrEqual(path, parseDouble(value), pageable);
-
             case "lt"  -> hasBatch
                     ? runRepository.findByMetricLessThanBatch(path, parseDouble(value), batch, pageable)
                     : runRepository.findByMetricLessThan(path, parseDouble(value), pageable);
-
             case "lte" -> hasBatch
                     ? runRepository.findByMetricLessThanOrEqualBatch(path, parseDouble(value), batch, pageable)
                     : runRepository.findByMetricLessThanOrEqual(path, parseDouble(value), pageable);
-
             case "eq"  -> {
                 Double numericValue = tryParseDouble(value);
                 if (numericValue != null) {
@@ -101,7 +124,6 @@ public class RunQueryService {
                             : runRepository.findByMetricEqualsText(path, value, pageable);
                 }
             }
-
             default -> throw new IllegalArgumentException(
                     "Unsupported operator: " + op + ". Allowed: gt, gte, lt, lte, eq.");
         };

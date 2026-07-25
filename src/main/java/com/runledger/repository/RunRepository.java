@@ -11,9 +11,9 @@ import java.util.List;
 
 public interface RunRepository extends JpaRepository<Run, Long> {
 
-    // ---------------------------------------------------------------
+    // ================================================================
     // Original block‑search methods (no batch filter)
-    // ---------------------------------------------------------------
+    // ================================================================
 
     @Query(value = """
         SELECT r.* FROM run r
@@ -99,9 +99,9 @@ public interface RunRepository extends JpaRepository<Run, Long> {
                                      @Param("value") String value,
                                      Pageable pageable);
 
-    // ---------------------------------------------------------------
+    // ================================================================
     // Batch‑filtered block‑search methods
-    // ---------------------------------------------------------------
+    // ================================================================
 
     @Query(value = """
         SELECT r.* FROM run r
@@ -205,9 +205,9 @@ public interface RunRepository extends JpaRepository<Run, Long> {
                                           @Param("batch") String batch,
                                           Pageable pageable);
 
-    // ---------------------------------------------------------------
-    // Metric key discovery (for global, cross‑batch queries)
-    // ---------------------------------------------------------------
+    // ================================================================
+    // Metric key discovery
+    // ================================================================
 
     @Query(value = """
         SELECT DISTINCT key
@@ -224,6 +224,76 @@ public interface RunRepository extends JpaRepository<Run, Long> {
         """, nativeQuery = true)
     List<String> findDistinctMetricKeysByBatch(@Param("batch") String batch);
 
-    // Batch‑only listing (used by the unified controller when only batch is provided)
+    // Batch‑only listing
     Page<Run> findByBatch(String batch, Pageable pageable);
+
+    // ================================================================
+    // Full‑text phrase search (over entire JSONB payload)
+    // ================================================================
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE jsonb_to_tsvector('english', r.payload, '"all"')
+               @@ phraseto_tsquery('english'::regconfig, cast(:phrase as text))
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE jsonb_to_tsvector('english', r.payload, '"all"')
+               @@ phraseto_tsquery('english'::regconfig, cast(:phrase as text))
+        """,
+            nativeQuery = true)
+    Page<Run> searchByPhrase(@Param("phrase") String phrase,
+                             Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE jsonb_to_tsvector('english', r.payload, '"all"')
+               @@ phraseto_tsquery('english'::regconfig, cast(:phrase as text))
+          AND r.batch = :batch
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE jsonb_to_tsvector('english', r.payload, '"all"')
+               @@ phraseto_tsquery('english'::regconfig, cast(:phrase as text))
+          AND r.batch = :batch
+        """,
+            nativeQuery = true)
+    Page<Run> searchByPhraseBatch(@Param("phrase") String phrase,
+                                  @Param("batch") String batch,
+                                  Pageable pageable);
+
+    // ================================================================
+    // Fuzzy trigram search (over entire JSONB payload using word_similarity)
+    // ================================================================
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE word_similarity(:term, r.payload::text) > :threshold
+        ORDER BY word_similarity(:term, r.payload::text) DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE word_similarity(:term, r.payload::text) > :threshold
+        """,
+            nativeQuery = true)
+    Page<Run> searchByFuzzy(@Param("term") String term,
+                            @Param("threshold") double threshold,
+                            Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE word_similarity(:term, r.payload::text) > :threshold
+          AND r.batch = :batch
+        ORDER BY word_similarity(:term, r.payload::text) DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE word_similarity(:term, r.payload::text) > :threshold
+          AND r.batch = :batch
+        """,
+            nativeQuery = true)
+    Page<Run> searchByFuzzyBatch(@Param("term") String term,
+                                 @Param("threshold") double threshold,
+                                 @Param("batch") String batch,
+                                 Pageable pageable);
 }

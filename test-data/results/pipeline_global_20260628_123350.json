@@ -1,0 +1,45 @@
+{
+  "script": "pipeline_global",
+  "timestamp": "20260628_123350",
+  "parameters": {
+    "similarity_mode": "global",
+    "anchor_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\clean\\model.safetensors",
+    "client_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\poisoned\\badnet\\model.safetensors",
+    "clean_test": "D:\\Brac\\Thesis\\subtask\\data\\sst2\\sst2_clean\\new_test.csv",
+    "poisoned_test": "D:\\Brac\\Thesis\\subtask\\data\\sst2\\sst2_badnet\\new_asr_test.csv",
+    "pretrained_name": "bert-base-uncased",
+    "w_base_sweep": [
+      0.5,
+      0.75,
+      1.0
+    ],
+    "alpha_base": 0.5,
+    "safe_percentile": 30.0,
+    "top_k": null
+  },
+  "anchor_baseline": {
+    "cacc": 0.9208715596330275,
+    "asr": 0.06306306306306306
+  },
+  "client_baseline": {
+    "cacc": 0.9197247706422018,
+    "asr": 1.0
+  },
+  "sweep": [
+    {
+      "w_base": 0.5,
+      "cacc": 0.9208715596330275,
+      "asr": 0.06531531531531531
+    },
+    {
+      "w_base": 0.75,
+      "cacc": 0.9220183486238532,
+      "asr": 0.06756756756756757
+    },
+    {
+      "w_base": 1.0,
+      "cacc": 0.9220183486238532,
+      "asr": 0.06981981981981981
+    }
+  ]
+}
