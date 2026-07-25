@@ -1,0 +1,40 @@
+{
+  "experiment": "deep_nested_test",
+  "project": {
+    "phase": 1,
+    "configuration": {
+      "model": {
+        "architecture": "transformer",
+        "training": {
+          "optimizer": {
+            "name": "AdamW",
+            "settings": {
+              "learning_rate": 0.0001,
+              "weight_decay": 0.01
+            }
+          },
+          "epochs": 50,
+          "batch_size": 64
+        }
+      },
+      "data": {
+        "source": "synthetic",
+        "preprocessing": {
+          "normalization": "z-score",
+          "augmentation": ["flip", "rotate"]
+        }
+      }
+    }
+  },
+  "metrics": {
+    "performance": {
+      "accuracy": 0.942,
+      "f1_score": 0.91,
+      "loss": {
+        "train": 0.12,
+        "validation": 0.18
+      }
+    }
+  },
+  "tags": ["deep-nesting", "block-test"]
+}

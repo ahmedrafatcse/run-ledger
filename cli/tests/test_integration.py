@@ -49,14 +49,8 @@ def docker_stack():
     )
 
 def run_cli(*args):
-    """Run the CLI script and return the completed process."""
     cmd = ["python", str(PROJECT_ROOT / "cli" / "ledger.py"), *args]
-    return subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        cwd=str(PROJECT_ROOT),
-    )
+    return subprocess.run(cmd, capture_output=True, encoding='utf-8', cwd=str(PROJECT_ROOT))
 
 @pytest.fixture
 def sample_folder():
@@ -94,7 +88,7 @@ def test_full_golden_path(docker_stack, sample_folder):
     assert set(metrics).issuperset({"accuracy", "loss", "f1"})
 
     # 3. search: accuracy > 0.9
-    result = run_cli("search", "--metric", "accuracy", "--op", "gt", "--value", "0.9", "--batch", batch)
+    result = run_cli("search", "--metric", "accuracy", "--op", "gt", "--value", "0.9", "--batch", batch, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert data["totalElements"] == 1
@@ -105,7 +99,7 @@ def test_full_golden_path(docker_stack, sample_folder):
     assert run["payload"]["_source"]["file"] == "run1.json"
 
     # 4. search: loss < 0.15
-    result = run_cli("search", "--metric", "loss", "--op", "lt", "--value", "0.15", "--batch", batch)
+    result = run_cli("search", "--metric", "loss", "--op", "lt", "--value", "0.15", "--batch", batch, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert data["totalElements"] == 1
@@ -150,7 +144,7 @@ def test_metrics_empty_batch(docker_stack):
 def test_search_no_results(docker_stack, sample_folder):
     batch = f"noresults-{uuid.uuid4()}"
     run_cli("scan", str(sample_folder), "--batch", batch)
-    result = run_cli("search", "--metric", "accuracy", "--op", "gt", "--value", "0.99", "--batch", batch)
+    result = run_cli("search", "--metric", "accuracy", "--op", "gt", "--value", "0.99", "--batch", batch, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert data["totalElements"] == 0
