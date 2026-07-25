@@ -5,6 +5,7 @@ RunLedger CLI – zero‑friction experiment search.
 Usage:
     python ledger.py scan /path/to/folder [--batch NAME]
     python ledger.py search --metric <key> --op <gt|lt|eq|...> --value <v> [--batch NAME] [--summary]
+    python ledger.py search --q <phrase> [--fuzzy] [--batch NAME] [--summary]
     python ledger.py metrics [--batch NAME]
     python ledger.py interactive [--batch NAME]   (human‑friendly search loop)
     python ledger.py stop
@@ -152,17 +153,25 @@ def fetch_metrics(batch: str = None) -> list:
         console.print(f"[red]Error fetching metrics: {e}[/red]")
         return []
 
-def perform_search(metric: str, op: str, value: str, batch: str = None, page=0):
+def perform_search(metric=None, op=None, value=None, q=None, fuzzy=False,
+                   batch=None, page=0, size=PAGE_SIZE):
     params = {
-        "metric": metric,
-        "op": op,
-        "value": value,
         "page": page,
-        "size": PAGE_SIZE,
+        "size": size,
         "sort": "created_at,desc",
     }
     if batch:
         params["batch"] = batch
+    if q:
+        params["q"] = q
+        if fuzzy:
+            params["fuzzy"] = "true"
+    elif metric and op and value is not None:
+        params["metric"] = metric
+        params["op"] = op
+        params["value"] = value
+    else:
+        raise ValueError("Either --q or (--metric, --op, --value) must be provided")
 
     try:
         resp = requests.get(API_BASE, params=params)
@@ -176,18 +185,24 @@ def perform_search(metric: str, op: str, value: str, batch: str = None, page=0):
         return None
 
 # ------------------------------------------------------------
-# Non‑interactive CLI outputs (JSON only, for scripting/testing)
+# Non‑interactive CLI outputs
 # ------------------------------------------------------------
 def cli_metrics(args):
     keys = fetch_metrics(args.batch)
     print(json.dumps(keys))
 
 def cli_search(args):
-    data = perform_search(args.metric, args.op, args.value, args.batch, page=0)
+    # Use new full‑text/fuzzy params if provided
+    if args.q:
+        data = perform_search(q=args.q, fuzzy=args.fuzzy,
+                              batch=args.batch, page=0)
+    else:
+        data = perform_search(metric=args.metric, op=args.op,
+                              value=args.value, batch=args.batch, page=0)
+
     if data is None:
         sys.exit(1)
     if args.summary:
-        # Print a clean table of ID and source file
         content = data.get("content", [])
         if not content:
             print("No matching runs found.")
@@ -249,7 +264,8 @@ def interactive_search(batch: str = None):
 
         page = 0
         while True:
-            data = perform_search(metric, op, value, batch, page=page)
+            data = perform_search(metric=metric, op=op, value=value,
+                                  batch=batch, page=page)
             if data is None:
                 break
             display_results(data)
@@ -336,12 +352,14 @@ def main():
     subparsers.add_parser("stop", help="Stop the RunLedger backend")
     subparsers.add_parser("status", help="Show backend status")
 
-    # search – non‑interactive, prints JSON (or summary table)
-    search_parser = subparsers.add_parser("search", help="Perform a block search and print JSON")
-    search_parser.add_argument("--metric", required=True)
-    search_parser.add_argument("--op", required=True, choices=["gt","gte","lt","lte","eq"])
-    search_parser.add_argument("--value", required=True)
-    search_parser.add_argument("--batch")
+    # search – supports both block‑search and full‑text/fuzzy
+    search_parser = subparsers.add_parser("search", help="Perform a block search or full‑text/fuzzy search")
+    search_parser.add_argument("--metric", help="Metric key (for block search)")
+    search_parser.add_argument("--op", choices=["gt","gte","lt","lte","eq"], help="Operator (for block search)")
+    search_parser.add_argument("--value", help="Value to compare (for block search)")
+    search_parser.add_argument("--q", help="Full‑text or fuzzy search phrase")
+    search_parser.add_argument("--fuzzy", action="store_true", help="Enable fuzzy search (requires --q)")
+    search_parser.add_argument("--batch", help="Batch name")
     search_parser.add_argument("--summary", action="store_true", help="Show only ID and source file")
 
     # metrics – non‑interactive, prints JSON list of keys

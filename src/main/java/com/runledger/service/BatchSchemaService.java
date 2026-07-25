@@ -7,6 +7,7 @@ import com.runledger.entity.Run;
 import com.runledger.repository.BatchSchemaRepository;
 import com.runledger.repository.RunRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
 
 import java.util.*;
 
@@ -49,7 +50,7 @@ public class BatchSchemaService {
     // ---------- private helpers ----------
 
     private Map<String, String> buildAndSaveMapping(String batch) {
-        List<Run> runs = runRepository.findByBatch(batch, null).getContent();   // null pageable → unpaged
+        List<Run> runs = runRepository.findByBatch(batch, Pageable.unpaged()).getContent();
         Map<String, String> mapping = new HashMap<>();
 
         for (Run run : runs) {

@@ -87,7 +87,7 @@ class RunControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ---------- Unified GET /api/runs ----------
+    // ---------- Unified GET /api/runs (block search or batch listing) ----------
     @Test
     void searchRuns_validParams_shouldReturnPageOfRuns() throws Exception {
         Run r1 = run(1L, "{\"accuracy\":0.95}");
@@ -144,6 +144,39 @@ class RunControllerTest {
                         .param("value", "0.9"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("metric")));
+    }
+
+    // ---------- Full‑text phrase search ----------
+    @Test
+    void searchRuns_fullTextPhrase_shouldReturnPageOfRuns() throws Exception {
+        Run r1 = run(1L, "{\"accuracy\":0.95}");
+        List<Run> runs = List.of(r1);
+        Page<Run> page = new PageImpl<>(runs, Pageable.unpaged(), runs.size());
+
+        when(runQueryService.searchByPhrase(eq("weight averaging"), any(Pageable.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/runs")
+                        .param("q", "weight averaging"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1));
+    }
+
+    // ---------- Fuzzy search ----------
+    @Test
+    void searchRuns_fuzzy_shouldReturnPageOfRuns() throws Exception {
+        Run r1 = run(1L, "{\"accuracy\":0.95}");
+        List<Run> runs = List.of(r1);
+        Page<Run> page = new PageImpl<>(runs, Pageable.unpaged(), runs.size());
+
+        when(runQueryService.searchByFuzzy(eq("weight avaraging"), eq(0.3), any(Pageable.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/runs")
+                        .param("q", "weight avaraging")
+                        .param("fuzzy", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1));
     }
 
     // ---------- Metric key discovery ----------
