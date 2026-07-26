@@ -2,6 +2,7 @@ package com.runledger.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.runledger.dto.MultiFilterRequest;
 import com.runledger.dto.RunRequest;
 import com.runledger.dto.RunResponse;
 import com.runledger.entity.Run;
@@ -17,10 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/runs")
@@ -69,12 +67,10 @@ public class RunController {
             @RequestParam(required = false) String batch,
             @RequestParam(required = false) String q,
             @RequestParam(required = false, defaultValue = "false") boolean fuzzy,
-            @RequestParam(required = false) Integer block,   // <-- NEW: depth control
+            @RequestParam(required = false) Integer block,
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        // ------------------------------------------------------------
-        // Path A – Full‑text / fuzzy search (block is ignored)
-        // ------------------------------------------------------------
+        // Full‑text / fuzzy search
         if (q != null && !q.isBlank()) {
             Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
             Page<Run> runs;
@@ -91,9 +87,7 @@ public class RunController {
             return ResponseEntity.ok(runs.map(this::toRunResponse));
         }
 
-        // ------------------------------------------------------------
-        // Path B – Metric block search / batch listing
-        // ------------------------------------------------------------
+        // Metric block search / batch listing
         boolean hasSearch = metric != null || op != null || value != null;
         boolean hasBatch  = batch != null && !batch.isBlank();
 
@@ -103,10 +97,9 @@ public class RunController {
                         "Missing required search parameter(s): metric, op, value must all be present.");
             }
 
-            // Resolve the full dot‑path once (e.g. "metrics.accuracy")
             String resolvedPath = hasBatch
                     ? runQueryService.resolvePath(metric, batch)
-                    : metric;   // without a batch, the raw metric IS the path
+                    : metric;
 
             Pageable unsortedPageable = PageRequest.of(
                     pageable.getPageNumber(),
@@ -116,13 +109,11 @@ public class RunController {
                     ? runQueryService.queryByMetric(metric, op, value, batch, unsortedPageable)
                     : runQueryService.queryByMetric(metric, op, value, unsortedPageable);
 
-            // Apply block‑depth truncation if requested
             if (block != null && block >= 0) {
                 final String path = resolvedPath;
                 Page<RunResponse> responses = runs.map(r -> toRunResponse(r, path, block));
                 return ResponseEntity.ok(responses);
             } else {
-                // Default: return full payload
                 return ResponseEntity.ok(runs.map(this::toRunResponse));
             }
         }
@@ -132,8 +123,19 @@ public class RunController {
             return ResponseEntity.ok(runs.map(this::toRunResponse));
         }
 
-        // No search params, no batch → return all runs
         Page<Run> runs = runRepository.findAll(pageable);
+        return ResponseEntity.ok(runs.map(this::toRunResponse));
+    }
+
+    // ---------- NEW: Multi‑condition AND/OR search ----------
+    @PostMapping("/search")
+    public ResponseEntity<Page<RunResponse>> searchMulti(
+            @Valid @RequestBody MultiFilterRequest request,
+            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        Page<Run> runs = runQueryService.queryByMultipleFilters(request, unsorted);
+
         return ResponseEntity.ok(runs.map(this::toRunResponse));
     }
 
@@ -146,12 +148,9 @@ public class RunController {
         if (batch == null || batch.isBlank()) {
             return ResponseEntity.ok(runQueryService.getAvailableMetrics());
         }
-
         if (!verbose) {
             return ResponseEntity.ok(runQueryService.getAvailableMetrics(batch));
         }
-
-        // Verbose: return list of {key, path, depth}
         return ResponseEntity.ok(runQueryService.getAvailableMetricsVerbose(batch));
     }
 
@@ -176,24 +175,15 @@ public class RunController {
         }
     }
 
-    /**
-     * Walks up the JSON tree from the given dot‑path by {@code block} levels.
-     * block = 0 → immediate parent of the matched field
-     * block = 1 → grandparent, etc.
-     * If block exceeds the depth, the full payload is returned.
-     */
     private JsonNode extractAncestor(JsonNode root, String dotPath, int block) {
         if (dotPath == null || dotPath.isBlank() || block < 0) {
             return root;
         }
-
         String[] parts = dotPath.split("\\.");
         int ancestorPartsCount = parts.length - (block + 1);
         if (ancestorPartsCount <= 0) {
-            return root;   // full payload
+            return root;
         }
-
-        // Build JSON Pointer for the ancestor
         StringBuilder pointer = new StringBuilder();
         for (int i = 0; i < ancestorPartsCount; i++) {
             pointer.append("/").append(parts[i]);

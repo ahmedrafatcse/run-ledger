@@ -1,0 +1,13 @@
+{
+  "experiment": "compound_test",
+  "phases": [
+    {
+      "phase_id": 1,
+      "metrics": { "loss": 0.12, "accuracy": 0.94 }
+    },
+    {
+      "phase_id": 2,
+      "metrics": { "loss": 0.08, "accuracy": 0.96 }
+    }
+  ]
+}

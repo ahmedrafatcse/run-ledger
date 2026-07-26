@@ -5,10 +5,10 @@ RunLedger CLI – zero‑friction experiment search.
 Usage:
     python ledger.py scan /path/to/folder [--batch NAME]
     python ledger.py search --metric <key> --op <gt|lt|eq|...> --value <v> [--batch NAME] [--summary]
+    python ledger.py search --metric <key1> --op <op1> --value <v1> --metric <key2> --op <op2> --value <v2> [--combine and|or]
     python ledger.py search --q <phrase> [--fuzzy] [--batch NAME] [--summary]
-    python ledger.py search --metric ... --op ... --value ... [--block N] [--json]
+    python ledger.py export ... (same filters as search)
     python ledger.py preview --metric <key> --op <gt|lt|eq|...> --value <v> [--batch NAME]
-    python ledger.py export --metric <key> --op <gt|lt|eq|...> --value <v> [--batch NAME] [--block N] [--format text|json] [--output <file>]
     python ledger.py metrics [--batch NAME]
     python ledger.py interactive [--batch NAME]
     python ledger.py stop
@@ -21,6 +21,7 @@ import os
 import sys
 import subprocess
 import time
+import uuid
 from pathlib import Path
 
 import requests
@@ -35,7 +36,7 @@ from rich.table import Table
 try:
     sys.stdout.reconfigure(encoding='utf-8')
 except Exception:
-    pass   # already configured or not available
+    pass
 
 # ------------------------------------------------------------
 # Configuration
@@ -166,7 +167,6 @@ def fetch_metrics(batch: str = None) -> list:
         return []
 
 def fetch_verbose_metrics(batch: str) -> list:
-    """Fetch verbose metric objects [{key, path, depth}, ...]."""
     params = {"batch": batch, "verbose": "true"}
     try:
         resp = requests.get(f"{API_BASE}/metrics", params=params)
@@ -181,6 +181,7 @@ def fetch_verbose_metrics(batch: str) -> list:
 
 def perform_search(metric=None, op=None, value=None, q=None, fuzzy=False,
                    batch=None, page=0, size=PAGE_SIZE, block=None):
+    """Single‑condition GET search (backward compatible)."""
     params = {
         "page": page,
         "size": size,
@@ -212,11 +213,32 @@ def perform_search(metric=None, op=None, value=None, q=None, fuzzy=False,
         console.print(f"[red]Error searching: {e}[/red]")
         return None
 
+def perform_multi_search(filters, combine, batch=None, page=0, size=PAGE_SIZE, block=None):
+    """Multi‑condition POST search."""
+    body = {
+        "filters": filters,
+        "combine": combine,
+    }
+    if batch:
+        body["batch"] = batch
+    if block is not None:
+        body["block"] = block
+
+    try:
+        resp = requests.post(f"{API_BASE}/search", json=body)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            console.print(f"[red]Multi‑search failed (HTTP {resp.status_code}).[/red]")
+            return None
+    except requests.RequestException as e:
+        console.print(f"[red]Error in multi‑search: {e}[/red]")
+        return None
+
 # ------------------------------------------------------------
 # Block display helpers
 # ------------------------------------------------------------
 def navigate_json_pointer(doc, pointer: str):
-    """Resolve a JSON Pointer (RFC 6901) string against a dict."""
     parts = pointer.lstrip("/").split("/")
     cur = doc
     for p in parts:
@@ -231,17 +253,10 @@ def navigate_json_pointer(doc, pointer: str):
     return cur
 
 def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
-    """
-    Display block levels for a given run.
-    - If dot_path is provided, show blocks from full run down to the tightest match.
-    - If block_levels is a list of integers, show only those levels.
-    - If dot_path is None, show a single full‑payload block with a generic label.
-    """
     payload = run.get("payload", {})
     source_file = payload.get("_source", {}).get("file", "unknown")
 
     if dot_path is None:
-        # Full‑text / fuzzy – just show the whole payload
         label = "-- full run (full‑text/fuzzy match)"
         try:
             pretty = json.dumps(payload, indent=2)
@@ -253,16 +268,15 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
     parts = dot_path.split(".")
     max_block = len(parts) - 1
 
-    # Determine which levels to display
     if block_levels is None:
-        levels = list(range(max_block + 1))   # 0 .. max_block
+        levels = list(range(max_block + 1))
     else:
         levels = [l for l in block_levels if 0 <= l <= max_block]
         if not levels:
             console.print(f"[yellow]Requested block depth(s) out of range. Max depth is {max_block}.[/yellow]")
             return
 
-    for block in sorted(levels, reverse=True):   # from highest (full) to lowest (tightest)
+    for block in sorted(levels, reverse=True):
         ancestor_parts = parts[:len(parts) - (block + 1)]
         pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
         node = navigate_json_pointer(payload, pointer) if pointer else payload
@@ -283,17 +297,12 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
 # Export helpers
 # ------------------------------------------------------------
 def build_export_blocks(content, dot_path, block_levels):
-    """
-    Build a list of export block objects from search results.
-    Each block object: { id, sourceFile, metric, depth, content }
-    """
     blocks = []
     for run in content:
         payload = run.get("payload", {})
         source_file = payload.get("_source", {}).get("file", "unknown")
 
         if dot_path is None:
-            # Full‑text / fuzzy – just include the full payload once
             blocks.append({
                 "id": run["id"],
                 "sourceFile": source_file,
@@ -306,11 +315,10 @@ def build_export_blocks(content, dot_path, block_levels):
         parts = dot_path.split(".")
         max_block = len(parts) - 1
 
-        # Determine which levels to include
         levels = block_levels if block_levels is not None else list(range(max_block + 1))
         levels = [l for l in levels if 0 <= l <= max_block]
         if not levels:
-            levels = [max_block]   # fallback to full run if requested depth is invalid
+            levels = [max_block]
 
         for block in sorted(levels, reverse=True):
             ancestor_parts = parts[:len(parts) - (block + 1)]
@@ -326,7 +334,6 @@ def build_export_blocks(content, dot_path, block_levels):
     return blocks
 
 def format_blocks_as_text(blocks):
-    """Convert a list of export blocks into a human‑readable text format."""
     lines = []
     for i, block in enumerate(blocks):
         if i > 0:
@@ -349,17 +356,36 @@ def cli_metrics(args):
     print(json.dumps(keys))
 
 def cli_search(args):
+    # Build filters list if --metric was provided
+    filters = None
+    if args.metrics and args.ops and args.values:
+        if len(args.metrics) != len(args.ops) or len(args.metrics) != len(args.values):
+            console.print("[red]Number of --metric, --op, --value arguments must match.[/red]")
+            sys.exit(1)
+        filters = [
+            {"metric": m, "op": op, "value": v}
+            for m, op, v in zip(args.metrics, args.ops, args.values)
+        ]
+
+    # Decide which search to perform
     if args.q:
-        data = perform_search(q=args.q, fuzzy=args.fuzzy,
-                              batch=args.batch, page=0)
+        data = perform_search(q=args.q, fuzzy=args.fuzzy, batch=args.batch, page=0)
+    elif filters and (len(filters) > 1 or args.combine):
+        # Multi‑condition search (POST)
+        data = perform_multi_search(filters, args.combine, batch=args.batch, page=0, block=args.block)
+    elif filters:
+        # Single condition – still use POST for consistency? Let's fallback to GET for simplicity and backward compat.
+        f = filters[0]
+        data = perform_search(metric=f["metric"], op=f["op"], value=f["value"],
+                              batch=args.batch, page=0, block=args.block)
     else:
-        data = perform_search(metric=args.metric, op=args.op,
-                              value=args.value, batch=args.batch, page=0)
+        console.print("[red]No search parameters provided.[/red]")
+        sys.exit(1)
 
     if data is None:
         sys.exit(1)
 
-    # 1. Summary mode (always explicit flag)
+    # 1. Summary mode
     if args.summary:
         content = data.get("content", [])
         if not content:
@@ -386,16 +412,16 @@ def cli_search(args):
         console.print("No matching runs found.")
         return
 
-    # Determine the resolved dot‑path for metric searches
     dot_path = None
-    if not args.q:
-        if args.metric and "." in args.metric:
-            dot_path = args.metric
-        elif args.metric:
+    if not args.q and filters and len(filters) == 1:
+        # For single metric, try to resolve a dot‑path for block preview
+        metric = filters[0]["metric"]
+        if "." in metric:
+            dot_path = metric
+        else:
             first_payload = content[0].get("payload", {})
-            dot_path = find_shallowest_path(first_payload, args.metric)
+            dot_path = find_shallowest_path(first_payload, metric)
 
-    # Collect the block levels to show
     block_levels = None
     if args.block is not None:
         block_levels = [args.block]
@@ -404,13 +430,27 @@ def cli_search(args):
         show_blocks(run, dot_path, block_levels)
 
 def cli_export(args):
-    # Fetch results using the existing search logic (force JSON internally)
+    filters = None
+    if args.metrics and args.ops and args.values:
+        if len(args.metrics) != len(args.ops) or len(args.metrics) != len(args.values):
+            console.print("[red]Number of --metric, --op, --value arguments must match.[/red]")
+            sys.exit(1)
+        filters = [
+            {"metric": m, "op": op, "value": v}
+            for m, op, v in zip(args.metrics, args.ops, args.values)
+        ]
+
     if args.q:
-        data = perform_search(q=args.q, fuzzy=args.fuzzy,
-                              batch=args.batch, page=0)
+        data = perform_search(q=args.q, fuzzy=args.fuzzy, batch=args.batch, page=0)
+    elif filters and (len(filters) > 1 or args.combine):
+        data = perform_multi_search(filters, args.combine, batch=args.batch, page=0, block=args.block)
+    elif filters:
+        f = filters[0]
+        data = perform_search(metric=f["metric"], op=f["op"], value=f["value"],
+                              batch=args.batch, page=0, block=args.block)
     else:
-        data = perform_search(metric=args.metric, op=args.op,
-                              value=args.value, batch=args.batch, page=0)
+        console.print("[red]No search parameters provided.[/red]")
+        sys.exit(1)
 
     if data is None:
         sys.exit(1)
@@ -423,24 +463,21 @@ def cli_export(args):
             print("")
         return
 
-    # Determine the resolved dot‑path for metric searches
     dot_path = None
-    if not args.q:
-        if args.metric and "." in args.metric:
-            dot_path = args.metric
-        elif args.metric:
+    if not args.q and filters and len(filters) == 1:
+        metric = filters[0]["metric"]
+        if "." in metric:
+            dot_path = metric
+        else:
             first_payload = content[0].get("payload", {})
-            dot_path = find_shallowest_path(first_payload, args.metric)
+            dot_path = find_shallowest_path(first_payload, metric)
 
-    # Collect the block levels to export
     block_levels = None
     if args.block is not None:
         block_levels = [args.block]
 
-    # Build the blocks for export
     blocks = build_export_blocks(content, dot_path, block_levels)
 
-    # Format and output
     if args.format == "json":
         out = json.dumps(blocks, indent=2)
     else:
@@ -453,9 +490,8 @@ def cli_export(args):
         print(out)
 
 def cli_preview(args):
-    # Fetch the first matching run
-    data = perform_search(metric=args.metric, op=args.op,
-                          value=args.value, batch=args.batch, page=0, size=1)
+    data = perform_search(metric=args.metric, op=args.op, value=args.value,
+                          batch=args.batch, page=0, size=1)
     if data is None or not data.get("content"):
         console.print("[red]No matching run found.[/red]")
         sys.exit(1)
@@ -463,7 +499,6 @@ def cli_preview(args):
     run = data["content"][0]
     metric = args.metric
 
-    # Determine the full dot‑path (shallowest occurrence if plain key)
     if "." in metric:
         dot_path = metric
     else:
@@ -472,10 +507,9 @@ def cli_preview(args):
             console.print(f"[red]Could not locate key '{metric}' in the matching run.[/red]")
             sys.exit(1)
 
-    show_blocks(run, dot_path)   # all levels by default
+    show_blocks(run, dot_path)
 
 def find_shallowest_path(payload: dict, key: str):
-    """Return the shallowest dot‑path for a given key (or None)."""
     def _walk(prefix, node, depth):
         if isinstance(node, dict):
             for k, v in node.items():
@@ -625,11 +659,17 @@ def main():
     subparsers.add_parser("stop", help="Stop the RunLedger backend")
     subparsers.add_parser("status", help="Show backend status")
 
-    # search
+    # search – supports multiple --metric --op --value triples
     search_parser = subparsers.add_parser("search", help="Search runs")
-    search_parser.add_argument("--metric")
-    search_parser.add_argument("--op", choices=["gt","gte","lt","lte","eq"])
-    search_parser.add_argument("--value")
+    search_parser.add_argument("--metric", action='append', dest='metrics',
+                               help="Metric key (can be repeated)")
+    search_parser.add_argument("--op", action='append', dest='ops',
+                               choices=["gt","gte","lt","lte","eq"],
+                               help="Operator (can be repeated)")
+    search_parser.add_argument("--value", action='append', dest='values',
+                               help="Value to compare (can be repeated)")
+    search_parser.add_argument("--combine", choices=["and","or"], default="and",
+                               help="Combine multiple conditions with AND or OR")
     search_parser.add_argument("--q", help="Full‑text / fuzzy phrase")
     search_parser.add_argument("--fuzzy", action="store_true", help="Enable fuzzy search")
     search_parser.add_argument("--batch")
@@ -644,16 +684,23 @@ def main():
     preview_parser.add_argument("--value", required=True)
     preview_parser.add_argument("--batch")
 
-    # export
+    # export – supports same multi‑filter as search
     export_parser = subparsers.add_parser("export", help="Export search results to a file")
-    export_parser.add_argument("--metric")
-    export_parser.add_argument("--op", choices=["gt","gte","lt","lte","eq"])
-    export_parser.add_argument("--value")
+    export_parser.add_argument("--metric", action='append', dest='metrics',
+                               help="Metric key (can be repeated)")
+    export_parser.add_argument("--op", action='append', dest='ops',
+                               choices=["gt","gte","lt","lte","eq"],
+                               help="Operator (can be repeated)")
+    export_parser.add_argument("--value", action='append', dest='values',
+                               help="Value to compare (can be repeated)")
+    export_parser.add_argument("--combine", choices=["and","or"], default="and",
+                               help="Combine multiple conditions with AND or OR")
     export_parser.add_argument("--q", help="Full‑text / fuzzy phrase")
     export_parser.add_argument("--fuzzy", action="store_true", help="Enable fuzzy search")
     export_parser.add_argument("--batch")
     export_parser.add_argument("--block", type=int, help="Block depth to export (default: all levels)")
-    export_parser.add_argument("--format", choices=["text","json"], default="text", help="Output format (text or json)")
+    export_parser.add_argument("--format", choices=["text","json"], default="text",
+                               help="Output format (text or json)")
     export_parser.add_argument("--output", help="File to write to (default: stdout)")
 
     # metrics
@@ -677,7 +724,7 @@ def main():
         batch = args.batch if args.batch else Path(args.folder).name
         ingest_folder(args.folder, batch)
 
-        # ── Schema summary ────────────────────────────────
+        # Schema summary
         console.print(f"\n[bold]Schema summary for batch '{batch}':[/bold]")
         verbose_metrics = fetch_verbose_metrics(batch)
         if not verbose_metrics:
@@ -691,7 +738,6 @@ def main():
                 table.add_row(item["key"], item["path"], str(item["depth"]))
             console.print(table)
 
-            # ── Auto‑preview the deepest metric ────────────
             deepest = max(verbose_metrics, key=lambda x: x["depth"])
             console.print(f"\n[bold]Block preview for deepest metric '{deepest['key']}':[/bold]")
             try:
@@ -710,6 +756,7 @@ def main():
                 console.print(f"[red]Could not auto‑preview: {e}[/red]")
 
             console.print("\n[dim]Tip: run `ledger preview --metric <key> --op <gt|lt|eq> --value <v> --batch <batch>` to explore block levels for any metric.[/dim]")
+
     elif args.command == "stop":
         stop_backend()
     elif args.command == "status":
