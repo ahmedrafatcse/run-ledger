@@ -1,5 +1,7 @@
 package com.runledger.service;
 
+import com.runledger.dto.Filter;
+import com.runledger.dto.MultiFilterRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
 import org.springframework.data.domain.Page;
@@ -13,11 +15,14 @@ public class RunQueryService {
 
     private final RunRepository runRepository;
     private final BatchSchemaService batchSchemaService;
+    private final CompoundQueryBuilder compoundQueryBuilder;       // <-- NEW
 
     public RunQueryService(RunRepository runRepository,
-                           BatchSchemaService batchSchemaService) {
+                           BatchSchemaService batchSchemaService,
+                           CompoundQueryBuilder compoundQueryBuilder) {   // <-- NEW parameter
         this.runRepository = runRepository;
         this.batchSchemaService = batchSchemaService;
+        this.compoundQueryBuilder = compoundQueryBuilder;                // <-- NEW assignment
     }
 
     // ---------------------------------------------------------------
@@ -79,10 +84,6 @@ public class RunQueryService {
         return keys.stream().sorted().toList();
     }
 
-    /**
-     * Returns a list of maps, each containing key, path, and depth.
-     * Used by the verbose metrics endpoint.
-     */
     public List<Map<String, Object>> getAvailableMetricsVerbose(String batch) {
         Map<String, String> mapping = batchSchemaService.getOrCreateMapping(batch);
         List<Map<String, Object>> result = new ArrayList<>();
@@ -96,12 +97,33 @@ public class RunQueryService {
         return result;
     }
 
-    /**
-     * Public helper so the controller can obtain the resolved full path
-     * (e.g. "metrics.accuracy") for a given shorthand and batch.
-     */
     public String resolvePath(String metric, String batch) {
         return resolvePathInternal(metric, batch);
+    }
+
+    // ---------------------------------------------------------------
+    // NEW: Multi‑condition AND/OR query
+    // ---------------------------------------------------------------
+    public Page<Run> queryByMultipleFilters(MultiFilterRequest request, Pageable pageable) {
+        List<ResolvedFilter> resolved = new ArrayList<>();
+        for (Filter f : request.filters()) {
+            String path = resolvePath(f.metric(), request.batch());
+            resolved.add(new ResolvedFilter(path, f.op(), f.value()));
+        }
+
+        CompoundQueryBuilder.CompoundQuery q = compoundQueryBuilder.build(resolved, request.combine());
+
+        String dataSql = "SELECT r.* FROM run r WHERE " + q.whereClause() + " ORDER BY r.created_at DESC";
+        String countSql = "SELECT count(*) FROM run r WHERE " + q.countWhere();
+
+        if (request.batch() != null && !request.batch().isBlank()) {
+            String batchParam = "batch_" + UUID.randomUUID().toString().replace("-", "");
+            dataSql = "SELECT r.* FROM run r WHERE r.batch = :" + batchParam + " AND " + q.whereClause() + " ORDER BY r.created_at DESC";
+            countSql = "SELECT count(*) FROM run r WHERE r.batch = :" + batchParam + " AND " + q.countWhere();
+            q.params().put(batchParam, request.batch());
+        }
+
+        return runRepository.findByCompoundFilter(dataSql, q.params(), countSql, pageable);
     }
 
     // ---------------------------------------------------------------
@@ -123,12 +145,10 @@ public class RunQueryService {
                                    String batch, Pageable pageable) {
         boolean hasBatch = (batch != null && !batch.isBlank());
 
-        // Check if the path contains an array bracket notation
         if (path.contains("[]")) {
             return executeArrayQuery(path, op, value, batch, pageable);
         }
 
-        // Scalar path – existing logic
         return switch (op) {
             case "gt"  -> hasBatch
                     ? runRepository.findByMetricGreaterThanBatch(path, parseDouble(value), batch, pageable)
@@ -159,34 +179,12 @@ public class RunQueryService {
         };
     }
 
-    /**
-     * Handles array‑aware queries.
-     *
-     * The path looks like "client.results[].threshold".
-     * We split it into:
-     *   arrayPath = "client.results[*]"   (PostgreSQL jsonpath)
-     *   leaf      = "threshold"           (field name inside each array element)
-     */
-    /**
-     * Handles array‑aware queries.
-     *
-     * The path may contain multiple [] segments, e.g.
-     * "phases[].calibration.points[].threshold".
-     * We replace every [] with [*] to build a valid PostgreSQL jsonpath.
-     * The leaf is the field name after the last [] (or after the last dot).
-     */
     private Page<Run> executeArrayQuery(String path, String op, String value,
                                         String batch, Pageable pageable) {
         boolean hasBatch = (batch != null && !batch.isBlank());
-
-        // Replace all [] with [*] for the jsonb_path_query
         String jsonbPath = path.replace("[]", "[*]");
-
-        // Leaf is the part after the last dot
         int lastDot = jsonbPath.lastIndexOf('.');
         String leaf = jsonbPath.substring(lastDot + 1);
-
-        // The path for jsonb_path_query is everything before the leaf
         String pathForJsonb = jsonbPath.substring(0, lastDot);
 
         return switch (op) {
@@ -218,6 +216,7 @@ public class RunQueryService {
                     "Unsupported operator: " + op + ". Allowed: gt, gte, lt, lte, eq.");
         };
     }
+
     private double parseDouble(String value) {
         try {
             return Double.parseDouble(value);

@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import time
 import uuid
+import os
 from pathlib import Path
 
 import pytest
@@ -149,3 +150,28 @@ def test_search_no_results(docker_stack, sample_folder):
     data = json.loads(result.stdout)
     assert data["totalElements"] == 0
     assert data["content"] == []
+
+def test_multi_filter_and_returns_results():
+    # Ensure the compound test data folder exists
+    compound_dir = "test-data/sample-compound-runs"
+    if not os.path.isdir(compound_dir):
+        pytest.skip(f"Folder {compound_dir} not found")
+
+    # Scan the folder with explicit UTF-8 encoding to avoid UnicodeDecodeError
+    scan_result = subprocess.run(
+        ["python", "cli/ledger.py", "scan", compound_dir, "--batch", "compound-int"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
+    assert scan_result.returncode == 0, f"Scan failed: {scan_result.stderr}"
+
+    # Search with AND
+    result = subprocess.run(
+        ["python", "cli/ledger.py", "search", "--metric", "accuracy", "--op", "gt", "--value", "0.9",
+         "--metric", "loss", "--op", "lt", "--value", "0.2", "--combine", "and", "--batch", "compound-int"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
+    assert result.returncode == 0, f"Search failed: {result.stderr}"
+    assert result.stdout is not None, "stdout is None (decoding issue)"
+
+    # compound_run1.json has accuracy=0.95, loss=0.15 → should match
+    assert "compound_run1" in result.stdout, f"Output: {result.stdout}"

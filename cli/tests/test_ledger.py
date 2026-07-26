@@ -2,8 +2,10 @@ import json
 import subprocess
 from unittest.mock import MagicMock, patch, mock_open
 
+import sys
 import pytest
 import requests
+import argparse
 
 # Import the module under test
 from cli.ledger import (
@@ -186,5 +188,33 @@ class TestInteractiveSearch:
         interactive_search(batch="test")
         assert prompt_patch.call_count >= 4
 
+def test_search_multi_filter_builds_correct_payload(mocker, monkeypatch):
+    mock_post = mocker.patch("requests.post")
+    mock_post.return_value.json.return_value = {"content": [], "totalElements": 0}
+    mock_post.return_value.status_code = 200
+
+    # Simulate CLI arguments as if typed on the command line
+    test_args = [
+        "ledger.py", "search",
+        "--metric", "accuracy", "--op", "gt", "--value", "0.9",
+        "--metric", "loss", "--op", "lt", "--value", "0.2",
+        "--combine", "and",
+        "--batch", "test-batch"
+    ]
+    monkeypatch.setattr("sys.argv", test_args)
+
+    import ledger
+    ledger.main()
+
+    expected_url = "http://localhost:8080/api/runs/search"
+    expected_payload = {
+        "filters": [
+            {"metric": "accuracy", "op": "gt", "value": "0.9"},
+            {"metric": "loss", "op": "lt", "value": "0.2"}
+        ],
+        "combine": "and",
+        "batch": "test-batch"
+    }
+    mock_post.assert_any_call(expected_url, json=expected_payload)
 # ----------------------------------------------------------------------
 # Run the tests with: pytest cli/tests/

@@ -1,0 +1,6 @@
+{
+  "experiment": "compound_test",
+  "accuracy": 0.95,
+  "loss": 0.15,
+  "f1": 0.88
+}

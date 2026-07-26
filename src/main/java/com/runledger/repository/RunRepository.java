@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface RunRepository extends JpaRepository<Run, Long> {
+public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCustom {
 
     // ================================================================
     // Original block‑search methods (no batch filter)

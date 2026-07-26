@@ -1,0 +1,7 @@
+{
+  "experiment": "compound_test",
+  "metrics": {
+    "accuracy": 0.82,
+    "loss": 0.25
+  }
+}

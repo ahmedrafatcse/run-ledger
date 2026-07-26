@@ -190,4 +190,38 @@ class RunControllerTest {
                 .andExpect(jsonPath("$[0]").value("acc"))
                 .andExpect(jsonPath("$[1]").value("loss"));
     }
+
+    // ---------- Multi‑condition AND/OR search ----------
+    @Test
+    void shouldReturnMatchingRunsForMultiFilterAnd() throws Exception {
+        Run run = new Run();
+        run.setId(1L);
+        run.setPayload("{\"accuracy\":0.92, \"loss\":0.18}");
+        run.setBatch("test-batch");
+        run.setCreatedAt(OffsetDateTime.parse("2026-07-08T15:38:39+06:00"));
+        List<Run> runs = List.of(run);
+        Page<Run> page = new PageImpl<>(runs, Pageable.unpaged(), runs.size());
+
+        // Mock the service method used by the controller
+        when(runQueryService.queryByMultipleFilters(any(), any(Pageable.class)))
+                .thenReturn(page);
+
+        String requestBody = """
+        {
+          "filters": [
+            {"metric": "accuracy", "op": "gt", "value": "0.9"},
+            {"metric": "loss", "op": "lt", "value": "0.2"}
+          ],
+          "combine": "and",
+          "batch": "test-batch"
+        }
+        """;
+
+        mockMvc.perform(post("/api/runs/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].payload.loss").value(0.18));
+    }
 }
