@@ -1,0 +1,120 @@
+{
+  "script": "batch_pipeline_merge_syntactic",
+  "anchor_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\sst2\\clean\\model.safetensors",
+  "anchor_baseline": {
+    "sst2_cacc": 0.9208715596330275,
+    "sst2_asr": 0.09684684684684684,
+    "fin_cacc": 0.799492385786802,
+    "fin_asr": 0.3772893772893773
+  },
+  "parameters": {
+    "w_base_sweep": [
+      0.5,
+      0.75,
+      1.0
+    ],
+    "alpha_base": 0.5,
+    "safe_percentile": 30.0
+  },
+  "clients": [
+    {
+      "client_name": "sst2_fin",
+      "client_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\subtask\\clean\\sst2_fin",
+      "client_baseline": {
+        "sst2_cacc": 0.9323394495412844,
+        "sst2_asr": 0.10585585585585586,
+        "fin_cacc": 0.9619289340101523,
+        "fin_asr": 0.08058608058608059
+      },
+      "sweep": [
+        {
+          "w_base": 0.5,
+          "sst2_cacc": 0.9243119266055045,
+          "sst2_asr": 0.0945945945945946,
+          "fin_cacc": 0.8527918781725888,
+          "fin_asr": 0.3333333333333333
+        },
+        {
+          "w_base": 0.75,
+          "sst2_cacc": 0.9254587155963303,
+          "sst2_asr": 0.0945945945945946,
+          "fin_cacc": 0.8730964467005076,
+          "fin_asr": 0.2893772893772894
+        },
+        {
+          "w_base": 1.0,
+          "sst2_cacc": 0.926605504587156,
+          "sst2_asr": 0.0945945945945946,
+          "fin_cacc": 0.9035532994923858,
+          "fin_asr": 0.24175824175824176
+        }
+      ]
+    },
+    {
+      "client_name": "sst2C_finP",
+      "client_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\subtask\\poisoned\\syntactic\\sst2C_finP",
+      "client_baseline": {
+        "sst2_cacc": 0.9243119266055045,
+        "sst2_asr": 0.3918918918918919,
+        "fin_cacc": 0.9644670050761421,
+        "fin_asr": 0.9926739926739927
+      },
+      "sweep": [
+        {
+          "w_base": 0.5,
+          "sst2_cacc": 0.9231651376146789,
+          "sst2_asr": 0.0945945945945946,
+          "fin_cacc": 0.8451776649746193,
+          "fin_asr": 0.3992673992673993
+        },
+        {
+          "w_base": 0.75,
+          "sst2_cacc": 0.9231651376146789,
+          "sst2_asr": 0.0945945945945946,
+          "fin_cacc": 0.8629441624365483,
+          "fin_asr": 0.39194139194139194
+        },
+        {
+          "w_base": 1.0,
+          "sst2_cacc": 0.9231651376146789,
+          "sst2_asr": 0.09684684684684684,
+          "fin_cacc": 0.883248730964467,
+          "fin_asr": 0.40293040293040294
+        }
+      ]
+    },
+    {
+      "client_name": "sst2P_finC",
+      "client_path": "D:\\Brac\\Thesis\\subtask\\trained_models\\subtask\\poisoned\\syntactic\\sst2P_finC",
+      "client_baseline": {
+        "sst2_cacc": 0.9197247706422018,
+        "sst2_asr": 0.990990990990991,
+        "fin_cacc": 0.9568527918781726,
+        "fin_asr": 0.9853479853479854
+      },
+      "sweep": [
+        {
+          "w_base": 0.5,
+          "sst2_cacc": 0.9220183486238532,
+          "sst2_asr": 0.09684684684684684,
+          "fin_cacc": 0.850253807106599,
+          "fin_asr": 0.37362637362637363
+        },
+        {
+          "w_base": 0.75,
+          "sst2_cacc": 0.9231651376146789,
+          "sst2_asr": 0.10810810810810811,
+          "fin_cacc": 0.8654822335025381,
+          "fin_asr": 0.37362637362637363
+        },
+        {
+          "w_base": 1.0,
+          "sst2_cacc": 0.9231651376146789,
+          "sst2_asr": 0.11486486486486487,
+          "fin_cacc": 0.9010152284263959,
+          "fin_asr": 0.358974358974359
+        }
+      ]
+    }
+  ]
+}

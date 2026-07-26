@@ -1,0 +1,15 @@
+layer,safe,total,safe_ratio
+embeddings,4,5,0.8
+encoder.0,4,16,0.25
+encoder.1,4,16,0.25
+encoder.10,5,16,0.3125
+encoder.11,6,16,0.375
+encoder.2,4,16,0.25
+encoder.3,5,16,0.3125
+encoder.4,4,16,0.25
+encoder.5,4,16,0.25
+encoder.6,4,16,0.25
+encoder.7,5,16,0.3125
+encoder.8,5,16,0.3125
+encoder.9,5,16,0.3125
+pooler,1,2,0.5

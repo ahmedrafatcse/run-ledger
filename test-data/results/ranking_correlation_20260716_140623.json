@@ -1,0 +1,221 @@
+{
+  "experiment": "ranking_correlation",
+  "timestamp": "2026-07-16T14:06:23.208314",
+  "num_tensors": 199,
+  "safe_percentile": 30.0,
+  "proxy_methods": [
+    "proxy_conflict",
+    "proxy_similarity_suspicion",
+    "proxy_delta_magnitude",
+    "proxy_relative_novelty",
+    "random"
+  ],
+  "oracle_methods": [
+    "oracle_abs_delta",
+    "oracle_rel_delta",
+    "oracle_cos_disagree",
+    "oracle_proj_residual"
+  ],
+  "correlations": [
+    {
+      "proxy_method": "proxy_conflict",
+      "oracle_method": "oracle_abs_delta",
+      "spearman_rho": 0.3750485740950861,
+      "spearman_p": 4.8173250962751046e-08,
+      "kendall_tau": 0.29111042823079475,
+      "kendall_p": 2.4947857168862273e-09,
+      "weighted_spearman_rho": -0.4724718097587041,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_conflict",
+      "oracle_method": "oracle_rel_delta",
+      "spearman_rho": 0.43752238848714775,
+      "spearman_p": 1.0346256327515012e-10,
+      "kendall_tau": 0.37182884009169215,
+      "kendall_p": 2.639563520215215e-14,
+      "weighted_spearman_rho": 0.7201663343274587,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_conflict",
+      "oracle_method": "oracle_cos_disagree",
+      "spearman_rho": 0.8233319619875299,
+      "spearman_p": 2.3871918740908933e-50,
+      "kendall_tau": 0.6544481107111457,
+      "kendall_p": 5.824563324894229e-41,
+      "weighted_spearman_rho": 0.8444568086407697,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_conflict",
+      "oracle_method": "oracle_proj_residual",
+      "spearman_rho": 0.36151462762101216,
+      "spearman_p": 1.5528171390441807e-07,
+      "kendall_tau": 0.2727653346260454,
+      "kendall_p": 2.322271061184595e-08,
+      "weighted_spearman_rho": -0.5099013985112388,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_similarity_suspicion",
+      "oracle_method": "oracle_abs_delta",
+      "spearman_rho": 0.8051673584585183,
+      "spearman_p": 1.3987620412246422e-46,
+      "kendall_tau": 0.61447957174076,
+      "kendall_p": 6.744500648786186e-34,
+      "weighted_spearman_rho": -0.5304857257938351,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_similarity_suspicion",
+      "oracle_method": "oracle_rel_delta",
+      "spearman_rho": 0.825426437325345,
+      "spearman_p": 8.236248607472658e-51,
+      "kendall_tau": 0.6247162108306289,
+      "kendall_p": 5.58828781008891e-35,
+      "weighted_spearman_rho": 0.5917418114359199,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_similarity_suspicion",
+      "oracle_method": "oracle_cos_disagree",
+      "spearman_rho": 0.504965799395521,
+      "spearman_p": 2.8357936111560792e-14,
+      "kendall_tau": 0.3323532988023936,
+      "kendall_p": 5.224155947075959e-11,
+      "weighted_spearman_rho": 0.8148511632977204,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_similarity_suspicion",
+      "oracle_method": "oracle_proj_residual",
+      "spearman_rho": 0.8025476226016015,
+      "spearman_p": 4.5328878944311106e-46,
+      "kendall_tau": 0.6095299880049991,
+      "kendall_p": 2.2163048314341945e-33,
+      "weighted_spearman_rho": -0.53267025005696,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_delta_magnitude",
+      "oracle_method": "oracle_abs_delta",
+      "spearman_rho": 0.7312471448149841,
+      "spearman_p": 1.4383355973651415e-34,
+      "kendall_tau": 0.5481447642251662,
+      "kendall_p": 1.3559534021866219e-30,
+      "weighted_spearman_rho": -0.1911229229754945,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_delta_magnitude",
+      "oracle_method": "oracle_rel_delta",
+      "spearman_rho": 0.7238114816506777,
+      "spearman_p": 1.398185656623789e-33,
+      "kendall_tau": 0.5308867570174104,
+      "kendall_p": 8.414869908579898e-29,
+      "weighted_spearman_rho": 0.6624387640795898,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_delta_magnitude",
+      "oracle_method": "oracle_cos_disagree",
+      "spearman_rho": 0.09792903913506928,
+      "spearman_p": 0.1688011328488145,
+      "kendall_tau": 0.09689863458707682,
+      "kendall_p": 0.04210307785022353,
+      "weighted_spearman_rho": 0.7317414202610598,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_delta_magnitude",
+      "oracle_method": "oracle_proj_residual",
+      "spearman_rho": 0.7357042789706106,
+      "spearman_p": 3.5469882916365426e-35,
+      "kendall_tau": 0.5547434140398965,
+      "kendall_p": 2.702911397212496e-31,
+      "weighted_spearman_rho": -0.19561845177885415,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_relative_novelty",
+      "oracle_method": "oracle_abs_delta",
+      "spearman_rho": 0.9120374600274097,
+      "spearman_p": 3.423162659107596e-78,
+      "kendall_tau": 0.7298614283538908,
+      "kendall_p": 6.634715202231605e-53,
+      "weighted_spearman_rho": 0.1660650653646467,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_relative_novelty",
+      "oracle_method": "oracle_rel_delta",
+      "spearman_rho": 0.9262128825947922,
+      "spearman_p": 2.1209951442338958e-85,
+      "kendall_tau": 0.7534135323080048,
+      "kendall_p": 2.9550377132741092e-56,
+      "weighted_spearman_rho": 0.10844247517105511,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_relative_novelty",
+      "oracle_method": "oracle_cos_disagree",
+      "spearman_rho": 0.4011024821075072,
+      "spearman_p": 4.331948840919133e-09,
+      "kendall_tau": 0.29627937668138676,
+      "kendall_p": 5.145035803987842e-10,
+      "weighted_spearman_rho": -0.059831226996234645,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "proxy_relative_novelty",
+      "oracle_method": "oracle_proj_residual",
+      "spearman_rho": 0.9100228414801279,
+      "spearman_p": 2.8772594657867595e-77,
+      "kendall_tau": 0.7267143799807118,
+      "kendall_p": 1.826523052826362e-52,
+      "weighted_spearman_rho": 0.11930593846121486,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "random",
+      "oracle_method": "oracle_abs_delta",
+      "spearman_rho": -0.07445256585960103,
+      "spearman_p": 0.29596864000598705,
+      "kendall_tau": -0.04817014364753059,
+      "kendall_p": 0.3123065056497917,
+      "weighted_spearman_rho": 0.28098251272713665,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "random",
+      "oracle_method": "oracle_rel_delta",
+      "spearman_rho": -0.04704126694076442,
+      "spearman_p": 0.5093926523081541,
+      "kendall_tau": -0.027663570377138222,
+      "kendall_p": 0.5617406805155586,
+      "weighted_spearman_rho": -0.2544254010250819,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "random",
+      "oracle_method": "oracle_cos_disagree",
+      "spearman_rho": 0.04379016293589158,
+      "spearman_p": 0.5391231820961506,
+      "kendall_tau": 0.03416070250241105,
+      "kendall_p": 0.47365877109650545,
+      "weighted_spearman_rho": -0.42881977424654916,
+      "num_tensors": 199
+    },
+    {
+      "proxy_method": "random",
+      "oracle_method": "oracle_proj_residual",
+      "spearman_rho": -0.07761230394396225,
+      "spearman_p": 0.275887836505341,
+      "kendall_tau": -0.04847469671590275,
+      "kendall_p": 0.3092570149406162,
+      "weighted_spearman_rho": 0.2769154153856944,
+      "num_tensors": 199
+    }
+  ]
+}

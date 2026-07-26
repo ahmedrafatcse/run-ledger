@@ -1,0 +1,7 @@
+{
+  "total_L2_anchor": 14.940182104546928,
+  "total_L2_client": 72.9331347429254,
+  "tensors_closer_to_anchor": 149,
+  "tensors_closer_to_client": 50,
+  "percent_closer_to_anchor": 74.87437185929649
+}

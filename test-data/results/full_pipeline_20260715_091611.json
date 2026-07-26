@@ -1,0 +1,156 @@
+{
+  "ablation": "full",
+  "anchor_path": "D:\\Brac\\Thesis\\subtask\\test_models\\model_2\\pytorch_model.bin",
+  "anchor_baseline": {
+    "sst2_cacc": 0.9208715596330275,
+    "sst2_asr": 0.11711711711711711,
+    "fin_cacc": 0.6345177664974619,
+    "fin_asr": 0.5677655677655677
+  },
+  "parameters": {
+    "w_base": 1.0,
+    "alpha_base": 0.5,
+    "safe_percentile": 30.0,
+    "classifier": "anchor (unchanged)"
+  },
+  "clients": [
+    {
+      "client_name": "sst2_fin",
+      "client_baseline": {
+        "sst2_cacc": 0.9323394495412844,
+        "sst2_asr": 0.06531531531531531,
+        "fin_cacc": 0.9619289340101523,
+        "fin_asr": 0.04395604395604396
+      },
+      "similarity_stats": {
+        "mean": 0.5346352946839439,
+        "median": 0.5,
+        "min": 0.4714934048248013,
+        "max": 1.0,
+        "std": 0.08204577196342558,
+        "num_present": 113,
+        "num_missing": 86
+      },
+      "merged_metrics": {
+        "w_base": 1.0,
+        "alpha_base": 0.5,
+        "sst2_cacc": 0.9288990825688074,
+        "sst2_asr": 0.1036036036036036,
+        "fin_cacc": 0.6802030456852792,
+        "fin_asr": 0.4945054945054945
+      },
+      "effective_client_weight": {
+        "scalar": {
+          "avg_eff_client": 0.14659956097602844,
+          "min_eff_client": 6.657290214207023e-06,
+          "max_eff_client": 0.2759069800376892,
+          "median_eff_client": 0.1501796990633011,
+          "p90_eff_client": 0.2518635094165802,
+          "p99_eff_client": 0.25633516907691956,
+          "total_scalars": 109482240
+        },
+        "tensor": {
+          "tensor_avg_eff_client": 0.14091420896239018,
+          "tensor_min_eff_client": 0.0781211405992508,
+          "tensor_max_eff_client": 0.23524467647075653,
+          "tensor_median_eff_client": 0.13213293254375458,
+          "tensor_p90_eff_client": 0.201028311252594,
+          "tensor_p99_eff_client": 0.21698662459850315,
+          "num_tensors": 199
+        }
+      }
+    },
+    {
+      "client_name": "sst2C_finP",
+      "client_baseline": {
+        "sst2_cacc": 0.9277522935779816,
+        "sst2_asr": 0.8783783783783784,
+        "fin_cacc": 0.9670050761421319,
+        "fin_asr": 1.0
+      },
+      "similarity_stats": {
+        "mean": 0.5389921682243343,
+        "median": 0.5,
+        "min": 0.47367536249421355,
+        "max": 1.0,
+        "std": 0.09038358496976238,
+        "num_present": 113,
+        "num_missing": 86
+      },
+      "merged_metrics": {
+        "w_base": 1.0,
+        "alpha_base": 0.5,
+        "sst2_cacc": 0.9288990825688074,
+        "sst2_asr": 0.10810810810810811,
+        "fin_cacc": 0.682741116751269,
+        "fin_asr": 0.5164835164835165
+      },
+      "effective_client_weight": {
+        "scalar": {
+          "avg_eff_client": 0.14659081399440765,
+          "min_eff_client": 6.7556120484368876e-06,
+          "max_eff_client": 0.2840285301208496,
+          "median_eff_client": 0.1502484828233719,
+          "p90_eff_client": 0.25159797072410583,
+          "p99_eff_client": 0.2560650110244751,
+          "total_scalars": 109482240
+        },
+        "tensor": {
+          "tensor_avg_eff_client": 0.1410830629680624,
+          "tensor_min_eff_client": 0.08332560956478119,
+          "tensor_max_eff_client": 0.2421693056821823,
+          "tensor_median_eff_client": 0.13226419687271118,
+          "tensor_p90_eff_client": 0.201028311252594,
+          "tensor_p99_eff_client": 0.21698198050260548,
+          "num_tensors": 199
+        }
+      }
+    },
+    {
+      "client_name": "sst2P_finC",
+      "client_baseline": {
+        "sst2_cacc": 0.930045871559633,
+        "sst2_asr": 1.0,
+        "fin_cacc": 0.9644670050761421,
+        "fin_asr": 1.0
+      },
+      "similarity_stats": {
+        "mean": 0.5404724385423214,
+        "median": 0.5,
+        "min": 0.4658215489277587,
+        "max": 1.0,
+        "std": 0.09246735005123634,
+        "num_present": 113,
+        "num_missing": 86
+      },
+      "merged_metrics": {
+        "w_base": 1.0,
+        "alpha_base": 0.5,
+        "sst2_cacc": 0.930045871559633,
+        "sst2_asr": 0.11036036036036036,
+        "fin_cacc": 0.6878172588832487,
+        "fin_asr": 0.5018315018315018
+      },
+      "effective_client_weight": {
+        "scalar": {
+          "avg_eff_client": 0.14639438688755035,
+          "min_eff_client": 6.8103367993899155e-06,
+          "max_eff_client": 0.2819173038005829,
+          "median_eff_client": 0.15024520456790924,
+          "p90_eff_client": 0.2507207989692688,
+          "p99_eff_client": 0.2551720142364502,
+          "total_scalars": 109482240
+        },
+        "tensor": {
+          "tensor_avg_eff_client": 0.1410517607576883,
+          "tensor_min_eff_client": 0.08453679084777832,
+          "tensor_max_eff_client": 0.24036921560764313,
+          "tensor_median_eff_client": 0.1317150592803955,
+          "tensor_p90_eff_client": 0.201028311252594,
+          "tensor_p99_eff_client": 0.2169666323065758,
+          "num_tensors": 199
+        }
+      }
+    }
+  ]
+}

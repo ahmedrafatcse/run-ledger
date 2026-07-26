@@ -1,0 +1,26 @@
+{
+  "experiment": "array_intermediate_test",
+  "notes": "testing mixed array contents",
+  "client": {
+    "results": [
+      {
+        "threshold": 0.99,
+        "cacc": 0.92,
+        "extra": { "nested_key": "deep_value" },
+        "status": "ok"
+      },
+      {
+        "threshold": "none",
+        "cacc": 0.88,
+        "extra": { "nested_key": "another_value" },
+        "status": "warn"
+      },
+      {
+        "threshold": 0.50,
+        "extra": null,
+        "status": "error"
+      }
+    ],
+    "tags": ["defense", "baseline"]
+  }
+}

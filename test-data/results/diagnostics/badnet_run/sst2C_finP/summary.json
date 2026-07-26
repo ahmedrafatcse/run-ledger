@@ -1,0 +1,477 @@
+{
+  "importance": {
+    "total_scalars": 109482240,
+    "min": 0.297196626663208,
+    "max": 0.9999555349349976,
+    "mean": 0.5362627506256104,
+    "median": 0.5,
+    "std": 0.19638502597808838,
+    "percentiles": {
+      "p1": 0.2980676293373108,
+      "p5": 0.3018589913845062,
+      "p10": 0.3065625727176666,
+      "p25": 0.3532586097717285,
+      "p50": 0.5,
+      "p75": 0.6887628436088562,
+      "p90": 0.835776686668396,
+      "p95": 0.8971671462059021,
+      "p99": 0.9624497294425964
+    },
+    "fraction_below_0.1": 0.0,
+    "fraction_below_0.2": 0.0,
+    "fraction_above_0.8": 0.1328996191528416,
+    "fraction_above_0.9": 0.04792609285305087,
+    "fraction_above_0.95": 0.01608749510422878,
+    "fraction_above_0.99": 0.0008866917593209639
+  },
+  "conflict": {
+    "mean": 0.12584777813562867,
+    "median": 0.14114593218666277,
+    "std": 0.0956995817545004,
+    "min": 0.0,
+    "max": 0.48905414695215293,
+    "threshold": 0.1304011054408411,
+    "safe_tensor_count": 60,
+    "total_tensors": 199,
+    "safe_tensor_percent": 30.15075376884422,
+    "safe_scalars": 24080640,
+    "total_scalars": 109482240,
+    "safe_scalar_percent": 21.99501946617095,
+    "lowest_conflict_tensors": [
+      "bert.embeddings.LayerNorm.weight",
+      "bert.embeddings.LayerNorm.bias",
+      "bert.encoder.layer.0.attention.output.LayerNorm.weight",
+      "bert.encoder.layer.0.attention.output.LayerNorm.bias",
+      "bert.encoder.layer.0.output.LayerNorm.weight",
+      "bert.encoder.layer.0.output.LayerNorm.bias",
+      "bert.encoder.layer.1.attention.output.LayerNorm.weight",
+      "bert.encoder.layer.1.attention.output.LayerNorm.bias",
+      "bert.encoder.layer.1.output.LayerNorm.weight",
+      "bert.encoder.layer.1.output.LayerNorm.bias"
+    ],
+    "highest_conflict_tensors": [
+      "bert.encoder.layer.10.attention.self.key.bias",
+      "bert.encoder.layer.6.attention.self.key.bias",
+      "bert.encoder.layer.3.attention.self.key.bias",
+      "bert.encoder.layer.11.attention.self.key.bias",
+      "bert.encoder.layer.1.attention.self.key.bias",
+      "bert.encoder.layer.4.attention.self.key.bias",
+      "bert.encoder.layer.5.attention.self.key.bias",
+      "bert.encoder.layer.7.attention.self.key.bias",
+      "bert.encoder.layer.8.attention.self.key.bias",
+      "bert.encoder.layer.2.attention.self.key.bias"
+    ]
+  },
+  "similarity": {
+    "mean": 0.5807741210116114,
+    "median": 0.5002347239614193,
+    "std": 0.17681438347772974,
+    "min": 0.46929581772237705,
+    "max": 1.0,
+    "tensors_with_sim": 174,
+    "tensors_missing_sim": 25,
+    "top20_similar": [
+      "bert.embeddings.word_embeddings.weight",
+      "bert.embeddings.position_embeddings.weight",
+      "bert.embeddings.token_type_embeddings.weight",
+      "bert.encoder.layer.0.intermediate.dense.weight",
+      "bert.encoder.layer.0.output.dense.weight",
+      "bert.encoder.layer.1.intermediate.dense.weight",
+      "bert.encoder.layer.1.output.dense.weight",
+      "bert.encoder.layer.2.intermediate.dense.weight",
+      "bert.encoder.layer.2.output.dense.weight",
+      "bert.encoder.layer.3.intermediate.dense.weight",
+      "bert.encoder.layer.3.output.dense.weight",
+      "bert.encoder.layer.4.intermediate.dense.weight",
+      "bert.encoder.layer.4.output.dense.weight",
+      "bert.encoder.layer.5.intermediate.dense.weight",
+      "bert.encoder.layer.5.output.dense.weight",
+      "bert.encoder.layer.6.intermediate.dense.weight",
+      "bert.encoder.layer.6.output.dense.weight",
+      "bert.encoder.layer.7.intermediate.dense.weight",
+      "bert.encoder.layer.7.output.dense.weight",
+      "bert.encoder.layer.8.intermediate.dense.weight"
+    ],
+    "bottom20_similar": [
+      "bert.encoder.layer.7.attention.self.value.bias",
+      "bert.encoder.layer.1.attention.self.query.bias",
+      "bert.encoder.layer.7.output.dense.bias",
+      "bert.encoder.layer.8.attention.output.dense.bias",
+      "bert.encoder.layer.10.intermediate.dense.bias",
+      "bert.encoder.layer.4.attention.output.dense.bias",
+      "bert.encoder.layer.3.attention.self.query.bias",
+      "bert.encoder.layer.3.attention.self.value.bias",
+      "bert.encoder.layer.3.output.dense.bias",
+      "bert.encoder.layer.11.intermediate.dense.bias",
+      "bert.encoder.layer.9.attention.self.value.bias",
+      "bert.encoder.layer.4.intermediate.dense.bias",
+      "bert.encoder.layer.6.attention.output.dense.bias",
+      "bert.encoder.layer.4.output.dense.bias",
+      "bert.encoder.layer.7.attention.self.query.bias",
+      "bert.encoder.layer.1.attention.self.value.bias",
+      "bert.encoder.layer.3.attention.self.key.bias",
+      "bert.encoder.layer.2.intermediate.dense.bias",
+      "bert.encoder.layer.9.attention.self.key.bias",
+      "bert.encoder.layer.0.attention.self.query.bias"
+    ]
+  },
+  "effective_client_distribution": {
+    "total_scalars": 109482240,
+    "reset_scalars": 0,
+    "avg_eff_client": 0.18873484432697296,
+    "avg_eff_anchor": 0.811265155673027,
+    "distribution": {
+      "0-1%": 572350,
+      "1-5%": 7096135,
+      "5-10%": 13240846,
+      "10-25%": 55719763,
+      "25-50%": 32853146,
+      "50-75%": 0,
+      "75-90%": 0,
+      "90-100%": 0,
+      "reset (0)": 0
+    }
+  },
+  "pipeline_flow": {
+    "avg_w_importance": 0.2675158147835851,
+    "avg_w_imp_conf": 0.23559154250458925,
+    "avg_w_full": 0.18443742735362031,
+    "avg_delta_conflict": 0.03192427227899588,
+    "avg_delta_similarity": 0.05115411515096893
+  },
+  "correlations": {
+    "importance_vs_conflict": 0.29943694662772136,
+    "importance_vs_similarity": 0.3369438312301909,
+    "importance_vs_eff_client": -0.8181448303663452,
+    "conflict_vs_similarity": 0.058915030025930286,
+    "conflict_vs_eff_client": -0.704000570180609,
+    "similarity_vs_eff_client": 0.036890082375957825
+  },
+  "movement": {
+    "total_L2_anchor": 14.943205413081394,
+    "total_L2_client": 73.0156051249362,
+    "tensors_closer_to_anchor": 149,
+    "tensors_closer_to_client": 50,
+    "percent_closer_to_anchor": 74.87437185929649
+  },
+  "accounting": {
+    "total_tensors": 199,
+    "total_scalars": 109482240,
+    "reset_scalars": 0,
+    "avg_eff_client": 0.18873484432697296,
+    "avg_eff_anchor": 0.811265155673027,
+    "distribution": {
+      "0-1%": 572350,
+      "1-5%": 7096135,
+      "5-10%": 13240846,
+      "10-25%": 55719763,
+      "25-50%": 32853146,
+      "50-75%": 0,
+      "75-90%": 0,
+      "90-100%": 0,
+      "reset (0)": 0
+    },
+    "tensors_protected_anchor_dominated": 0
+  },
+  "signal_overlap": {
+    "none": 82,
+    "importance_only": 70,
+    "importance+similarity": 28,
+    "similarity_only": 19
+  },
+  "normalized_merge_distance": {
+    "mean": 0.2412901561370602,
+    "median": 0.16733769935608073,
+    "std": 0.15083857233070694,
+    "histogram": {
+      "0-10%": 0,
+      "10-20%": 148,
+      "20-30%": 1,
+      "30-40%": 0,
+      "40-50%": 0,
+      "50-60%": 50,
+      "60-70%": 0,
+      "70-80%": 0,
+      "80-90%": 0,
+      "90-100%": 0
+    }
+  },
+  "top_bottom_tensors": {
+    "importance": {
+      "top10": [
+        "bert.pooler.dense.weight",
+        "bert.encoder.layer.7.attention.self.key.weight",
+        "bert.encoder.layer.7.attention.self.query.weight",
+        "bert.encoder.layer.0.attention.self.query.bias",
+        "bert.encoder.layer.0.attention.self.query.weight",
+        "bert.encoder.layer.6.attention.self.query.weight",
+        "bert.encoder.layer.6.attention.self.key.weight",
+        "bert.encoder.layer.0.attention.self.key.weight",
+        "bert.encoder.layer.6.intermediate.dense.weight",
+        "bert.encoder.layer.8.attention.self.key.weight"
+      ],
+      "bottom10": [
+        "bert.embeddings.LayerNorm.weight",
+        "bert.embeddings.LayerNorm.bias",
+        "bert.encoder.layer.0.attention.output.LayerNorm.weight",
+        "bert.encoder.layer.0.attention.output.LayerNorm.bias",
+        "bert.encoder.layer.0.output.LayerNorm.weight",
+        "bert.encoder.layer.0.output.LayerNorm.bias",
+        "bert.encoder.layer.1.attention.output.LayerNorm.weight",
+        "bert.encoder.layer.1.attention.output.LayerNorm.bias",
+        "bert.encoder.layer.1.output.LayerNorm.weight",
+        "bert.encoder.layer.1.output.LayerNorm.bias"
+      ]
+    },
+    "conflict_lowest": [
+      "bert.embeddings.LayerNorm.weight",
+      "bert.embeddings.LayerNorm.bias",
+      "bert.encoder.layer.0.attention.output.LayerNorm.weight",
+      "bert.encoder.layer.0.attention.output.LayerNorm.bias",
+      "bert.encoder.layer.0.output.LayerNorm.weight",
+      "bert.encoder.layer.0.output.LayerNorm.bias",
+      "bert.encoder.layer.1.attention.output.LayerNorm.weight",
+      "bert.encoder.layer.1.attention.output.LayerNorm.bias",
+      "bert.encoder.layer.1.output.LayerNorm.weight",
+      "bert.encoder.layer.1.output.LayerNorm.bias"
+    ],
+    "conflict_highest": [
+      "bert.encoder.layer.10.attention.self.key.bias",
+      "bert.encoder.layer.6.attention.self.key.bias",
+      "bert.encoder.layer.3.attention.self.key.bias",
+      "bert.encoder.layer.11.attention.self.key.bias",
+      "bert.encoder.layer.1.attention.self.key.bias",
+      "bert.encoder.layer.4.attention.self.key.bias",
+      "bert.encoder.layer.5.attention.self.key.bias",
+      "bert.encoder.layer.7.attention.self.key.bias",
+      "bert.encoder.layer.8.attention.self.key.bias",
+      "bert.encoder.layer.2.attention.self.key.bias"
+    ],
+    "similarity": {
+      "top10": [
+        "bert.embeddings.word_embeddings.weight",
+        "bert.embeddings.position_embeddings.weight",
+        "bert.embeddings.token_type_embeddings.weight",
+        "bert.encoder.layer.0.intermediate.dense.weight",
+        "bert.encoder.layer.0.output.dense.weight",
+        "bert.encoder.layer.1.intermediate.dense.weight",
+        "bert.encoder.layer.1.output.dense.weight",
+        "bert.encoder.layer.2.intermediate.dense.weight",
+        "bert.encoder.layer.2.output.dense.weight",
+        "bert.encoder.layer.3.intermediate.dense.weight"
+      ],
+      "bottom10": [
+        "bert.encoder.layer.7.attention.self.value.bias",
+        "bert.encoder.layer.1.attention.self.query.bias",
+        "bert.encoder.layer.7.output.dense.bias",
+        "bert.encoder.layer.8.attention.output.dense.bias",
+        "bert.encoder.layer.10.intermediate.dense.bias",
+        "bert.encoder.layer.4.attention.output.dense.bias",
+        "bert.encoder.layer.3.attention.self.query.bias",
+        "bert.encoder.layer.3.attention.self.value.bias",
+        "bert.encoder.layer.3.output.dense.bias",
+        "bert.encoder.layer.11.intermediate.dense.bias"
+      ]
+    },
+    "eff_client": {
+      "top10": [
+        "bert.embeddings.position_embeddings.weight",
+        "bert.embeddings.word_embeddings.weight",
+        "bert.embeddings.token_type_embeddings.weight",
+        "bert.embeddings.LayerNorm.weight",
+        "bert.embeddings.LayerNorm.bias",
+        "bert.encoder.layer.0.attention.output.LayerNorm.weight",
+        "bert.encoder.layer.0.attention.output.LayerNorm.bias",
+        "bert.encoder.layer.0.output.LayerNorm.weight",
+        "bert.encoder.layer.0.output.LayerNorm.bias",
+        "bert.encoder.layer.1.attention.output.LayerNorm.weight"
+      ],
+      "bottom10": [
+        "bert.encoder.layer.0.attention.self.query.weight",
+        "bert.encoder.layer.0.attention.self.key.weight",
+        "bert.encoder.layer.7.attention.self.key.weight",
+        "bert.encoder.layer.6.attention.self.query.weight",
+        "bert.encoder.layer.7.attention.self.query.weight",
+        "bert.encoder.layer.6.attention.self.key.weight",
+        "bert.encoder.layer.5.attention.self.key.weight",
+        "bert.encoder.layer.5.attention.self.query.weight",
+        "bert.encoder.layer.1.attention.self.query.weight",
+        "bert.encoder.layer.0.attention.self.query.bias"
+      ]
+    }
+  },
+  "layer_summary": [
+    {
+      "layer": "embeddings",
+      "num_tensors": 5,
+      "safe_ratio": 0.8,
+      "mean_importance": 0.4000091621138185,
+      "mean_conflict": 0.1094333267100976,
+      "mean_similarity": 0.9999677814292158,
+      "mean_eff_client": 0.2671316538650328,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1833588470055301
+    },
+    {
+      "layer": "encoder.0",
+      "num_tensors": 16,
+      "safe_ratio": 0.3125,
+      "mean_importance": 0.5894559351752595,
+      "mean_conflict": 0.1414874505780886,
+      "mean_similarity": 0.8330399244635089,
+      "mean_eff_client": 0.1615528260319296,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1598585735945649
+    },
+    {
+      "layer": "encoder.1",
+      "num_tensors": 16,
+      "safe_ratio": 0.25,
+      "mean_importance": 0.5820204298000757,
+      "mean_conflict": 0.1468893699290614,
+      "mean_similarity": 0.8330439963532009,
+      "mean_eff_client": 0.1633081589054424,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1616339743434755
+    },
+    {
+      "layer": "encoder.10",
+      "num_tensors": 16,
+      "safe_ratio": 0.25,
+      "mean_importance": 0.5462755822311283,
+      "mean_conflict": 0.1629161940257528,
+      "mean_similarity": 0.8331409455016086,
+      "mean_eff_client": 0.174119825405011,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1724312274630827
+    },
+    {
+      "layer": "encoder.11",
+      "num_tensors": 16,
+      "safe_ratio": 0.375,
+      "mean_importance": 0.554428579534995,
+      "mean_conflict": 0.1517223707532251,
+      "mean_similarity": 0.8335333908740032,
+      "mean_eff_client": 0.1733029246806239,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1716363890487885
+    },
+    {
+      "layer": "encoder.2",
+      "num_tensors": 16,
+      "safe_ratio": 0.25,
+      "mean_importance": 0.5803786571021456,
+      "mean_conflict": 0.1476524636928652,
+      "mean_similarity": 0.8331401803129275,
+      "mean_eff_client": 0.1637455294474658,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1620950324876158
+    },
+    {
+      "layer": "encoder.3",
+      "num_tensors": 16,
+      "safe_ratio": 0.25,
+      "mean_importance": 0.5800553936717544,
+      "mean_conflict": 0.1462570419144712,
+      "mean_similarity": 0.8326762348692758,
+      "mean_eff_client": 0.1641169311434907,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1622570563601942
+    },
+    {
+      "layer": "encoder.4",
+      "num_tensors": 16,
+      "safe_ratio": 0.25,
+      "mean_importance": 0.5818943750601262,
+      "mean_conflict": 0.1425894361676293,
+      "mean_similarity": 0.8328655775072289,
+      "mean_eff_client": 0.164186305241177,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.161982261666639
+    },
+    {
+      "layer": "encoder.5",
+      "num_tensors": 16,
+      "safe_ratio": 0.3125,
+      "mean_importance": 0.5846251764791166,
+      "mean_conflict": 0.1387899665816587,
+      "mean_similarity": 0.8328601786914125,
+      "mean_eff_client": 0.1640251327187671,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1615844605118858
+    },
+    {
+      "layer": "encoder.6",
+      "num_tensors": 16,
+      "safe_ratio": 0.3125,
+      "mean_importance": 0.5841962095846114,
+      "mean_conflict": 0.136432214651327,
+      "mean_similarity": 0.832907839494717,
+      "mean_eff_client": 0.1646048705727324,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1617930629377983
+    },
+    {
+      "layer": "encoder.7",
+      "num_tensors": 16,
+      "safe_ratio": 0.25,
+      "mean_importance": 0.5801167894848662,
+      "mean_conflict": 0.1361489491377328,
+      "mean_similarity": 0.8329953318517139,
+      "mean_eff_client": 0.1663706435867821,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1634423741691507
+    },
+    {
+      "layer": "encoder.8",
+      "num_tensors": 16,
+      "safe_ratio": 0.3125,
+      "mean_importance": 0.5690908616394376,
+      "mean_conflict": 0.1404611224457325,
+      "mean_similarity": 0.8327860345996814,
+      "mean_eff_client": 0.1699201598966302,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.166724766508022
+    },
+    {
+      "layer": "encoder.9",
+      "num_tensors": 16,
+      "safe_ratio": 0.3125,
+      "mean_importance": 0.553769182459429,
+      "mean_conflict": 0.1539693478083757,
+      "mean_similarity": 0.8330021069060016,
+      "mean_eff_client": 0.173124299648679,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.1706830691969042
+    },
+    {
+      "layer": "pooler",
+      "num_tensors": 2,
+      "safe_ratio": 0.5,
+      "mean_importance": 0.6212571483827226,
+      "mean_conflict": 0.0796614399149648,
+      "mean_similarity": 0.9993653006769244,
+      "mean_eff_client": 0.1741948834895026,
+      "scalars_reset": 0,
+      "avg_normalized_distance": 0.177981885414438
+    }
+  ],
+  "dominant_stage_counts": {
+    "importance": 199
+  },
+  "reason_distribution": {
+    "UNSAFE, HighImportance": 62,
+    "SAFE": 52,
+    "UNSAFE": 30,
+    "UNSAFE, HighImportance, LowSimilarity": 28,
+    "UNSAFE, LowSimilarity": 19,
+    "SAFE, HighImportance": 8
+  },
+  "scalar_weighted_averages": {
+    "importance": 0.5362629161603631,
+    "conflict": 0.1372478828405596,
+    "similarity": 0.8702502170939951,
+    "eff_client": 0.18873509224959997,
+    "eff_anchor": 0.8112649077504
+  }
+}

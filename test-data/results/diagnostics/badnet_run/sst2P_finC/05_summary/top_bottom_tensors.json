@@ -1,0 +1,104 @@
+{
+  "importance": {
+    "top10": [
+      "bert.pooler.dense.weight",
+      "bert.encoder.layer.7.attention.self.key.weight",
+      "bert.encoder.layer.7.attention.self.query.weight",
+      "bert.encoder.layer.0.attention.self.query.bias",
+      "bert.encoder.layer.0.attention.self.query.weight",
+      "bert.encoder.layer.6.attention.self.query.weight",
+      "bert.encoder.layer.6.attention.self.key.weight",
+      "bert.encoder.layer.0.attention.self.key.weight",
+      "bert.encoder.layer.6.intermediate.dense.weight",
+      "bert.encoder.layer.8.attention.self.key.weight"
+    ],
+    "bottom10": [
+      "bert.embeddings.LayerNorm.weight",
+      "bert.embeddings.LayerNorm.bias",
+      "bert.encoder.layer.0.attention.output.LayerNorm.weight",
+      "bert.encoder.layer.0.attention.output.LayerNorm.bias",
+      "bert.encoder.layer.0.output.LayerNorm.weight",
+      "bert.encoder.layer.0.output.LayerNorm.bias",
+      "bert.encoder.layer.1.attention.output.LayerNorm.weight",
+      "bert.encoder.layer.1.attention.output.LayerNorm.bias",
+      "bert.encoder.layer.1.output.LayerNorm.weight",
+      "bert.encoder.layer.1.output.LayerNorm.bias"
+    ]
+  },
+  "conflict_lowest": [
+    "bert.embeddings.LayerNorm.weight",
+    "bert.embeddings.LayerNorm.bias",
+    "bert.encoder.layer.0.attention.output.LayerNorm.weight",
+    "bert.encoder.layer.0.attention.output.LayerNorm.bias",
+    "bert.encoder.layer.0.output.LayerNorm.weight",
+    "bert.encoder.layer.0.output.LayerNorm.bias",
+    "bert.encoder.layer.1.attention.output.LayerNorm.weight",
+    "bert.encoder.layer.1.attention.output.LayerNorm.bias",
+    "bert.encoder.layer.1.output.LayerNorm.weight",
+    "bert.encoder.layer.1.output.LayerNorm.bias"
+  ],
+  "conflict_highest": [
+    "bert.encoder.layer.11.attention.self.key.bias",
+    "bert.encoder.layer.5.attention.self.key.bias",
+    "bert.encoder.layer.2.attention.self.key.bias",
+    "bert.encoder.layer.4.attention.self.key.bias",
+    "bert.encoder.layer.6.attention.self.key.bias",
+    "bert.encoder.layer.8.attention.self.key.bias",
+    "bert.encoder.layer.1.attention.self.key.bias",
+    "bert.encoder.layer.3.attention.self.key.bias",
+    "bert.encoder.layer.10.attention.self.key.bias",
+    "bert.encoder.layer.9.attention.self.key.bias"
+  ],
+  "similarity": {
+    "top10": [
+      "bert.embeddings.word_embeddings.weight",
+      "bert.embeddings.position_embeddings.weight",
+      "bert.embeddings.token_type_embeddings.weight",
+      "bert.encoder.layer.0.intermediate.dense.weight",
+      "bert.encoder.layer.0.intermediate.dense.bias",
+      "bert.encoder.layer.0.output.dense.weight",
+      "bert.encoder.layer.1.intermediate.dense.weight",
+      "bert.encoder.layer.1.intermediate.dense.bias",
+      "bert.encoder.layer.1.output.dense.weight",
+      "bert.encoder.layer.2.intermediate.dense.weight"
+    ],
+    "bottom10": [
+      "bert.encoder.layer.0.attention.output.dense.bias",
+      "bert.encoder.layer.6.attention.self.value.bias",
+      "bert.encoder.layer.7.attention.self.key.bias",
+      "bert.encoder.layer.3.attention.output.dense.bias",
+      "bert.encoder.layer.1.attention.self.key.bias",
+      "bert.encoder.layer.10.attention.self.value.bias",
+      "bert.encoder.layer.1.attention.output.dense.bias",
+      "bert.encoder.layer.2.attention.self.value.bias",
+      "bert.encoder.layer.5.attention.self.value.bias",
+      "bert.encoder.layer.0.attention.self.query.bias"
+    ]
+  },
+  "eff_client": {
+    "top10": [
+      "bert.embeddings.position_embeddings.weight",
+      "bert.embeddings.word_embeddings.weight",
+      "bert.embeddings.token_type_embeddings.weight",
+      "bert.embeddings.LayerNorm.weight",
+      "bert.embeddings.LayerNorm.bias",
+      "bert.encoder.layer.0.attention.output.LayerNorm.weight",
+      "bert.encoder.layer.0.attention.output.LayerNorm.bias",
+      "bert.encoder.layer.0.output.LayerNorm.weight",
+      "bert.encoder.layer.0.output.LayerNorm.bias",
+      "bert.encoder.layer.1.attention.output.LayerNorm.weight"
+    ],
+    "bottom10": [
+      "bert.encoder.layer.0.attention.self.query.bias",
+      "bert.encoder.layer.11.attention.self.key.bias",
+      "bert.encoder.layer.0.attention.self.query.weight",
+      "bert.encoder.layer.6.attention.self.query.weight",
+      "bert.encoder.layer.7.attention.self.key.weight",
+      "bert.encoder.layer.7.attention.self.query.weight",
+      "bert.encoder.layer.5.attention.self.key.weight",
+      "bert.encoder.layer.5.attention.self.query.weight",
+      "bert.encoder.layer.6.attention.self.key.weight",
+      "bert.encoder.layer.0.attention.self.key.weight"
+    ]
+  }
+}

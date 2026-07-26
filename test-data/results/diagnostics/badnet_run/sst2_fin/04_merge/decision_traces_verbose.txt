@@ -1,0 +1,3580 @@
+Tensor: bert.embeddings.word_embeddings.weight
+  Scalars: 23,440,896
+  Importance: mean=0.401 → α_anchor_mean=0.701
+  Conflict: 0.109 (rank 54/199, percentile 0.268)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2994
+      + conflict      : 0.2668   (removed 0.0326)
+      + similarity    : 0.2668   (removed 0.0000)
+  Final eff_client (mean): 0.2668   eff_anchor: 0.7332
+  Distance: anchor=0.7294  client=2.9565  (closer to anchor)
+  Cosine: anchor=1.001772  client=1.001704
+  Normalized toward client: 0.183
+  Dominant reduction stage: importance  (importance reduction: 0.701, conflict: 0.033, similarity: 0.000)
+  Decision: SAFE
+
+
+Tensor: bert.embeddings.position_embeddings.weight
+  Scalars: 393,216
+  Importance: mean=0.333 → α_anchor_mean=0.667
+  Conflict: 0.159 (rank 152/199, percentile 0.763)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3334
+      + conflict      : 0.2802   (removed 0.0531)
+      + similarity    : 0.2802   (removed 0.0000)
+  Final eff_client (mean): 0.2802   eff_anchor: 0.7198
+  Distance: anchor=0.0526  client=0.2080  (closer to anchor)
+  Cosine: anchor=0.999994  client=0.999794
+  Normalized toward client: 0.190
+  Dominant reduction stage: importance  (importance reduction: 0.667, conflict: 0.053, similarity: 0.000)
+  Decision: UNSAFE
+
+
+Tensor: bert.embeddings.token_type_embeddings.weight
+  Scalars: 1,536
+  Importance: mean=0.399 → α_anchor_mean=0.700
+  Conflict: 0.143 (rank 110/199, percentile 0.551)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3003
+      + conflict      : 0.2573   (removed 0.0430)
+      + similarity    : 0.2573   (removed 0.0000)
+  Final eff_client (mean): 0.2573   eff_anchor: 0.7427
+  Distance: anchor=0.0043  client=0.0155  (closer to anchor)
+  Cosine: anchor=0.999995  client=0.999936
+  Normalized toward client: 0.204
+  Dominant reduction stage: importance  (importance reduction: 0.700, conflict: 0.043, similarity: 0.000)
+  Decision: UNSAFE
+
+
+Tensor: bert.embeddings.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.embeddings.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.0.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.598 → α_anchor_mean=0.799
+  Conflict: 0.143 (rank 111/199, percentile 0.556)
+  Similarity: 0.501 (rank 117/199, percentile 0.586)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2008
+      + conflict      : 0.1720   (removed 0.0288)
+      + similarity    : 0.1291   (removed 0.0430)
+  Final eff_client (mean): 0.1291   eff_anchor: 0.8709
+  Distance: anchor=0.1298  client=0.7972  (closer to anchor)
+  Cosine: anchor=1.000001  client=0.999720
+  Normalized toward client: 0.128
+  Dominant reduction stage: importance  (importance reduction: 0.799, conflict: 0.029, similarity: 0.043)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.0.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.599 → α_anchor_mean=0.799
+  Conflict: 0.168 (rank 170/199, percentile 0.854)
+  Similarity: 0.502 (rank 127/199, percentile 0.636)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2006
+      + conflict      : 0.1670   (removed 0.0336)
+      + similarity    : 0.1255   (removed 0.0416)
+  Final eff_client (mean): 0.1255   eff_anchor: 0.8745
+  Distance: anchor=0.0044  client=0.0275  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999995
+  Normalized toward client: 0.123
+  Dominant reduction stage: importance  (importance reduction: 0.799, conflict: 0.034, similarity: 0.042)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.0.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.596 → α_anchor_mean=0.798
+  Conflict: 0.147 (rank 120/199, percentile 0.601)
+  Similarity: 0.500 (rank 42/199, percentile 0.207)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2018
+      + conflict      : 0.1721   (removed 0.0297)
+      + similarity    : 0.1291   (removed 0.0430)
+  Final eff_client (mean): 0.1291   eff_anchor: 0.8709
+  Distance: anchor=0.1300  client=0.7968  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999712
+  Normalized toward client: 0.128
+  Dominant reduction stage: importance  (importance reduction: 0.798, conflict: 0.030, similarity: 0.043)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.0.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.299 → α_anchor_mean=0.649
+  Conflict: 0.273 (rank 188/199, percentile 0.944)
+  Similarity: 0.493 (rank 19/199, percentile 0.091)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3506
+      + conflict      : 0.2550   (removed 0.0957)
+      + similarity    : 0.1903   (removed 0.0647)
+  Final eff_client (mean): 0.1903   eff_anchor: 0.8097
+  Distance: anchor=0.0002  client=0.0010  (closer to anchor)
+  Cosine: anchor=0.999996  client=0.999930
+  Normalized toward client: 0.190
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.096, similarity: 0.065)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.0.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.583 → α_anchor_mean=0.791
+  Conflict: 0.142 (rank 99/199, percentile 0.495)
+  Similarity: 0.501 (rank 119/199, percentile 0.596)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2087
+      + conflict      : 0.1791   (removed 0.0296)
+      + similarity    : 0.1344   (removed 0.0447)
+  Final eff_client (mean): 0.1344   eff_anchor: 0.8656
+  Distance: anchor=0.1208  client=0.7175  (closer to anchor)
+  Cosine: anchor=0.999995  client=0.999483
+  Normalized toward client: 0.133
+  Dominant reduction stage: importance  (importance reduction: 0.791, conflict: 0.030, similarity: 0.045)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.0.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.494 → α_anchor_mean=0.747
+  Conflict: 0.154 (rank 140/199, percentile 0.702)
+  Similarity: 0.524 (rank 151/199, percentile 0.758)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2531
+      + conflict      : 0.2141   (removed 0.0390)
+      + similarity    : 0.1631   (removed 0.0510)
+  Final eff_client (mean): 0.1631   eff_anchor: 0.8369
+  Distance: anchor=0.0030  client=0.0150  (closer to anchor)
+  Cosine: anchor=0.999996  client=0.999911
+  Normalized toward client: 0.162
+  Dominant reduction stage: importance  (importance reduction: 0.747, conflict: 0.039, similarity: 0.051)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.0.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.579 → α_anchor_mean=0.790
+  Conflict: 0.142 (rank 103/199, percentile 0.515)
+  Similarity: 0.500 (rank 109/199, percentile 0.545)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2105
+      + conflict      : 0.1805   (removed 0.0300)
+      + similarity    : 0.1354   (removed 0.0451)
+  Final eff_client (mean): 0.1354   eff_anchor: 0.8646
+  Distance: anchor=0.1200  client=0.7078  (closer to anchor)
+  Cosine: anchor=0.999994  client=0.999487
+  Normalized toward client: 0.134
+  Dominant reduction stage: importance  (importance reduction: 0.790, conflict: 0.030, similarity: 0.045)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.0.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.489 → α_anchor_mean=0.744
+  Conflict: 0.153 (rank 136/199, percentile 0.682)
+  Similarity: 0.505 (rank 134/199, percentile 0.672)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2557
+      + conflict      : 0.2165   (removed 0.0392)
+      + similarity    : 0.1630   (removed 0.0536)
+  Final eff_client (mean): 0.1630   eff_anchor: 0.8370
+  Distance: anchor=0.0028  client=0.0138  (closer to anchor)
+  Cosine: anchor=0.999996  client=0.999901
+  Normalized toward client: 0.161
+  Dominant reduction stage: importance  (importance reduction: 0.744, conflict: 0.039, similarity: 0.054)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.0.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.0.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.0.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.595 → α_anchor_mean=0.797
+  Conflict: 0.139 (rank 88/199, percentile 0.439)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2025
+      + conflict      : 0.1744   (removed 0.0281)
+      + similarity    : 0.1744   (removed 0.0000)
+  Final eff_client (mean): 0.1744   eff_anchor: 0.8256
+  Distance: anchor=0.3339  client=1.4445  (closer to anchor)
+  Cosine: anchor=1.000064  client=0.999764
+  Normalized toward client: 0.173
+  Dominant reduction stage: importance  (importance reduction: 0.797, conflict: 0.028, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.0.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.589 → α_anchor_mean=0.795
+  Conflict: 0.132 (rank 70/199, percentile 0.348)
+  Similarity: 0.491 (rank 17/199, percentile 0.081)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2055
+      + conflict      : 0.1783   (removed 0.0272)
+      + similarity    : 0.1329   (removed 0.0454)
+  Final eff_client (mean): 0.1329   eff_anchor: 0.8671
+  Distance: anchor=0.0085  client=0.0499  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999972
+  Normalized toward client: 0.134
+  Dominant reduction stage: importance  (importance reduction: 0.795, conflict: 0.027, similarity: 0.045)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.0.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.585 → α_anchor_mean=0.792
+  Conflict: 0.137 (rank 81/199, percentile 0.404)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2076
+      + conflict      : 0.1791   (removed 0.0285)
+      + similarity    : 0.1791   (removed 0.0000)
+  Final eff_client (mean): 0.1791   eff_anchor: 0.8209
+  Distance: anchor=0.3216  client=1.3616  (closer to anchor)
+  Cosine: anchor=1.000070  client=0.999784
+  Normalized toward client: 0.177
+  Dominant reduction stage: importance  (importance reduction: 0.792, conflict: 0.028, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.0.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.497 → α_anchor_mean=0.748
+  Conflict: 0.138 (rank 84/199, percentile 0.419)
+  Similarity: 0.516 (rank 147/199, percentile 0.737)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2517
+      + conflict      : 0.2169   (removed 0.0348)
+      + similarity    : 0.1644   (removed 0.0525)
+  Final eff_client (mean): 0.1644   eff_anchor: 0.8356
+  Distance: anchor=0.0029  client=0.0142  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999981
+  Normalized toward client: 0.164
+  Dominant reduction stage: importance  (importance reduction: 0.748, conflict: 0.035, similarity: 0.053)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.0.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.0.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.1.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.590 → α_anchor_mean=0.795
+  Conflict: 0.151 (rank 129/199, percentile 0.646)
+  Similarity: 0.499 (rank 30/199, percentile 0.146)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2052
+      + conflict      : 0.1741   (removed 0.0310)
+      + similarity    : 0.1305   (removed 0.0436)
+  Final eff_client (mean): 0.1305   eff_anchor: 0.8695
+  Distance: anchor=0.1290  client=0.7859  (closer to anchor)
+  Cosine: anchor=1.000001  client=0.999720
+  Normalized toward client: 0.129
+  Dominant reduction stage: importance  (importance reduction: 0.795, conflict: 0.031, similarity: 0.044)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.1.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.576 → α_anchor_mean=0.788
+  Conflict: 0.129 (rank 61/199, percentile 0.303)
+  Similarity: 0.497 (rank 24/199, percentile 0.116)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2118
+      + conflict      : 0.1844   (removed 0.0274)
+      + similarity    : 0.1381   (removed 0.0464)
+  Final eff_client (mean): 0.1381   eff_anchor: 0.8619
+  Distance: anchor=0.0045  client=0.0257  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999988
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.788, conflict: 0.027, similarity: 0.046)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.1.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.588 → α_anchor_mean=0.794
+  Conflict: 0.154 (rank 141/199, percentile 0.707)
+  Similarity: 0.500 (rank 38/199, percentile 0.187)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2062
+      + conflict      : 0.1744   (removed 0.0318)
+      + similarity    : 0.1308   (removed 0.0436)
+  Final eff_client (mean): 0.1308   eff_anchor: 0.8692
+  Distance: anchor=0.1301  client=0.7907  (closer to anchor)
+  Cosine: anchor=1.000003  client=0.999718
+  Normalized toward client: 0.130
+  Dominant reduction stage: importance  (importance reduction: 0.794, conflict: 0.032, similarity: 0.044)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.1.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.398 (rank 192/199, percentile 0.965)
+  Similarity: 0.532 (rank 157/199, percentile 0.788)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3509
+      + conflict      : 0.2111   (removed 0.1398)
+      + similarity    : 0.1616   (removed 0.0494)
+  Final eff_client (mean): 0.1616   eff_anchor: 0.8384
+  Distance: anchor=0.0002  client=0.0009  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999982
+  Normalized toward client: 0.162
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.140, similarity: 0.049)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.1.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.564 → α_anchor_mean=0.782
+  Conflict: 0.157 (rank 146/199, percentile 0.732)
+  Similarity: 0.500 (rank 34/199, percentile 0.167)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2179
+      + conflict      : 0.1836   (removed 0.0343)
+      + similarity    : 0.1377   (removed 0.0460)
+  Final eff_client (mean): 0.1377   eff_anchor: 0.8623
+  Distance: anchor=0.1201  client=0.7033  (closer to anchor)
+  Cosine: anchor=0.999996  client=0.999488
+  Normalized toward client: 0.136
+  Dominant reduction stage: importance  (importance reduction: 0.782, conflict: 0.034, similarity: 0.046)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.1.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.487 → α_anchor_mean=0.744
+  Conflict: 0.129 (rank 60/199, percentile 0.298)
+  Similarity: 0.625 (rank 164/199, percentile 0.823)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2564
+      + conflict      : 0.2233   (removed 0.0331)
+      + similarity    : 0.1814   (removed 0.0419)
+  Final eff_client (mean): 0.1814   eff_anchor: 0.8186
+  Distance: anchor=0.0031  client=0.0140  (closer to anchor)
+  Cosine: anchor=0.999996  client=0.999932
+  Normalized toward client: 0.170
+  Dominant reduction stage: importance  (importance reduction: 0.744, conflict: 0.033, similarity: 0.042)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.1.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.560 → α_anchor_mean=0.780
+  Conflict: 0.162 (rank 157/199, percentile 0.788)
+  Similarity: 0.500 (rank 102/199, percentile 0.510)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2199
+      + conflict      : 0.1844   (removed 0.0356)
+      + similarity    : 0.1383   (removed 0.0461)
+  Final eff_client (mean): 0.1383   eff_anchor: 0.8617
+  Distance: anchor=0.1207  client=0.7032  (closer to anchor)
+  Cosine: anchor=0.999994  client=0.999476
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.780, conflict: 0.036, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.1.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.484 → α_anchor_mean=0.742
+  Conflict: 0.148 (rank 124/199, percentile 0.621)
+  Similarity: 0.514 (rank 146/199, percentile 0.732)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2579
+      + conflict      : 0.2197   (removed 0.0382)
+      + similarity    : 0.1664   (removed 0.0533)
+  Final eff_client (mean): 0.1664   eff_anchor: 0.8336
+  Distance: anchor=0.0028  client=0.0141  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999965
+  Normalized toward client: 0.160
+  Dominant reduction stage: importance  (importance reduction: 0.742, conflict: 0.038, similarity: 0.053)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.1.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.1.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.1.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.593 → α_anchor_mean=0.797
+  Conflict: 0.139 (rank 90/199, percentile 0.449)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2034
+      + conflict      : 0.1751   (removed 0.0283)
+      + similarity    : 0.1751   (removed 0.0000)
+  Final eff_client (mean): 0.1751   eff_anchor: 0.8249
+  Distance: anchor=0.3317  client=1.4309  (closer to anchor)
+  Cosine: anchor=1.000062  client=0.999792
+  Normalized toward client: 0.173
+  Dominant reduction stage: importance  (importance reduction: 0.797, conflict: 0.028, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.1.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.574 → α_anchor_mean=0.787
+  Conflict: 0.135 (rank 76/199, percentile 0.379)
+  Similarity: 0.501 (rank 121/199, percentile 0.606)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2128
+      + conflict      : 0.1841   (removed 0.0287)
+      + similarity    : 0.1382   (removed 0.0459)
+  Final eff_client (mean): 0.1382   eff_anchor: 0.8618
+  Distance: anchor=0.0083  client=0.0482  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999970
+  Normalized toward client: 0.136
+  Dominant reduction stage: importance  (importance reduction: 0.787, conflict: 0.029, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.1.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.578 → α_anchor_mean=0.789
+  Conflict: 0.143 (rank 106/199, percentile 0.530)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2110
+      + conflict      : 0.1809   (removed 0.0301)
+      + similarity    : 0.1809   (removed 0.0000)
+  Final eff_client (mean): 0.1809   eff_anchor: 0.8191
+  Distance: anchor=0.3193  client=1.3392  (closer to anchor)
+  Cosine: anchor=1.000072  client=0.999822
+  Normalized toward client: 0.179
+  Dominant reduction stage: importance  (importance reduction: 0.789, conflict: 0.030, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.1.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.474 → α_anchor_mean=0.737
+  Conflict: 0.172 (rank 176/199, percentile 0.884)
+  Similarity: 0.504 (rank 133/199, percentile 0.667)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2632
+      + conflict      : 0.2179   (removed 0.0453)
+      + similarity    : 0.1639   (removed 0.0540)
+  Final eff_client (mean): 0.1639   eff_anchor: 0.8361
+  Distance: anchor=0.0027  client=0.0140  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999966
+  Normalized toward client: 0.158
+  Dominant reduction stage: importance  (importance reduction: 0.737, conflict: 0.045, similarity: 0.054)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.1.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.1.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.2.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.581 → α_anchor_mean=0.791
+  Conflict: 0.160 (rank 154/199, percentile 0.773)
+  Similarity: 0.499 (rank 32/199, percentile 0.157)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2095
+      + conflict      : 0.1760   (removed 0.0335)
+      + similarity    : 0.1319   (removed 0.0440)
+  Final eff_client (mean): 0.1319   eff_anchor: 0.8681
+  Distance: anchor=0.1309  client=0.7910  (closer to anchor)
+  Cosine: anchor=1.000006  client=0.999780
+  Normalized toward client: 0.131
+  Dominant reduction stage: importance  (importance reduction: 0.791, conflict: 0.033, similarity: 0.044)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.2.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.550 → α_anchor_mean=0.775
+  Conflict: 0.183 (rank 182/199, percentile 0.914)
+  Similarity: 0.492 (rank 18/199, percentile 0.086)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2252
+      + conflict      : 0.1841   (removed 0.0411)
+      + similarity    : 0.1374   (removed 0.0467)
+  Final eff_client (mean): 0.1374   eff_anchor: 0.8626
+  Distance: anchor=0.0045  client=0.0270  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999974
+  Normalized toward client: 0.136
+  Dominant reduction stage: importance  (importance reduction: 0.775, conflict: 0.041, similarity: 0.047)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.2.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.582 → α_anchor_mean=0.791
+  Conflict: 0.160 (rank 153/199, percentile 0.768)
+  Similarity: 0.501 (rank 122/199, percentile 0.611)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2091
+      + conflict      : 0.1757   (removed 0.0334)
+      + similarity    : 0.1319   (removed 0.0438)
+  Final eff_client (mean): 0.1319   eff_anchor: 0.8681
+  Distance: anchor=0.1319  client=0.7959  (closer to anchor)
+  Cosine: anchor=1.000007  client=0.999768
+  Normalized toward client: 0.131
+  Dominant reduction stage: importance  (importance reduction: 0.791, conflict: 0.033, similarity: 0.044)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.2.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.501 (rank 198/199, percentile 0.995)
+  Similarity: 0.506 (rank 135/199, percentile 0.677)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3508
+      + conflict      : 0.1750   (removed 0.1759)
+      + similarity    : 0.1317   (removed 0.0432)
+  Final eff_client (mean): 0.1317   eff_anchor: 0.8683
+  Distance: anchor=0.0001  client=0.0009  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999968
+  Normalized toward client: 0.132
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.176, similarity: 0.043)
+  Decision: UNSAFE, HighConflict
+
+
+Tensor: bert.encoder.layer.2.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.560 → α_anchor_mean=0.780
+  Conflict: 0.163 (rank 161/199, percentile 0.808)
+  Similarity: 0.500 (rank 106/199, percentile 0.530)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2202
+      + conflict      : 0.1843   (removed 0.0359)
+      + similarity    : 0.1382   (removed 0.0460)
+  Final eff_client (mean): 0.1382   eff_anchor: 0.8618
+  Distance: anchor=0.1213  client=0.7077  (closer to anchor)
+  Cosine: anchor=0.999992  client=0.999461
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.780, conflict: 0.036, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.2.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.482 → α_anchor_mean=0.741
+  Conflict: 0.154 (rank 139/199, percentile 0.697)
+  Similarity: 0.488 (rank 14/199, percentile 0.066)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2590
+      + conflict      : 0.2191   (removed 0.0399)
+      + similarity    : 0.1630   (removed 0.0561)
+  Final eff_client (mean): 0.1630   eff_anchor: 0.8370
+  Distance: anchor=0.0026  client=0.0134  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999965
+  Normalized toward client: 0.158
+  Dominant reduction stage: importance  (importance reduction: 0.741, conflict: 0.040, similarity: 0.056)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.2.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.557 → α_anchor_mean=0.779
+  Conflict: 0.166 (rank 168/199, percentile 0.843)
+  Similarity: 0.500 (rank 43/199, percentile 0.212)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2213
+      + conflict      : 0.1846   (removed 0.0367)
+      + similarity    : 0.1384   (removed 0.0462)
+  Final eff_client (mean): 0.1384   eff_anchor: 0.8616
+  Distance: anchor=0.1216  client=0.7079  (closer to anchor)
+  Cosine: anchor=0.999994  client=0.999431
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.779, conflict: 0.037, similarity: 0.046)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.2.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.476 → α_anchor_mean=0.738
+  Conflict: 0.152 (rank 132/199, percentile 0.662)
+  Similarity: 0.529 (rank 155/199, percentile 0.778)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2619
+      + conflict      : 0.2222   (removed 0.0398)
+      + similarity    : 0.1698   (removed 0.0523)
+  Final eff_client (mean): 0.1698   eff_anchor: 0.8302
+  Distance: anchor=0.0027  client=0.0131  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999986
+  Normalized toward client: 0.167
+  Dominant reduction stage: importance  (importance reduction: 0.738, conflict: 0.040, similarity: 0.052)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.2.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.2.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.2.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.593 → α_anchor_mean=0.796
+  Conflict: 0.139 (rank 87/199, percentile 0.434)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2037
+      + conflict      : 0.1754   (removed 0.0283)
+      + similarity    : 0.1754   (removed 0.0000)
+  Final eff_client (mean): 0.1754   eff_anchor: 0.8246
+  Distance: anchor=0.3297  client=1.4188  (closer to anchor)
+  Cosine: anchor=1.000063  client=0.999810
+  Normalized toward client: 0.174
+  Dominant reduction stage: importance  (importance reduction: 0.796, conflict: 0.028, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.2.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.571 → α_anchor_mean=0.786
+  Conflict: 0.132 (rank 66/199, percentile 0.328)
+  Similarity: 0.498 (rank 26/199, percentile 0.126)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2143
+      + conflict      : 0.1861   (removed 0.0282)
+      + similarity    : 0.1393   (removed 0.0467)
+  Final eff_client (mean): 0.1393   eff_anchor: 0.8607
+  Distance: anchor=0.0081  client=0.0455  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999976
+  Normalized toward client: 0.140
+  Dominant reduction stage: importance  (importance reduction: 0.786, conflict: 0.028, similarity: 0.047)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.2.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.579 → α_anchor_mean=0.790
+  Conflict: 0.142 (rank 100/199, percentile 0.500)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2104
+      + conflict      : 0.1806   (removed 0.0298)
+      + similarity    : 0.1806   (removed 0.0000)
+  Final eff_client (mean): 0.1806   eff_anchor: 0.8194
+  Distance: anchor=0.3192  client=1.3430  (closer to anchor)
+  Cosine: anchor=1.000072  client=0.999826
+  Normalized toward client: 0.178
+  Dominant reduction stage: importance  (importance reduction: 0.790, conflict: 0.030, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.2.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.467 → α_anchor_mean=0.733
+  Conflict: 0.185 (rank 183/199, percentile 0.919)
+  Similarity: 0.512 (rank 145/199, percentile 0.727)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2666
+      + conflict      : 0.2172   (removed 0.0493)
+      + similarity    : 0.1643   (removed 0.0530)
+  Final eff_client (mean): 0.1643   eff_anchor: 0.8357
+  Distance: anchor=0.0029  client=0.0145  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999975
+  Normalized toward client: 0.160
+  Dominant reduction stage: importance  (importance reduction: 0.733, conflict: 0.049, similarity: 0.053)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.2.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.2.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.3.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.588 → α_anchor_mean=0.794
+  Conflict: 0.155 (rank 143/199, percentile 0.717)
+  Similarity: 0.500 (rank 104/199, percentile 0.520)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2061
+      + conflict      : 0.1742   (removed 0.0319)
+      + similarity    : 0.1307   (removed 0.0435)
+  Final eff_client (mean): 0.1307   eff_anchor: 0.8693
+  Distance: anchor=0.1295  client=0.7873  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999724
+  Normalized toward client: 0.130
+  Dominant reduction stage: importance  (importance reduction: 0.794, conflict: 0.032, similarity: 0.044)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.3.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.586 → α_anchor_mean=0.793
+  Conflict: 0.143 (rank 104/199, percentile 0.520)
+  Similarity: 0.531 (rank 156/199, percentile 0.783)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2070
+      + conflict      : 0.1775   (removed 0.0295)
+      + similarity    : 0.1358   (removed 0.0417)
+  Final eff_client (mean): 0.1358   eff_anchor: 0.8642
+  Distance: anchor=0.0043  client=0.0255  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999978
+  Normalized toward client: 0.133
+  Dominant reduction stage: importance  (importance reduction: 0.793, conflict: 0.030, similarity: 0.042)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.3.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.587 → α_anchor_mean=0.793
+  Conflict: 0.157 (rank 147/199, percentile 0.737)
+  Similarity: 0.500 (rank 113/199, percentile 0.566)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2065
+      + conflict      : 0.1740   (removed 0.0325)
+      + similarity    : 0.1306   (removed 0.0435)
+  Final eff_client (mean): 0.1306   eff_anchor: 0.8694
+  Distance: anchor=0.1302  client=0.7925  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999718
+  Normalized toward client: 0.130
+  Dominant reduction stage: importance  (importance reduction: 0.793, conflict: 0.032, similarity: 0.043)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.3.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.414 (rank 194/199, percentile 0.975)
+  Similarity: 0.502 (rank 128/199, percentile 0.641)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3510
+      + conflict      : 0.2056   (removed 0.1454)
+      + similarity    : 0.1544   (removed 0.0511)
+  Final eff_client (mean): 0.1544   eff_anchor: 0.8456
+  Distance: anchor=0.0002  client=0.0008  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999983
+  Normalized toward client: 0.154
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.145, similarity: 0.051)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.3.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.553 → α_anchor_mean=0.777
+  Conflict: 0.164 (rank 164/199, percentile 0.823)
+  Similarity: 0.500 (rank 45/199, percentile 0.222)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2233
+      + conflict      : 0.1866   (removed 0.0367)
+      + similarity    : 0.1399   (removed 0.0466)
+  Final eff_client (mean): 0.1399   eff_anchor: 0.8601
+  Distance: anchor=0.1229  client=0.7105  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999571
+  Normalized toward client: 0.138
+  Dominant reduction stage: importance  (importance reduction: 0.777, conflict: 0.037, similarity: 0.047)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.3.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.465 → α_anchor_mean=0.733
+  Conflict: 0.147 (rank 119/199, percentile 0.596)
+  Similarity: 0.508 (rank 142/199, percentile 0.712)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2675
+      + conflict      : 0.2281   (removed 0.0393)
+      + similarity    : 0.1720   (removed 0.0561)
+  Final eff_client (mean): 0.1720   eff_anchor: 0.8280
+  Distance: anchor=0.0025  client=0.0122  (closer to anchor)
+  Cosine: anchor=0.999996  client=0.999910
+  Normalized toward client: 0.167
+  Dominant reduction stage: importance  (importance reduction: 0.733, conflict: 0.039, similarity: 0.056)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.3.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.552 → α_anchor_mean=0.776
+  Conflict: 0.168 (rank 171/199, percentile 0.859)
+  Similarity: 0.499 (rank 29/199, percentile 0.141)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2240
+      + conflict      : 0.1864   (removed 0.0375)
+      + similarity    : 0.1398   (removed 0.0467)
+  Final eff_client (mean): 0.1398   eff_anchor: 0.8602
+  Distance: anchor=0.1228  client=0.7104  (closer to anchor)
+  Cosine: anchor=0.999995  client=0.999502
+  Normalized toward client: 0.138
+  Dominant reduction stage: importance  (importance reduction: 0.776, conflict: 0.038, similarity: 0.047)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.3.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.461 → α_anchor_mean=0.731
+  Conflict: 0.166 (rank 169/199, percentile 0.848)
+  Similarity: 0.508 (rank 141/199, percentile 0.707)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2693
+      + conflict      : 0.2245   (removed 0.0447)
+      + similarity    : 0.1693   (removed 0.0553)
+  Final eff_client (mean): 0.1693   eff_anchor: 0.8307
+  Distance: anchor=0.0028  client=0.0136  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999978
+  Normalized toward client: 0.165
+  Dominant reduction stage: importance  (importance reduction: 0.731, conflict: 0.045, similarity: 0.055)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.3.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.3.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.3.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.593 → α_anchor_mean=0.796
+  Conflict: 0.138 (rank 85/199, percentile 0.424)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2037
+      + conflict      : 0.1755   (removed 0.0282)
+      + similarity    : 0.1755   (removed 0.0000)
+  Final eff_client (mean): 0.1755   eff_anchor: 0.8245
+  Distance: anchor=0.3312  client=1.4251  (closer to anchor)
+  Cosine: anchor=1.000059  client=0.999809
+  Normalized toward client: 0.174
+  Dominant reduction stage: importance  (importance reduction: 0.796, conflict: 0.028, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.3.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.570 → α_anchor_mean=0.785
+  Conflict: 0.140 (rank 94/199, percentile 0.470)
+  Similarity: 0.490 (rank 16/199, percentile 0.076)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2148
+      + conflict      : 0.1847   (removed 0.0301)
+      + similarity    : 0.1376   (removed 0.0471)
+  Final eff_client (mean): 0.1376   eff_anchor: 0.8624
+  Distance: anchor=0.0078  client=0.0457  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999974
+  Normalized toward client: 0.136
+  Dominant reduction stage: importance  (importance reduction: 0.785, conflict: 0.030, similarity: 0.047)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.3.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.578 → α_anchor_mean=0.789
+  Conflict: 0.139 (rank 89/199, percentile 0.444)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2110
+      + conflict      : 0.1816   (removed 0.0294)
+      + similarity    : 0.1816   (removed 0.0000)
+  Final eff_client (mean): 0.1816   eff_anchor: 0.8184
+  Distance: anchor=0.3200  client=1.3398  (closer to anchor)
+  Cosine: anchor=1.000068  client=0.999837
+  Normalized toward client: 0.179
+  Dominant reduction stage: importance  (importance reduction: 0.789, conflict: 0.029, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.3.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.449 → α_anchor_mean=0.724
+  Conflict: 0.165 (rank 166/199, percentile 0.833)
+  Similarity: 0.484 (rank 10/199, percentile 0.045)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2755
+      + conflict      : 0.2300   (removed 0.0455)
+      + similarity    : 0.1707   (removed 0.0593)
+  Final eff_client (mean): 0.1707   eff_anchor: 0.8293
+  Distance: anchor=0.0026  client=0.0130  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999980
+  Normalized toward client: 0.162
+  Dominant reduction stage: importance  (importance reduction: 0.724, conflict: 0.046, similarity: 0.059)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.3.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.3.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.4.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.588 → α_anchor_mean=0.794
+  Conflict: 0.151 (rank 128/199, percentile 0.641)
+  Similarity: 0.500 (rank 35/199, percentile 0.172)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2058
+      + conflict      : 0.1747   (removed 0.0311)
+      + similarity    : 0.1310   (removed 0.0437)
+  Final eff_client (mean): 0.1310   eff_anchor: 0.8690
+  Distance: anchor=0.1291  client=0.7836  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999715
+  Normalized toward client: 0.130
+  Dominant reduction stage: importance  (importance reduction: 0.794, conflict: 0.031, similarity: 0.044)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.4.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.571 → α_anchor_mean=0.785
+  Conflict: 0.148 (rank 122/199, percentile 0.611)
+  Similarity: 0.483 (rank 9/199, percentile 0.040)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2147
+      + conflict      : 0.1830   (removed 0.0317)
+      + similarity    : 0.1357   (removed 0.0473)
+  Final eff_client (mean): 0.1357   eff_anchor: 0.8643
+  Distance: anchor=0.0042  client=0.0252  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999981
+  Normalized toward client: 0.132
+  Dominant reduction stage: importance  (importance reduction: 0.785, conflict: 0.032, similarity: 0.047)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.4.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.586 → α_anchor_mean=0.793
+  Conflict: 0.155 (rank 144/199, percentile 0.722)
+  Similarity: 0.500 (rank 39/199, percentile 0.192)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2069
+      + conflict      : 0.1748   (removed 0.0321)
+      + similarity    : 0.1311   (removed 0.0437)
+  Final eff_client (mean): 0.1311   eff_anchor: 0.8689
+  Distance: anchor=0.1293  client=0.7852  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999710
+  Normalized toward client: 0.130
+  Dominant reduction stage: importance  (importance reduction: 0.793, conflict: 0.032, similarity: 0.044)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.4.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.409 (rank 193/199, percentile 0.970)
+  Similarity: 0.503 (rank 130/199, percentile 0.652)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3510
+      + conflict      : 0.2074   (removed 0.1436)
+      + similarity    : 0.1559   (removed 0.0516)
+  Final eff_client (mean): 0.1559   eff_anchor: 0.8441
+  Distance: anchor=0.0001  client=0.0008  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999983
+  Normalized toward client: 0.156
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.144, similarity: 0.052)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.4.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.563 → α_anchor_mean=0.782
+  Conflict: 0.153 (rank 137/199, percentile 0.687)
+  Similarity: 0.500 (rank 105/199, percentile 0.525)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2185
+      + conflict      : 0.1850   (removed 0.0335)
+      + similarity    : 0.1388   (removed 0.0462)
+  Final eff_client (mean): 0.1388   eff_anchor: 0.8612
+  Distance: anchor=0.1231  client=0.7146  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999656
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.782, conflict: 0.034, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.4.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.464 → α_anchor_mean=0.732
+  Conflict: 0.193 (rank 185/199, percentile 0.929)
+  Similarity: 0.486 (rank 13/199, percentile 0.061)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2679
+      + conflict      : 0.2161   (removed 0.0517)
+      + similarity    : 0.1605   (removed 0.0556)
+  Final eff_client (mean): 0.1605   eff_anchor: 0.8395
+  Distance: anchor=0.0027  client=0.0139  (closer to anchor)
+  Cosine: anchor=0.999994  client=0.999825
+  Normalized toward client: 0.156
+  Dominant reduction stage: importance  (importance reduction: 0.732, conflict: 0.052, similarity: 0.056)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.4.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.563 → α_anchor_mean=0.781
+  Conflict: 0.152 (rank 133/199, percentile 0.667)
+  Similarity: 0.500 (rank 46/199, percentile 0.227)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2186
+      + conflict      : 0.1853   (removed 0.0333)
+      + similarity    : 0.1389   (removed 0.0463)
+  Final eff_client (mean): 0.1389   eff_anchor: 0.8611
+  Distance: anchor=0.1230  client=0.7128  (closer to anchor)
+  Cosine: anchor=1.000001  client=0.999605
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.781, conflict: 0.033, similarity: 0.046)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.4.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.464 → α_anchor_mean=0.732
+  Conflict: 0.181 (rank 181/199, percentile 0.909)
+  Similarity: 0.476 (rank 3/199, percentile 0.010)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2680
+      + conflict      : 0.2194   (removed 0.0485)
+      + similarity    : 0.1619   (removed 0.0575)
+  Final eff_client (mean): 0.1619   eff_anchor: 0.8381
+  Distance: anchor=0.0027  client=0.0139  (closer to anchor)
+  Cosine: anchor=0.999997  client=0.999929
+  Normalized toward client: 0.162
+  Dominant reduction stage: importance  (importance reduction: 0.732, conflict: 0.049, similarity: 0.058)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.4.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.4.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.4.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.596 → α_anchor_mean=0.798
+  Conflict: 0.137 (rank 80/199, percentile 0.399)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2022
+      + conflict      : 0.1746   (removed 0.0276)
+      + similarity    : 0.1746   (removed 0.0000)
+  Final eff_client (mean): 0.1746   eff_anchor: 0.8254
+  Distance: anchor=0.3333  client=1.4415  (closer to anchor)
+  Cosine: anchor=1.000062  client=0.999811
+  Normalized toward client: 0.173
+  Dominant reduction stage: importance  (importance reduction: 0.798, conflict: 0.028, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.4.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.568 → α_anchor_mean=0.784
+  Conflict: 0.132 (rank 68/199, percentile 0.338)
+  Similarity: 0.507 (rank 137/199, percentile 0.687)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2160
+      + conflict      : 0.1875   (removed 0.0285)
+      + similarity    : 0.1412   (removed 0.0463)
+  Final eff_client (mean): 0.1412   eff_anchor: 0.8588
+  Distance: anchor=0.0083  client=0.0471  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999976
+  Normalized toward client: 0.138
+  Dominant reduction stage: importance  (importance reduction: 0.784, conflict: 0.029, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.4.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.576 → α_anchor_mean=0.788
+  Conflict: 0.137 (rank 82/199, percentile 0.409)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2122
+      + conflict      : 0.1830   (removed 0.0291)
+      + similarity    : 0.1830   (removed 0.0000)
+  Final eff_client (mean): 0.1830   eff_anchor: 0.8170
+  Distance: anchor=0.3152  client=1.3123  (closer to anchor)
+  Cosine: anchor=1.000069  client=0.999850
+  Normalized toward client: 0.180
+  Dominant reduction stage: importance  (importance reduction: 0.788, conflict: 0.029, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.4.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.460 → α_anchor_mean=0.730
+  Conflict: 0.165 (rank 165/199, percentile 0.828)
+  Similarity: 0.488 (rank 15/199, percentile 0.071)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2701
+      + conflict      : 0.2255   (removed 0.0446)
+      + similarity    : 0.1678   (removed 0.0577)
+  Final eff_client (mean): 0.1678   eff_anchor: 0.8322
+  Distance: anchor=0.0025  client=0.0124  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999967
+  Normalized toward client: 0.167
+  Dominant reduction stage: importance  (importance reduction: 0.730, conflict: 0.045, similarity: 0.058)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.4.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.4.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.5.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.593 → α_anchor_mean=0.797
+  Conflict: 0.146 (rank 115/199, percentile 0.576)
+  Similarity: 0.500 (rank 41/199, percentile 0.202)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2034
+      + conflict      : 0.1736   (removed 0.0297)
+      + similarity    : 0.1302   (removed 0.0434)
+  Final eff_client (mean): 0.1302   eff_anchor: 0.8698
+  Distance: anchor=0.1286  client=0.7841  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999733
+  Normalized toward client: 0.129
+  Dominant reduction stage: importance  (importance reduction: 0.797, conflict: 0.030, similarity: 0.043)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.5.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.567 → α_anchor_mean=0.784
+  Conflict: 0.149 (rank 125/199, percentile 0.626)
+  Similarity: 0.509 (rank 143/199, percentile 0.717)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2163
+      + conflict      : 0.1842   (removed 0.0322)
+      + similarity    : 0.1389   (removed 0.0453)
+  Final eff_client (mean): 0.1389   eff_anchor: 0.8611
+  Distance: anchor=0.0042  client=0.0245  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999976
+  Normalized toward client: 0.138
+  Dominant reduction stage: importance  (importance reduction: 0.784, conflict: 0.032, similarity: 0.045)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.5.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.593 → α_anchor_mean=0.796
+  Conflict: 0.147 (rank 117/199, percentile 0.586)
+  Similarity: 0.500 (rank 40/199, percentile 0.197)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2036
+      + conflict      : 0.1738   (removed 0.0299)
+      + similarity    : 0.1303   (removed 0.0435)
+  Final eff_client (mean): 0.1303   eff_anchor: 0.8697
+  Distance: anchor=0.1293  client=0.7890  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999729
+  Normalized toward client: 0.129
+  Dominant reduction stage: importance  (importance reduction: 0.796, conflict: 0.030, similarity: 0.043)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.5.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.438 (rank 195/199, percentile 0.980)
+  Similarity: 0.500 (rank 99/199, percentile 0.495)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3510
+      + conflict      : 0.1973   (removed 0.1537)
+      + similarity    : 0.1480   (removed 0.0493)
+  Final eff_client (mean): 0.1480   eff_anchor: 0.8520
+  Distance: anchor=0.0001  client=0.0008  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999987
+  Normalized toward client: 0.148
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.154, similarity: 0.049)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.5.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.577 → α_anchor_mean=0.789
+  Conflict: 0.145 (rank 113/199, percentile 0.566)
+  Similarity: 0.499 (rank 31/199, percentile 0.152)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2114
+      + conflict      : 0.1807   (removed 0.0307)
+      + similarity    : 0.1354   (removed 0.0452)
+  Final eff_client (mean): 0.1354   eff_anchor: 0.8646
+  Distance: anchor=0.1240  client=0.7322  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999641
+  Normalized toward client: 0.134
+  Dominant reduction stage: importance  (importance reduction: 0.789, conflict: 0.031, similarity: 0.045)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.5.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.475 → α_anchor_mean=0.737
+  Conflict: 0.188 (rank 184/199, percentile 0.924)
+  Similarity: 0.496 (rank 22/199, percentile 0.106)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2626
+      + conflict      : 0.2133   (removed 0.0493)
+      + similarity    : 0.1596   (removed 0.0537)
+  Final eff_client (mean): 0.1596   eff_anchor: 0.8404
+  Distance: anchor=0.0030  client=0.0153  (closer to anchor)
+  Cosine: anchor=0.999992  client=0.999798
+  Normalized toward client: 0.159
+  Dominant reduction stage: importance  (importance reduction: 0.737, conflict: 0.049, similarity: 0.054)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.5.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.574 → α_anchor_mean=0.787
+  Conflict: 0.147 (rank 118/199, percentile 0.591)
+  Similarity: 0.500 (rank 108/199, percentile 0.540)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2129
+      + conflict      : 0.1817   (removed 0.0313)
+      + similarity    : 0.1363   (removed 0.0454)
+  Final eff_client (mean): 0.1363   eff_anchor: 0.8637
+  Distance: anchor=0.1230  client=0.7224  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999608
+  Normalized toward client: 0.135
+  Dominant reduction stage: importance  (importance reduction: 0.787, conflict: 0.031, similarity: 0.045)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.5.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.461 → α_anchor_mean=0.730
+  Conflict: 0.174 (rank 177/199, percentile 0.889)
+  Similarity: 0.479 (rank 4/199, percentile 0.015)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2697
+      + conflict      : 0.2229   (removed 0.0469)
+      + similarity    : 0.1648   (removed 0.0580)
+  Final eff_client (mean): 0.1648   eff_anchor: 0.8352
+  Distance: anchor=0.0027  client=0.0135  (closer to anchor)
+  Cosine: anchor=0.999998  client=0.999938
+  Normalized toward client: 0.161
+  Dominant reduction stage: importance  (importance reduction: 0.730, conflict: 0.047, similarity: 0.058)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.5.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.5.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.5.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.595 → α_anchor_mean=0.798
+  Conflict: 0.135 (rank 75/199, percentile 0.374)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2023
+      + conflict      : 0.1750   (removed 0.0273)
+      + similarity    : 0.1750   (removed 0.0000)
+  Final eff_client (mean): 0.1750   eff_anchor: 0.8250
+  Distance: anchor=0.3322  client=1.4354  (closer to anchor)
+  Cosine: anchor=1.000063  client=0.999808
+  Normalized toward client: 0.173
+  Dominant reduction stage: importance  (importance reduction: 0.798, conflict: 0.027, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.5.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.568 → α_anchor_mean=0.784
+  Conflict: 0.131 (rank 64/199, percentile 0.318)
+  Similarity: 0.536 (rank 158/199, percentile 0.793)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2159
+      + conflict      : 0.1877   (removed 0.0283)
+      + similarity    : 0.1442   (removed 0.0435)
+  Final eff_client (mean): 0.1442   eff_anchor: 0.8558
+  Distance: anchor=0.0081  client=0.0459  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999977
+  Normalized toward client: 0.140
+  Dominant reduction stage: importance  (importance reduction: 0.784, conflict: 0.028, similarity: 0.044)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.5.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.575 → α_anchor_mean=0.787
+  Conflict: 0.135 (rank 78/199, percentile 0.389)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2127
+      + conflict      : 0.1838   (removed 0.0288)
+      + similarity    : 0.1838   (removed 0.0000)
+  Final eff_client (mean): 0.1838   eff_anchor: 0.8162
+  Distance: anchor=0.3152  client=1.3093  (closer to anchor)
+  Cosine: anchor=1.000069  client=0.999845
+  Normalized toward client: 0.180
+  Dominant reduction stage: importance  (importance reduction: 0.787, conflict: 0.029, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.5.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.454 → α_anchor_mean=0.727
+  Conflict: 0.162 (rank 159/199, percentile 0.798)
+  Similarity: 0.498 (rank 25/199, percentile 0.121)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2728
+      + conflict      : 0.2285   (removed 0.0443)
+      + similarity    : 0.1711   (removed 0.0574)
+  Final eff_client (mean): 0.1711   eff_anchor: 0.8289
+  Distance: anchor=0.0026  client=0.0126  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999972
+  Normalized toward client: 0.168
+  Dominant reduction stage: importance  (importance reduction: 0.727, conflict: 0.044, similarity: 0.057)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.5.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.5.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.6.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.597 → α_anchor_mean=0.799
+  Conflict: 0.143 (rank 108/199, percentile 0.540)
+  Similarity: 0.500 (rank 47/199, percentile 0.232)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2015
+      + conflict      : 0.1727   (removed 0.0288)
+      + similarity    : 0.1295   (removed 0.0432)
+  Final eff_client (mean): 0.1295   eff_anchor: 0.8705
+  Distance: anchor=0.1288  client=0.7895  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999724
+  Normalized toward client: 0.128
+  Dominant reduction stage: importance  (importance reduction: 0.799, conflict: 0.029, similarity: 0.043)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.6.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.578 → α_anchor_mean=0.789
+  Conflict: 0.142 (rank 98/199, percentile 0.490)
+  Similarity: 0.524 (rank 152/199, percentile 0.763)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2112
+      + conflict      : 0.1813   (removed 0.0299)
+      + similarity    : 0.1381   (removed 0.0432)
+  Final eff_client (mean): 0.1381   eff_anchor: 0.8619
+  Distance: anchor=0.0043  client=0.0239  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999977
+  Normalized toward client: 0.141
+  Dominant reduction stage: importance  (importance reduction: 0.789, conflict: 0.030, similarity: 0.043)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.6.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.597 → α_anchor_mean=0.798
+  Conflict: 0.140 (rank 95/199, percentile 0.475)
+  Similarity: 0.500 (rank 103/199, percentile 0.515)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2016
+      + conflict      : 0.1733   (removed 0.0283)
+      + similarity    : 0.1300   (removed 0.0433)
+  Final eff_client (mean): 0.1300   eff_anchor: 0.8700
+  Distance: anchor=0.1285  client=0.7844  (closer to anchor)
+  Cosine: anchor=1.000003  client=0.999727
+  Normalized toward client: 0.128
+  Dominant reduction stage: importance  (importance reduction: 0.798, conflict: 0.028, similarity: 0.043)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.6.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.464 (rank 197/199, percentile 0.990)
+  Similarity: 0.507 (rank 138/199, percentile 0.692)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3509
+      + conflict      : 0.1881   (removed 0.1628)
+      + similarity    : 0.1418   (removed 0.0464)
+  Final eff_client (mean): 0.1418   eff_anchor: 0.8582
+  Distance: anchor=0.0001  client=0.0009  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999984
+  Normalized toward client: 0.142
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.163, similarity: 0.046)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.6.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.573 → α_anchor_mean=0.786
+  Conflict: 0.142 (rank 101/199, percentile 0.505)
+  Similarity: 0.501 (rank 124/199, percentile 0.621)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2137
+      + conflict      : 0.1833   (removed 0.0304)
+      + similarity    : 0.1376   (removed 0.0457)
+  Final eff_client (mean): 0.1376   eff_anchor: 0.8624
+  Distance: anchor=0.1217  client=0.7104  (closer to anchor)
+  Cosine: anchor=1.000003  client=0.999643
+  Normalized toward client: 0.135
+  Dominant reduction stage: importance  (importance reduction: 0.786, conflict: 0.030, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.6.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.477 → α_anchor_mean=0.739
+  Conflict: 0.178 (rank 179/199, percentile 0.899)
+  Similarity: 0.482 (rank 8/199, percentile 0.035)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2613
+      + conflict      : 0.2148   (removed 0.0465)
+      + similarity    : 0.1592   (removed 0.0556)
+  Final eff_client (mean): 0.1592   eff_anchor: 0.8408
+  Distance: anchor=0.0027  client=0.0141  (closer to anchor)
+  Cosine: anchor=0.999996  client=0.999900
+  Normalized toward client: 0.153
+  Dominant reduction stage: importance  (importance reduction: 0.739, conflict: 0.047, similarity: 0.056)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.6.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.567 → α_anchor_mean=0.784
+  Conflict: 0.143 (rank 105/199, percentile 0.525)
+  Similarity: 0.500 (rank 111/199, percentile 0.556)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2164
+      + conflict      : 0.1856   (removed 0.0309)
+      + similarity    : 0.1392   (removed 0.0464)
+  Final eff_client (mean): 0.1392   eff_anchor: 0.8608
+  Distance: anchor=0.1211  client=0.6978  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999613
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.784, conflict: 0.031, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.6.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.463 → α_anchor_mean=0.732
+  Conflict: 0.158 (rank 149/199, percentile 0.747)
+  Similarity: 0.480 (rank 5/199, percentile 0.020)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2684
+      + conflict      : 0.2259   (removed 0.0425)
+      + similarity    : 0.1672   (removed 0.0587)
+  Final eff_client (mean): 0.1672   eff_anchor: 0.8328
+  Distance: anchor=0.0026  client=0.0128  (closer to anchor)
+  Cosine: anchor=0.999998  client=0.999959
+  Normalized toward client: 0.167
+  Dominant reduction stage: importance  (importance reduction: 0.732, conflict: 0.043, similarity: 0.059)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.6.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.6.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.6.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.596 → α_anchor_mean=0.798
+  Conflict: 0.131 (rank 65/199, percentile 0.323)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2018
+      + conflict      : 0.1753   (removed 0.0265)
+      + similarity    : 0.1753   (removed 0.0000)
+  Final eff_client (mean): 0.1753   eff_anchor: 0.8247
+  Distance: anchor=0.3319  client=1.4336  (closer to anchor)
+  Cosine: anchor=1.000056  client=0.999811
+  Normalized toward client: 0.172
+  Dominant reduction stage: importance  (importance reduction: 0.798, conflict: 0.026, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.6.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.566 → α_anchor_mean=0.783
+  Conflict: 0.127 (rank 59/199, percentile 0.293)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2169
+      + conflict      : 0.1894   (removed 0.0275)
+      + similarity    : 0.1894   (removed 0.0000)
+  Final eff_client (mean): 0.1894   eff_anchor: 0.8106
+  Distance: anchor=0.0107  client=0.0425  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999980
+  Normalized toward client: 0.188
+  Dominant reduction stage: importance  (importance reduction: 0.783, conflict: 0.028, similarity: 0.000)
+  Decision: SAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.6.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.573 → α_anchor_mean=0.787
+  Conflict: 0.131 (rank 63/199, percentile 0.313)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2133
+      + conflict      : 0.1854   (removed 0.0279)
+      + similarity    : 0.1854   (removed 0.0000)
+  Final eff_client (mean): 0.1854   eff_anchor: 0.8146
+  Distance: anchor=0.3114  client=1.2859  (closer to anchor)
+  Cosine: anchor=1.000073  client=0.999854
+  Normalized toward client: 0.181
+  Dominant reduction stage: importance  (importance reduction: 0.787, conflict: 0.028, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.6.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.457 → α_anchor_mean=0.729
+  Conflict: 0.137 (rank 79/199, percentile 0.394)
+  Similarity: 0.507 (rank 139/199, percentile 0.697)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2714
+      + conflict      : 0.2343   (removed 0.0371)
+      + similarity    : 0.1766   (removed 0.0578)
+  Final eff_client (mean): 0.1766   eff_anchor: 0.8234
+  Distance: anchor=0.0024  client=0.0116  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999984
+  Normalized toward client: 0.169
+  Dominant reduction stage: importance  (importance reduction: 0.729, conflict: 0.037, similarity: 0.058)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.6.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.6.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.7.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.599 → α_anchor_mean=0.800
+  Conflict: 0.134 (rank 73/199, percentile 0.364)
+  Similarity: 0.500 (rank 37/199, percentile 0.182)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2003
+      + conflict      : 0.1734   (removed 0.0269)
+      + similarity    : 0.1300   (removed 0.0434)
+  Final eff_client (mean): 0.1300   eff_anchor: 0.8700
+  Distance: anchor=0.1270  client=0.7746  (closer to anchor)
+  Cosine: anchor=1.000004  client=0.999739
+  Normalized toward client: 0.128
+  Dominant reduction stage: importance  (importance reduction: 0.800, conflict: 0.027, similarity: 0.043)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.7.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.593 → α_anchor_mean=0.797
+  Conflict: 0.126 (rank 58/199, percentile 0.288)
+  Similarity: 0.702 (rank 168/199, percentile 0.843)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2034
+      + conflict      : 0.1778   (removed 0.0256)
+      + similarity    : 0.1513   (removed 0.0265)
+  Final eff_client (mean): 0.1513   eff_anchor: 0.8487
+  Distance: anchor=0.0045  client=0.0233  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999983
+  Normalized toward client: 0.150
+  Dominant reduction stage: importance  (importance reduction: 0.797, conflict: 0.026, similarity: 0.026)
+  Decision: SAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.7.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.600 → α_anchor_mean=0.800
+  Conflict: 0.134 (rank 72/199, percentile 0.359)
+  Similarity: 0.502 (rank 126/199, percentile 0.631)
+  Safe: NO
+  Client weight after:
+      importance only: 0.1998
+      + conflict      : 0.1730   (removed 0.0268)
+      + similarity    : 0.1299   (removed 0.0431)
+  Final eff_client (mean): 0.1299   eff_anchor: 0.8701
+  Distance: anchor=0.1265  client=0.7700  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999744
+  Normalized toward client: 0.128
+  Dominant reduction stage: importance  (importance reduction: 0.800, conflict: 0.027, similarity: 0.043)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.7.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.314 (rank 189/199, percentile 0.949)
+  Similarity: 0.475 (rank 2/199, percentile 0.005)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3509
+      + conflict      : 0.2409   (removed 0.1100)
+      + similarity    : 0.1776   (removed 0.0633)
+  Final eff_client (mean): 0.1776   eff_anchor: 0.8224
+  Distance: anchor=0.0002  client=0.0007  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999989
+  Normalized toward client: 0.177
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.110, similarity: 0.063)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.7.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.571 → α_anchor_mean=0.786
+  Conflict: 0.137 (rank 83/199, percentile 0.414)
+  Similarity: 0.500 (rank 115/199, percentile 0.576)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2145
+      + conflict      : 0.1850   (removed 0.0295)
+      + similarity    : 0.1388   (removed 0.0462)
+  Final eff_client (mean): 0.1388   eff_anchor: 0.8612
+  Distance: anchor=0.1200  client=0.6928  (closer to anchor)
+  Cosine: anchor=0.999998  client=0.999633
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.786, conflict: 0.029, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.7.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.468 → α_anchor_mean=0.734
+  Conflict: 0.169 (rank 173/199, percentile 0.869)
+  Similarity: 0.474 (rank 1/199, percentile 0.000)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2658
+      + conflict      : 0.2209   (removed 0.0449)
+      + similarity    : 0.1628   (removed 0.0581)
+  Final eff_client (mean): 0.1628   eff_anchor: 0.8372
+  Distance: anchor=0.0027  client=0.0137  (closer to anchor)
+  Cosine: anchor=0.999997  client=0.999932
+  Normalized toward client: 0.161
+  Dominant reduction stage: importance  (importance reduction: 0.734, conflict: 0.045, similarity: 0.058)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.7.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.564 → α_anchor_mean=0.782
+  Conflict: 0.140 (rank 93/199, percentile 0.465)
+  Similarity: 0.500 (rank 100/199, percentile 0.500)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2178
+      + conflict      : 0.1873   (removed 0.0305)
+      + similarity    : 0.1405   (removed 0.0468)
+  Final eff_client (mean): 0.1405   eff_anchor: 0.8595
+  Distance: anchor=0.1193  client=0.6843  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999618
+  Normalized toward client: 0.138
+  Dominant reduction stage: importance  (importance reduction: 0.782, conflict: 0.031, similarity: 0.047)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.7.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.465 → α_anchor_mean=0.733
+  Conflict: 0.146 (rank 114/199, percentile 0.571)
+  Similarity: 0.494 (rank 20/199, percentile 0.096)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2674
+      + conflict      : 0.2284   (removed 0.0390)
+      + similarity    : 0.1705   (removed 0.0578)
+  Final eff_client (mean): 0.1705   eff_anchor: 0.8295
+  Distance: anchor=0.0025  client=0.0121  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999976
+  Normalized toward client: 0.166
+  Dominant reduction stage: importance  (importance reduction: 0.733, conflict: 0.039, similarity: 0.058)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.7.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.7.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.7.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.594 → α_anchor_mean=0.797
+  Conflict: 0.132 (rank 67/199, percentile 0.333)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2031
+      + conflict      : 0.1764   (removed 0.0268)
+      + similarity    : 0.1764   (removed 0.0000)
+  Final eff_client (mean): 0.1764   eff_anchor: 0.8236
+  Distance: anchor=0.3335  client=1.4355  (closer to anchor)
+  Cosine: anchor=1.000062  client=0.999793
+  Normalized toward client: 0.173
+  Dominant reduction stage: importance  (importance reduction: 0.797, conflict: 0.027, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.7.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.561 → α_anchor_mean=0.780
+  Conflict: 0.130 (rank 62/199, percentile 0.308)
+  Similarity: 0.485 (rank 12/199, percentile 0.056)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2197
+      + conflict      : 0.1912   (removed 0.0285)
+      + similarity    : 0.1420   (removed 0.0492)
+  Final eff_client (mean): 0.1420   eff_anchor: 0.8580
+  Distance: anchor=0.0077  client=0.0449  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999978
+  Normalized toward client: 0.136
+  Dominant reduction stage: importance  (importance reduction: 0.780, conflict: 0.029, similarity: 0.049)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.7.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.563 → α_anchor_mean=0.782
+  Conflict: 0.133 (rank 71/199, percentile 0.354)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2183
+      + conflict      : 0.1892   (removed 0.0291)
+      + similarity    : 0.1892   (removed 0.0000)
+  Final eff_client (mean): 0.1892   eff_anchor: 0.8108
+  Distance: anchor=0.3075  client=1.2487  (closer to anchor)
+  Cosine: anchor=1.000076  client=0.999852
+  Normalized toward client: 0.185
+  Dominant reduction stage: importance  (importance reduction: 0.782, conflict: 0.029, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.7.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.458 → α_anchor_mean=0.729
+  Conflict: 0.154 (rank 138/199, percentile 0.692)
+  Similarity: 0.503 (rank 131/199, percentile 0.657)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2709
+      + conflict      : 0.2293   (removed 0.0416)
+      + similarity    : 0.1723   (removed 0.0570)
+  Final eff_client (mean): 0.1723   eff_anchor: 0.8277
+  Distance: anchor=0.0026  client=0.0121  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999988
+  Normalized toward client: 0.171
+  Dominant reduction stage: importance  (importance reduction: 0.729, conflict: 0.042, similarity: 0.057)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.7.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.7.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.8.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.593 → α_anchor_mean=0.797
+  Conflict: 0.135 (rank 74/199, percentile 0.369)
+  Similarity: 0.500 (rank 114/199, percentile 0.571)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2035
+      + conflict      : 0.1761   (removed 0.0274)
+      + similarity    : 0.1321   (removed 0.0440)
+  Final eff_client (mean): 0.1321   eff_anchor: 0.8679
+  Distance: anchor=0.1268  client=0.7631  (closer to anchor)
+  Cosine: anchor=1.000003  client=0.999753
+  Normalized toward client: 0.130
+  Dominant reduction stage: importance  (importance reduction: 0.797, conflict: 0.027, similarity: 0.044)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.8.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.568 → α_anchor_mean=0.784
+  Conflict: 0.112 (rank 56/199, percentile 0.278)
+  Similarity: 0.698 (rank 167/199, percentile 0.838)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2158
+      + conflict      : 0.1917   (removed 0.0241)
+      + similarity    : 0.1627   (removed 0.0290)
+  Final eff_client (mean): 0.1627   eff_anchor: 0.8373
+  Distance: anchor=0.0046  client=0.0224  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999989
+  Normalized toward client: 0.159
+  Dominant reduction stage: importance  (importance reduction: 0.784, conflict: 0.024, similarity: 0.029)
+  Decision: SAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.8.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.596 → α_anchor_mean=0.798
+  Conflict: 0.132 (rank 69/199, percentile 0.343)
+  Similarity: 0.500 (rank 33/199, percentile 0.162)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2021
+      + conflict      : 0.1753   (removed 0.0268)
+      + similarity    : 0.1314   (removed 0.0439)
+  Final eff_client (mean): 0.1314   eff_anchor: 0.8686
+  Distance: anchor=0.1254  client=0.7593  (closer to anchor)
+  Cosine: anchor=1.000004  client=0.999759
+  Normalized toward client: 0.129
+  Dominant reduction stage: importance  (importance reduction: 0.798, conflict: 0.027, similarity: 0.044)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.8.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.388 (rank 191/199, percentile 0.960)
+  Similarity: 0.507 (rank 140/199, percentile 0.702)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3510
+      + conflict      : 0.2147   (removed 0.1363)
+      + similarity    : 0.1618   (removed 0.0529)
+  Final eff_client (mean): 0.1618   eff_anchor: 0.8382
+  Distance: anchor=0.0001  client=0.0006  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999995
+  Normalized toward client: 0.162
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.136, similarity: 0.053)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.8.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.557 → α_anchor_mean=0.779
+  Conflict: 0.140 (rank 96/199, percentile 0.480)
+  Similarity: 0.500 (rank 112/199, percentile 0.561)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2215
+      + conflict      : 0.1904   (removed 0.0311)
+      + similarity    : 0.1428   (removed 0.0475)
+  Final eff_client (mean): 0.1428   eff_anchor: 0.8572
+  Distance: anchor=0.1188  client=0.6746  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999702
+  Normalized toward client: 0.140
+  Dominant reduction stage: importance  (importance reduction: 0.779, conflict: 0.031, similarity: 0.048)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.8.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.462 → α_anchor_mean=0.731
+  Conflict: 0.171 (rank 175/199, percentile 0.879)
+  Similarity: 0.522 (rank 150/199, percentile 0.753)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2692
+      + conflict      : 0.2231   (removed 0.0461)
+      + similarity    : 0.1698   (removed 0.0533)
+  Final eff_client (mean): 0.1698   eff_anchor: 0.8302
+  Distance: anchor=0.0028  client=0.0136  (closer to anchor)
+  Cosine: anchor=0.999998  client=0.999943
+  Normalized toward client: 0.168
+  Dominant reduction stage: importance  (importance reduction: 0.731, conflict: 0.046, similarity: 0.053)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.8.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.560 → α_anchor_mean=0.780
+  Conflict: 0.138 (rank 86/199, percentile 0.429)
+  Similarity: 0.500 (rank 101/199, percentile 0.505)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2202
+      + conflict      : 0.1897   (removed 0.0304)
+      + similarity    : 0.1423   (removed 0.0474)
+  Final eff_client (mean): 0.1423   eff_anchor: 0.8577
+  Distance: anchor=0.1177  client=0.6691  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999674
+  Normalized toward client: 0.139
+  Dominant reduction stage: importance  (importance reduction: 0.780, conflict: 0.030, similarity: 0.047)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.8.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.460 → α_anchor_mean=0.730
+  Conflict: 0.142 (rank 102/199, percentile 0.510)
+  Similarity: 0.482 (rank 7/199, percentile 0.030)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2698
+      + conflict      : 0.2315   (removed 0.0384)
+      + similarity    : 0.1715   (removed 0.0600)
+  Final eff_client (mean): 0.1715   eff_anchor: 0.8285
+  Distance: anchor=0.0025  client=0.0117  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999979
+  Normalized toward client: 0.172
+  Dominant reduction stage: importance  (importance reduction: 0.730, conflict: 0.038, similarity: 0.060)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.8.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.8.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.8.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.585 → α_anchor_mean=0.792
+  Conflict: 0.139 (rank 91/199, percentile 0.455)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2075
+      + conflict      : 0.1786   (removed 0.0289)
+      + similarity    : 0.1786   (removed 0.0000)
+  Final eff_client (mean): 0.1786   eff_anchor: 0.8214
+  Distance: anchor=0.3409  client=1.4508  (closer to anchor)
+  Cosine: anchor=1.000059  client=0.999781
+  Normalized toward client: 0.176
+  Dominant reduction stage: importance  (importance reduction: 0.792, conflict: 0.029, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.8.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.556 → α_anchor_mean=0.778
+  Conflict: 0.135 (rank 77/199, percentile 0.384)
+  Similarity: 0.498 (rank 27/199, percentile 0.131)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2222
+      + conflict      : 0.1922   (removed 0.0301)
+      + similarity    : 0.1439   (removed 0.0482)
+  Final eff_client (mean): 0.1439   eff_anchor: 0.8561
+  Distance: anchor=0.0082  client=0.0462  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999972
+  Normalized toward client: 0.141
+  Dominant reduction stage: importance  (importance reduction: 0.778, conflict: 0.030, similarity: 0.048)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.8.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.546 → α_anchor_mean=0.773
+  Conflict: 0.144 (rank 112/199, percentile 0.561)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2268
+      + conflict      : 0.1942   (removed 0.0325)
+      + similarity    : 0.1942   (removed 0.0000)
+  Final eff_client (mean): 0.1942   eff_anchor: 0.8058
+  Distance: anchor=0.3027  client=1.2028  (closer to anchor)
+  Cosine: anchor=1.000074  client=0.999863
+  Normalized toward client: 0.190
+  Dominant reduction stage: importance  (importance reduction: 0.773, conflict: 0.033, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.8.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.468 → α_anchor_mean=0.734
+  Conflict: 0.146 (rank 116/199, percentile 0.581)
+  Similarity: 0.518 (rank 149/199, percentile 0.747)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2660
+      + conflict      : 0.2271   (removed 0.0389)
+      + similarity    : 0.1724   (removed 0.0547)
+  Final eff_client (mean): 0.1724   eff_anchor: 0.8276
+  Distance: anchor=0.0025  client=0.0118  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999990
+  Normalized toward client: 0.170
+  Dominant reduction stage: importance  (importance reduction: 0.734, conflict: 0.039, similarity: 0.055)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.8.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.8.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.9.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.580 → α_anchor_mean=0.790
+  Conflict: 0.143 (rank 109/199, percentile 0.545)
+  Similarity: 0.500 (rank 110/199, percentile 0.551)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2102
+      + conflict      : 0.1802   (removed 0.0301)
+      + similarity    : 0.1352   (removed 0.0450)
+  Final eff_client (mean): 0.1352   eff_anchor: 0.8648
+  Distance: anchor=0.1313  client=0.7762  (closer to anchor)
+  Cosine: anchor=1.000005  client=0.999768
+  Normalized toward client: 0.133
+  Dominant reduction stage: importance  (importance reduction: 0.790, conflict: 0.030, similarity: 0.045)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.9.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.590 → α_anchor_mean=0.795
+  Conflict: 0.100 (rank 52/199, percentile 0.258)
+  Similarity: 0.721 (rank 170/199, percentile 0.854)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2048
+      + conflict      : 0.1844   (removed 0.0204)
+      + similarity    : 0.1586   (removed 0.0258)
+  Final eff_client (mean): 0.1586   eff_anchor: 0.8414
+  Distance: anchor=0.0047  client=0.0233  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999991
+  Normalized toward client: 0.155
+  Dominant reduction stage: importance  (importance reduction: 0.795, conflict: 0.020, similarity: 0.026)
+  Decision: SAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.9.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.581 → α_anchor_mean=0.790
+  Conflict: 0.143 (rank 107/199, percentile 0.535)
+  Similarity: 0.500 (rank 36/199, percentile 0.177)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2096
+      + conflict      : 0.1797   (removed 0.0299)
+      + similarity    : 0.1348   (removed 0.0450)
+  Final eff_client (mean): 0.1348   eff_anchor: 0.8652
+  Distance: anchor=0.1304  client=0.7717  (closer to anchor)
+  Cosine: anchor=1.000004  client=0.999773
+  Normalized toward client: 0.133
+  Dominant reduction stage: importance  (importance reduction: 0.790, conflict: 0.030, similarity: 0.045)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.9.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.364 (rank 190/199, percentile 0.955)
+  Similarity: 0.506 (rank 136/199, percentile 0.682)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3511
+      + conflict      : 0.2232   (removed 0.1279)
+      + similarity    : 0.1681   (removed 0.0551)
+  Final eff_client (mean): 0.1681   eff_anchor: 0.8319
+  Distance: anchor=0.0001  client=0.0005  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999997
+  Normalized toward client: 0.168
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.128, similarity: 0.055)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.9.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.542 → α_anchor_mean=0.771
+  Conflict: 0.150 (rank 127/199, percentile 0.636)
+  Similarity: 0.501 (rank 123/199, percentile 0.616)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2292
+      + conflict      : 0.1949   (removed 0.0344)
+      + similarity    : 0.1463   (removed 0.0486)
+  Final eff_client (mean): 0.1463   eff_anchor: 0.8537
+  Distance: anchor=0.1173  client=0.6507  (closer to anchor)
+  Cosine: anchor=1.000001  client=0.999708
+  Normalized toward client: 0.144
+  Dominant reduction stage: importance  (importance reduction: 0.771, conflict: 0.034, similarity: 0.049)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.9.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.469 → α_anchor_mean=0.734
+  Conflict: 0.153 (rank 134/199, percentile 0.672)
+  Similarity: 0.525 (rank 153/199, percentile 0.768)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2657
+      + conflict      : 0.2251   (removed 0.0406)
+      + similarity    : 0.1717   (removed 0.0534)
+  Final eff_client (mean): 0.1717   eff_anchor: 0.8283
+  Distance: anchor=0.0026  client=0.0126  (closer to anchor)
+  Cosine: anchor=0.999997  client=0.999933
+  Normalized toward client: 0.165
+  Dominant reduction stage: importance  (importance reduction: 0.734, conflict: 0.041, similarity: 0.053)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.9.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.546 → α_anchor_mean=0.773
+  Conflict: 0.150 (rank 126/199, percentile 0.631)
+  Similarity: 0.500 (rank 107/199, percentile 0.535)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2272
+      + conflict      : 0.1932   (removed 0.0340)
+      + similarity    : 0.1449   (removed 0.0483)
+  Final eff_client (mean): 0.1449   eff_anchor: 0.8551
+  Distance: anchor=0.1174  client=0.6570  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999669
+  Normalized toward client: 0.142
+  Dominant reduction stage: importance  (importance reduction: 0.773, conflict: 0.034, similarity: 0.048)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.9.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.472 → α_anchor_mean=0.736
+  Conflict: 0.140 (rank 92/199, percentile 0.460)
+  Similarity: 0.538 (rank 159/199, percentile 0.798)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2641
+      + conflict      : 0.2271   (removed 0.0369)
+      + similarity    : 0.1747   (removed 0.0524)
+  Final eff_client (mean): 0.1747   eff_anchor: 0.8253
+  Distance: anchor=0.0026  client=0.0123  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999974
+  Normalized toward client: 0.171
+  Dominant reduction stage: importance  (importance reduction: 0.736, conflict: 0.037, similarity: 0.052)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.9.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.9.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.9.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.570 → α_anchor_mean=0.785
+  Conflict: 0.157 (rank 145/199, percentile 0.727)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2152
+      + conflict      : 0.1814   (removed 0.0338)
+      + similarity    : 0.1814   (removed 0.0000)
+  Final eff_client (mean): 0.1814   eff_anchor: 0.8186
+  Distance: anchor=0.3516  client=1.4764  (closer to anchor)
+  Cosine: anchor=1.000058  client=0.999781
+  Normalized toward client: 0.180
+  Dominant reduction stage: importance  (importance reduction: 0.785, conflict: 0.034, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.9.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.552 → α_anchor_mean=0.776
+  Conflict: 0.152 (rank 131/199, percentile 0.657)
+  Similarity: 0.499 (rank 28/199, percentile 0.136)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2238
+      + conflict      : 0.1898   (removed 0.0340)
+      + similarity    : 0.1423   (removed 0.0475)
+  Final eff_client (mean): 0.1423   eff_anchor: 0.8577
+  Distance: anchor=0.0088  client=0.0491  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999970
+  Normalized toward client: 0.143
+  Dominant reduction stage: importance  (importance reduction: 0.776, conflict: 0.034, similarity: 0.048)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.9.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.530 → α_anchor_mean=0.765
+  Conflict: 0.162 (rank 158/199, percentile 0.793)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2348
+      + conflict      : 0.1968   (removed 0.0381)
+      + similarity    : 0.1968   (removed 0.0000)
+  Final eff_client (mean): 0.1968   eff_anchor: 0.8032
+  Distance: anchor=0.3074  client=1.2089  (closer to anchor)
+  Cosine: anchor=1.000068  client=0.999877
+  Normalized toward client: 0.193
+  Dominant reduction stage: importance  (importance reduction: 0.765, conflict: 0.038, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.9.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.464 → α_anchor_mean=0.732
+  Conflict: 0.174 (rank 178/199, percentile 0.894)
+  Similarity: 0.561 (rank 161/199, percentile 0.808)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2678
+      + conflict      : 0.2213   (removed 0.0465)
+      + similarity    : 0.1727   (removed 0.0486)
+  Final eff_client (mean): 0.1727   eff_anchor: 0.8273
+  Distance: anchor=0.0027  client=0.0125  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999985
+  Normalized toward client: 0.173
+  Dominant reduction stage: importance  (importance reduction: 0.732, conflict: 0.047, similarity: 0.049)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.9.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.9.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.10.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.559 → α_anchor_mean=0.780
+  Conflict: 0.159 (rank 150/199, percentile 0.753)
+  Similarity: 0.501 (rank 118/199, percentile 0.591)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2204
+      + conflict      : 0.1853   (removed 0.0350)
+      + similarity    : 0.1391   (removed 0.0463)
+  Final eff_client (mean): 0.1391   eff_anchor: 0.8609
+  Distance: anchor=0.1291  client=0.7457  (closer to anchor)
+  Cosine: anchor=1.000005  client=0.999788
+  Normalized toward client: 0.138
+  Dominant reduction stage: importance  (importance reduction: 0.780, conflict: 0.035, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.10.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.554 → α_anchor_mean=0.777
+  Conflict: 0.109 (rank 55/199, percentile 0.273)
+  Similarity: 0.719 (rank 169/199, percentile 0.848)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2230
+      + conflict      : 0.1987   (removed 0.0243)
+      + similarity    : 0.1707   (removed 0.0279)
+  Final eff_client (mean): 0.1707   eff_anchor: 0.8293
+  Distance: anchor=0.0048  client=0.0223  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999994
+  Normalized toward client: 0.165
+  Dominant reduction stage: importance  (importance reduction: 0.777, conflict: 0.024, similarity: 0.028)
+  Decision: SAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.10.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.556 → α_anchor_mean=0.778
+  Conflict: 0.164 (rank 163/199, percentile 0.818)
+  Similarity: 0.501 (rank 120/199, percentile 0.601)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2218
+      + conflict      : 0.1854   (removed 0.0365)
+      + similarity    : 0.1391   (removed 0.0462)
+  Final eff_client (mean): 0.1391   eff_anchor: 0.8609
+  Distance: anchor=0.1300  client=0.7486  (closer to anchor)
+  Cosine: anchor=1.000003  client=0.999783
+  Normalized toward client: 0.139
+  Dominant reduction stage: importance  (importance reduction: 0.778, conflict: 0.036, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.10.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.527 (rank 199/199, percentile 1.000)
+  Similarity: 0.517 (rank 148/199, percentile 0.742)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3511
+      + conflict      : 0.1661   (removed 0.1850)
+      + similarity    : 0.1259   (removed 0.0401)
+  Final eff_client (mean): 0.1259   eff_anchor: 0.8741
+  Distance: anchor=0.0001  client=0.0005  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999996
+  Normalized toward client: 0.126
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.185, similarity: 0.040)
+  Decision: UNSAFE, HighConflict
+
+
+Tensor: bert.encoder.layer.10.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.541 → α_anchor_mean=0.770
+  Conflict: 0.148 (rank 123/199, percentile 0.616)
+  Similarity: 0.502 (rank 125/199, percentile 0.626)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2297
+      + conflict      : 0.1957   (removed 0.0340)
+      + similarity    : 0.1470   (removed 0.0488)
+  Final eff_client (mean): 0.1470   eff_anchor: 0.8530
+  Distance: anchor=0.1177  client=0.6498  (closer to anchor)
+  Cosine: anchor=1.000002  client=0.999729
+  Normalized toward client: 0.145
+  Dominant reduction stage: importance  (importance reduction: 0.770, conflict: 0.034, similarity: 0.049)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.10.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.464 → α_anchor_mean=0.732
+  Conflict: 0.169 (rank 172/199, percentile 0.864)
+  Similarity: 0.527 (rank 154/199, percentile 0.773)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2682
+      + conflict      : 0.2230   (removed 0.0452)
+      + similarity    : 0.1702   (removed 0.0528)
+  Final eff_client (mean): 0.1702   eff_anchor: 0.8298
+  Distance: anchor=0.0029  client=0.0136  (closer to anchor)
+  Cosine: anchor=0.999993  client=0.999850
+  Normalized toward client: 0.170
+  Dominant reduction stage: importance  (importance reduction: 0.732, conflict: 0.045, similarity: 0.053)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.10.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.542 → α_anchor_mean=0.771
+  Conflict: 0.151 (rank 130/199, percentile 0.652)
+  Similarity: 0.500 (rank 44/199, percentile 0.217)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2291
+      + conflict      : 0.1944   (removed 0.0347)
+      + similarity    : 0.1458   (removed 0.0486)
+  Final eff_client (mean): 0.1458   eff_anchor: 0.8542
+  Distance: anchor=0.1184  client=0.6566  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999681
+  Normalized toward client: 0.144
+  Dominant reduction stage: importance  (importance reduction: 0.771, conflict: 0.035, similarity: 0.049)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.10.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.462 → α_anchor_mean=0.731
+  Conflict: 0.180 (rank 180/199, percentile 0.904)
+  Similarity: 0.544 (rank 160/199, percentile 0.803)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2689
+      + conflict      : 0.2204   (removed 0.0485)
+      + similarity    : 0.1702   (removed 0.0502)
+  Final eff_client (mean): 0.1702   eff_anchor: 0.8298
+  Distance: anchor=0.0029  client=0.0139  (closer to anchor)
+  Cosine: anchor=0.999998  client=0.999955
+  Normalized toward client: 0.170
+  Dominant reduction stage: importance  (importance reduction: 0.731, conflict: 0.048, similarity: 0.050)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.10.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.10.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.10.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.564 → α_anchor_mean=0.782
+  Conflict: 0.166 (rank 167/199, percentile 0.838)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2181
+      + conflict      : 0.1820   (removed 0.0361)
+      + similarity    : 0.1820   (removed 0.0000)
+  Final eff_client (mean): 0.1820   eff_anchor: 0.8180
+  Distance: anchor=0.3524  client=1.4768  (closer to anchor)
+  Cosine: anchor=1.000062  client=0.999773
+  Normalized toward client: 0.181
+  Dominant reduction stage: importance  (importance reduction: 0.782, conflict: 0.036, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.10.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.548 → α_anchor_mean=0.774
+  Conflict: 0.161 (rank 156/199, percentile 0.783)
+  Similarity: 0.494 (rank 21/199, percentile 0.101)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2261
+      + conflict      : 0.1896   (removed 0.0365)
+      + similarity    : 0.1416   (removed 0.0480)
+  Final eff_client (mean): 0.1416   eff_anchor: 0.8584
+  Distance: anchor=0.0089  client=0.0506  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999966
+  Normalized toward client: 0.142
+  Dominant reduction stage: importance  (importance reduction: 0.774, conflict: 0.036, similarity: 0.048)
+  Decision: UNSAFE, HighImportance, LowSimilarity
+
+
+Tensor: bert.encoder.layer.10.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.526 → α_anchor_mean=0.763
+  Conflict: 0.171 (rank 174/199, percentile 0.874)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2370
+      + conflict      : 0.1964   (removed 0.0406)
+      + similarity    : 0.1964   (removed 0.0000)
+  Final eff_client (mean): 0.1964   eff_anchor: 0.8036
+  Distance: anchor=0.3062  client=1.2069  (closer to anchor)
+  Cosine: anchor=1.000070  client=0.999869
+  Normalized toward client: 0.193
+  Dominant reduction stage: importance  (importance reduction: 0.763, conflict: 0.041, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.10.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.475 → α_anchor_mean=0.738
+  Conflict: 0.153 (rank 135/199, percentile 0.677)
+  Similarity: 0.581 (rank 163/199, percentile 0.818)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2623
+      + conflict      : 0.2221   (removed 0.0402)
+      + similarity    : 0.1756   (removed 0.0465)
+  Final eff_client (mean): 0.1756   eff_anchor: 0.8244
+  Distance: anchor=0.0029  client=0.0139  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999989
+  Normalized toward client: 0.170
+  Dominant reduction stage: importance  (importance reduction: 0.738, conflict: 0.040, similarity: 0.047)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.10.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.10.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.11.attention.self.query.weight
+  Scalars: 589,824
+  Importance: mean=0.568 → α_anchor_mean=0.784
+  Conflict: 0.157 (rank 148/199, percentile 0.742)
+  Similarity: 0.501 (rank 116/199, percentile 0.581)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2162
+      + conflict      : 0.1821   (removed 0.0340)
+      + similarity    : 0.1366   (removed 0.0455)
+  Final eff_client (mean): 0.1366   eff_anchor: 0.8634
+  Distance: anchor=0.1261  client=0.7406  (closer to anchor)
+  Cosine: anchor=1.000004  client=0.999786
+  Normalized toward client: 0.135
+  Dominant reduction stage: importance  (importance reduction: 0.784, conflict: 0.034, similarity: 0.045)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.attention.self.query.bias
+  Scalars: 768
+  Importance: mean=0.557 → α_anchor_mean=0.778
+  Conflict: 0.125 (rank 57/199, percentile 0.283)
+  Similarity: 0.668 (rank 165/199, percentile 0.828)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2217
+      + conflict      : 0.1940   (removed 0.0277)
+      + similarity    : 0.1618   (removed 0.0322)
+  Final eff_client (mean): 0.1618   eff_anchor: 0.8382
+  Distance: anchor=0.0042  client=0.0210  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999994
+  Normalized toward client: 0.157
+  Dominant reduction stage: importance  (importance reduction: 0.778, conflict: 0.028, similarity: 0.032)
+  Decision: SAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.attention.self.key.weight
+  Scalars: 589,824
+  Importance: mean=0.564 → α_anchor_mean=0.782
+  Conflict: 0.161 (rank 155/199, percentile 0.778)
+  Similarity: 0.503 (rank 129/199, percentile 0.646)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2180
+      + conflict      : 0.1829   (removed 0.0351)
+      + similarity    : 0.1374   (removed 0.0455)
+  Final eff_client (mean): 0.1374   eff_anchor: 0.8626
+  Distance: anchor=0.1279  client=0.7448  (closer to anchor)
+  Cosine: anchor=1.000005  client=0.999775
+  Normalized toward client: 0.137
+  Dominant reduction stage: importance  (importance reduction: 0.782, conflict: 0.035, similarity: 0.045)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.attention.self.key.bias
+  Scalars: 768
+  Importance: mean=0.298 → α_anchor_mean=0.649
+  Conflict: 0.454 (rank 196/199, percentile 0.985)
+  Similarity: 0.497 (rank 23/199, percentile 0.111)
+  Safe: NO
+  Client weight after:
+      importance only: 0.3511
+      + conflict      : 0.1916   (removed 0.1595)
+      + similarity    : 0.1434   (removed 0.0482)
+  Final eff_client (mean): 0.1434   eff_anchor: 0.8566
+  Distance: anchor=0.0001  client=0.0004  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999997
+  Normalized toward client: 0.143
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.160, similarity: 0.048)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.11.attention.self.value.weight
+  Scalars: 589,824
+  Importance: mean=0.540 → α_anchor_mean=0.770
+  Conflict: 0.154 (rank 142/199, percentile 0.712)
+  Similarity: 0.504 (rank 132/199, percentile 0.662)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2301
+      + conflict      : 0.1946   (removed 0.0355)
+      + similarity    : 0.1463   (removed 0.0483)
+  Final eff_client (mean): 0.1463   eff_anchor: 0.8537
+  Distance: anchor=0.1161  client=0.6427  (closer to anchor)
+  Cosine: anchor=1.000000  client=0.999781
+  Normalized toward client: 0.145
+  Dominant reduction stage: importance  (importance reduction: 0.770, conflict: 0.035, similarity: 0.048)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.attention.self.value.bias
+  Scalars: 768
+  Importance: mean=0.472 → α_anchor_mean=0.736
+  Conflict: 0.196 (rank 186/199, percentile 0.934)
+  Similarity: 0.482 (rank 6/199, percentile 0.025)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2638
+      + conflict      : 0.2121   (removed 0.0517)
+      + similarity    : 0.1571   (removed 0.0550)
+  Final eff_client (mean): 0.1571   eff_anchor: 0.8429
+  Distance: anchor=0.0029  client=0.0152  (closer to anchor)
+  Cosine: anchor=0.999987  client=0.999630
+  Normalized toward client: 0.155
+  Dominant reduction stage: importance  (importance reduction: 0.736, conflict: 0.052, similarity: 0.055)
+  Decision: UNSAFE, LowSimilarity
+
+
+Tensor: bert.encoder.layer.11.attention.output.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.543 → α_anchor_mean=0.772
+  Conflict: 0.159 (rank 151/199, percentile 0.758)
+  Similarity: 0.500 (rank 98/199, percentile 0.490)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2285
+      + conflict      : 0.1921   (removed 0.0364)
+      + similarity    : 0.1440   (removed 0.0480)
+  Final eff_client (mean): 0.1440   eff_anchor: 0.8560
+  Distance: anchor=0.1167  client=0.6505  (closer to anchor)
+  Cosine: anchor=1.000003  client=0.999746
+  Normalized toward client: 0.144
+  Dominant reduction stage: importance  (importance reduction: 0.772, conflict: 0.036, similarity: 0.048)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.attention.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.497 → α_anchor_mean=0.749
+  Conflict: 0.163 (rank 160/199, percentile 0.803)
+  Similarity: 0.562 (rank 162/199, percentile 0.813)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2514
+      + conflict      : 0.2104   (removed 0.0410)
+      + similarity    : 0.1644   (removed 0.0460)
+  Final eff_client (mean): 0.1644   eff_anchor: 0.8356
+  Distance: anchor=0.0031  client=0.0152  (closer to anchor)
+  Cosine: anchor=0.999996  client=0.999896
+  Normalized toward client: 0.164
+  Dominant reduction stage: importance  (importance reduction: 0.749, conflict: 0.041, similarity: 0.046)
+  Decision: UNSAFE
+
+
+Tensor: bert.encoder.layer.11.attention.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.11.attention.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.11.intermediate.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.566 → α_anchor_mean=0.783
+  Conflict: 0.164 (rank 162/199, percentile 0.813)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2171
+      + conflict      : 0.1816   (removed 0.0356)
+      + similarity    : 0.1816   (removed 0.0000)
+  Final eff_client (mean): 0.1816   eff_anchor: 0.8184
+  Distance: anchor=0.3487  client=1.4617  (closer to anchor)
+  Cosine: anchor=1.000060  client=0.999781
+  Normalized toward client: 0.180
+  Dominant reduction stage: importance  (importance reduction: 0.783, conflict: 0.036, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.intermediate.dense.bias
+  Scalars: 3,072
+  Importance: mean=0.561 → α_anchor_mean=0.781
+  Conflict: 0.147 (rank 121/199, percentile 0.606)
+  Similarity: 0.509 (rank 144/199, percentile 0.722)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2195
+      + conflict      : 0.1871   (removed 0.0323)
+      + similarity    : 0.1412   (removed 0.0459)
+  Final eff_client (mean): 0.1412   eff_anchor: 0.8588
+  Distance: anchor=0.0085  client=0.0472  (closer to anchor)
+  Cosine: anchor=0.999999  client=0.999958
+  Normalized toward client: 0.143
+  Dominant reduction stage: importance  (importance reduction: 0.781, conflict: 0.032, similarity: 0.046)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.output.dense.weight
+  Scalars: 2,359,296
+  Importance: mean=0.544 → α_anchor_mean=0.772
+  Conflict: 0.141 (rank 97/199, percentile 0.485)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2278
+      + conflict      : 0.1958   (removed 0.0321)
+      + similarity    : 0.1958   (removed 0.0000)
+  Final eff_client (mean): 0.1958   eff_anchor: 0.8042
+  Distance: anchor=0.2977  client=1.1719  (closer to anchor)
+  Cosine: anchor=1.000072  client=0.999859
+  Normalized toward client: 0.191
+  Dominant reduction stage: importance  (importance reduction: 0.772, conflict: 0.032, similarity: 0.000)
+  Decision: UNSAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.output.dense.bias
+  Scalars: 768
+  Importance: mean=0.505 → α_anchor_mean=0.753
+  Conflict: 0.103 (rank 53/199, percentile 0.263)
+  Similarity: 0.684 (rank 166/199, percentile 0.833)
+  Safe: YES
+  Client weight after:
+      importance only: 0.2474
+      + conflict      : 0.2218   (removed 0.0256)
+      + similarity    : 0.1868   (removed 0.0350)
+  Final eff_client (mean): 0.1868   eff_anchor: 0.8132
+  Distance: anchor=0.0035  client=0.0148  (closer to anchor)
+  Cosine: anchor=0.999998  client=0.999958
+  Normalized toward client: 0.185
+  Dominant reduction stage: importance  (importance reduction: 0.753, conflict: 0.026, similarity: 0.035)
+  Decision: SAFE, HighImportance
+
+
+Tensor: bert.encoder.layer.11.output.LayerNorm.weight
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.encoder.layer.11.output.LayerNorm.bias
+  Scalars: 768
+  Importance: mean=0.297 → α_anchor_mean=0.649
+  Conflict: 0.000 (rank 1/199, percentile 0.000)
+  Similarity: 0.500 (rank 48/199, percentile 0.237)
+  Safe: YES
+  Client weight after:
+      importance only: 0.3514
+      + conflict      : 0.3514   (removed 0.0000)
+      + similarity    : 0.2636   (removed 0.0879)
+  Final eff_client (mean): 0.2636   eff_anchor: 0.7364
+  Distance: anchor=0.0000  client=0.0000  (closer to client)
+  Cosine: anchor=1.000000  client=1.000000
+  Normalized toward client: 0.500
+  Dominant reduction stage: importance  (importance reduction: 0.649, conflict: 0.000, similarity: 0.088)
+  Decision: SAFE
+
+
+Tensor: bert.pooler.dense.weight
+  Scalars: 589,824
+  Importance: mean=0.622 → α_anchor_mean=0.811
+  Conflict: 0.084 (rank 51/199, percentile 0.253)
+  Similarity: 1.000 (rank 171/199, percentile 0.859)
+  Safe: YES
+  Client weight after:
+      importance only: 0.1892
+      + conflict      : 0.1734   (removed 0.0159)
+      + similarity    : 0.1734   (removed 0.0000)
+  Final eff_client (mean): 0.1734   eff_anchor: 0.8266
+  Distance: anchor=0.1200  client=0.4968  (closer to anchor)
+  Cosine: anchor=0.999997  client=0.999756
+  Normalized toward client: 0.178
+  Dominant reduction stage: importance  (importance reduction: 0.811, conflict: 0.016, similarity: 0.000)
+  Decision: SAFE, HighImportance
+
+
+Tensor: bert.pooler.dense.bias
+  Scalars: 768
+  Importance: mean=0.416 → α_anchor_mean=0.708
+  Conflict: 0.240 (rank 187/199, percentile 0.939)
+  Similarity: 0.484 (rank 11/199, percentile 0.051)
+  Safe: NO
+  Client weight after:
+      importance only: 0.2919
+      + conflict      : 0.2219   (removed 0.0700)
+      + similarity    : 0.1647   (removed 0.0572)
+  Final eff_client (mean): 0.1647   eff_anchor: 0.8353
+  Distance: anchor=0.0025  client=0.0129  (closer to anchor)
+  Cosine: anchor=0.999997  client=0.999912
+  Normalized toward client: 0.159
+  Dominant reduction stage: importance  (importance reduction: 0.708, conflict: 0.070, similarity: 0.057)
+  Decision: UNSAFE, LowSimilarity

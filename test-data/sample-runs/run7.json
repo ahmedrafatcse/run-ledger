@@ -1,0 +1,9 @@
+{
+  "experiment": "array_basic_test",
+  "client": {
+    "results": [
+      { "threshold": 0.99, "cacc": 0.92, "asr": 0.49, "status": "ok" },
+      { "threshold": 0.95, "cacc": 0.88, "asr": 0.52, "status": "ok" }
+    ]
+  }
+}

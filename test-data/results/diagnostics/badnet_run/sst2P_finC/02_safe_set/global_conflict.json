@@ -1,0 +1,38 @@
+{
+  "mean": 0.12550736428042059,
+  "median": 0.1409022097230933,
+  "std": 0.09486756417103893,
+  "min": 0.0,
+  "max": 0.514686223533366,
+  "threshold": 0.12768478309616937,
+  "safe_tensor_count": 60,
+  "total_tensors": 199,
+  "safe_tensor_percent": 30.15075376884422,
+  "safe_scalars": 24076032,
+  "total_scalars": 109482240,
+  "safe_scalar_percent": 21.990810564343587,
+  "lowest_conflict_tensors": [
+    "bert.embeddings.LayerNorm.weight",
+    "bert.embeddings.LayerNorm.bias",
+    "bert.encoder.layer.0.attention.output.LayerNorm.weight",
+    "bert.encoder.layer.0.attention.output.LayerNorm.bias",
+    "bert.encoder.layer.0.output.LayerNorm.weight",
+    "bert.encoder.layer.0.output.LayerNorm.bias",
+    "bert.encoder.layer.1.attention.output.LayerNorm.weight",
+    "bert.encoder.layer.1.attention.output.LayerNorm.bias",
+    "bert.encoder.layer.1.output.LayerNorm.weight",
+    "bert.encoder.layer.1.output.LayerNorm.bias"
+  ],
+  "highest_conflict_tensors": [
+    "bert.encoder.layer.11.attention.self.key.bias",
+    "bert.encoder.layer.5.attention.self.key.bias",
+    "bert.encoder.layer.2.attention.self.key.bias",
+    "bert.encoder.layer.4.attention.self.key.bias",
+    "bert.encoder.layer.6.attention.self.key.bias",
+    "bert.encoder.layer.8.attention.self.key.bias",
+    "bert.encoder.layer.1.attention.self.key.bias",
+    "bert.encoder.layer.3.attention.self.key.bias",
+    "bert.encoder.layer.10.attention.self.key.bias",
+    "bert.encoder.layer.9.attention.self.key.bias"
+  ]
+}

@@ -1,0 +1,200 @@
+tensor,mean_importance,conflict,similarity,dominant_reduction_stage,eff_client_mean,reason
+bert.embeddings.word_embeddings.weight,0.40113595128059387,0.10856848618783954,1.0,importance,0.2669232623090919,SAFE
+bert.embeddings.position_embeddings.weight,0.33324143290519714,0.1613837090844369,1.0,importance,0.27957733572567917,UNSAFE
+bert.embeddings.token_type_embeddings.weight,0.39943090081214905,0.11789997577035077,1.0,importance,0.26488102161690563,SAFE
+bert.embeddings.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.embeddings.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.0.attention.self.query.weight,0.5983671545982361,0.14571749059641187,0.5002347239614193,importance,0.12868562114571336,"UNSAFE, HighImportance"
+bert.encoder.layer.0.attention.self.query.bias,0.5987387299537659,0.13132819232076548,0.4947178763763299,importance,0.13025132295249076,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.0.attention.self.key.weight,0.5964401364326477,0.14793889593861204,0.4992293576445907,importance,0.1288803186641606,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.0.attention.self.key.bias,0.29872792959213257,0.3371306340323852,0.4974387910150044,importance,0.17402175433056474,"UNSAFE, LowSimilarity"
+bert.encoder.layer.0.attention.self.value.weight,0.5826019048690796,0.14256722508323683,0.5002873556854875,importance,0.13423472475936907,"UNSAFE, HighImportance"
+bert.encoder.layer.0.attention.self.value.bias,0.49372756481170654,0.1521639570193658,0.4955877948255037,importance,0.16048999966028277,"UNSAFE, LowSimilarity"
+bert.encoder.layer.0.attention.output.dense.weight,0.5790042877197266,0.14466203939660582,0.5004607124508974,importance,0.1350765801395789,"UNSAFE, HighImportance"
+bert.encoder.layer.0.attention.output.dense.bias,0.4885735511779785,0.14901600922949693,0.5048217282606701,importance,0.16373047997196236,UNSAFE
+bert.encoder.layer.0.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.0.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.0.intermediate.dense.weight,0.5949822664260864,0.14049092464109308,1.0,importance,0.1740582600747704,"UNSAFE, HighImportance"
+bert.encoder.layer.0.intermediate.dense.bias,0.5890281200408936,0.12915971793533965,0.8649651440540976,importance,0.16686354688707344,"SAFE, HighImportance"
+bert.encoder.layer.0.output.dense.weight,0.5848491191864014,0.138887335241692,1.0,importance,0.17874578930076385,"UNSAFE, HighImportance"
+bert.encoder.layer.0.output.dense.bias,0.49658694863319397,0.13120938150316086,0.5101051048705739,importance,0.16511502619309634,UNSAFE
+bert.encoder.layer.0.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.0.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.1.attention.self.query.weight,0.5896961688995361,0.1538035919923088,0.4995560414244422,importance,0.13016061300151016,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.1.attention.self.query.bias,0.5764055252075195,0.1388318444380408,0.47032558085548626,importance,0.13408857350739803,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.1.attention.self.key.weight,0.5875845551490784,0.15461128613126035,0.5002824504085011,importance,0.13076897461557935,"UNSAFE, HighImportance"
+bert.encoder.layer.1.attention.self.key.bias,0.29826095700263977,0.4185642183321304,0.5025192385022916,importance,0.15326304990419373,UNSAFE
+bert.encoder.layer.1.attention.self.value.weight,0.5641995072364807,0.158280616051096,0.500944318283668,importance,0.13764476380061746,"UNSAFE, HighImportance"
+bert.encoder.layer.1.attention.self.value.bias,0.48722854256629944,0.13921333232627342,0.4924164811485065,importance,0.1646832560230207,"UNSAFE, LowSimilarity"
+bert.encoder.layer.1.attention.output.dense.weight,0.560150682926178,0.16159606910342778,0.5013871676452241,importance,0.1384171793583481,"UNSAFE, HighImportance"
+bert.encoder.layer.1.attention.output.dense.bias,0.48423293232917786,0.1504730567983642,0.5141359345774303,importance,0.1658577105123471,UNSAFE
+bert.encoder.layer.1.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.1.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.1.intermediate.dense.weight,0.5931929349899292,0.13998110142734183,1.0,importance,0.17493077946852653,"UNSAFE, HighImportance"
+bert.encoder.layer.1.intermediate.dense.bias,0.5744569897651672,0.13573969294424093,0.5013400407226416,importance,0.13804074278575754,"UNSAFE, HighImportance"
+bert.encoder.layer.1.output.dense.weight,0.5780335068702698,0.14372270243652396,1.0,importance,0.18066013868067915,"UNSAFE, HighImportance"
+bert.encoder.layer.1.output.dense.bias,0.47363269329071045,0.1859477842649211,0.5117420246265532,importance,0.16194172686266017,UNSAFE
+bert.encoder.layer.1.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.1.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.2.attention.self.query.weight,0.5810880661010742,0.16019450395520746,0.5009504300868682,importance,0.1320103331396051,"UNSAFE, HighImportance"
+bert.encoder.layer.2.attention.self.query.bias,0.5495964884757996,0.15897714201344398,0.4975456160646982,importance,0.14181745701554102,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.2.attention.self.key.weight,0.5817592144012451,0.15915015182940317,0.5007929783595164,importance,0.1319488561026672,"UNSAFE, HighImportance"
+bert.encoder.layer.2.attention.self.key.bias,0.2983075678348541,0.34552885277311296,0.5053948941540015,importance,0.1728334064930875,UNSAFE
+bert.encoder.layer.2.attention.self.value.weight,0.5596211552619934,0.16359661604284464,0.5011134494780788,importance,0.13822793261880523,"UNSAFE, HighImportance"
+bert.encoder.layer.2.attention.self.value.bias,0.48207059502601624,0.1484008215017404,0.5163469420512222,importance,0.16720313484909116,UNSAFE
+bert.encoder.layer.2.attention.output.dense.weight,0.557325005531311,0.1673427930857339,0.5004418105989159,importance,0.1382644091372156,"UNSAFE, HighImportance"
+bert.encoder.layer.2.attention.output.dense.bias,0.47611555457115173,0.1693110930574931,0.5044865703811616,importance,0.16368248671995694,UNSAFE
+bert.encoder.layer.2.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.2.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.2.intermediate.dense.weight,0.5926433205604553,0.13974665960441118,1.0,importance,0.1752148951975195,"UNSAFE, HighImportance"
+bert.encoder.layer.2.intermediate.dense.bias,0.5714436173439026,0.13885945521580245,0.4942034567459207,importance,0.13785794835957813,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.2.output.dense.weight,0.5791293978691101,0.14075827949279102,1.0,importance,0.18081481575032418,"UNSAFE, HighImportance"
+bert.encoder.layer.2.output.dense.bias,0.4668212831020355,0.17759693131001375,0.5167588324170428,importance,0.16627009367616005,UNSAFE
+bert.encoder.layer.2.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.2.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.3.attention.self.query.weight,0.5878534317016602,0.15720967966164628,0.5000365336348664,importance,0.13026063706570382,"UNSAFE, HighImportance"
+bert.encoder.layer.3.attention.self.query.bias,0.5860462784767151,0.143414743995177,0.48632556299144614,importance,0.1317578212007254,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.3.attention.self.key.weight,0.586977481842041,0.1567598309397274,0.49866040976182013,importance,0.130487266924878,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.3.attention.self.key.bias,0.29808878898620605,0.45136152645563693,0.49399973819595294,importance,0.14383311788946246,"UNSAFE, LowSimilarity"
+bert.encoder.layer.3.attention.self.value.weight,0.5533797144889832,0.16466966670705258,0.5002536950851946,importance,0.13992690781241376,"UNSAFE, HighImportance"
+bert.encoder.layer.3.attention.self.value.bias,0.4650896489620209,0.15791690231080374,0.4869053004763673,importance,0.16743997464987692,"UNSAFE, LowSimilarity"
+bert.encoder.layer.3.attention.output.dense.weight,0.5520213842391968,0.16845009344697592,0.4988201682694754,importance,0.13958380216453,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.3.attention.output.dense.bias,0.46149885654449463,0.17863463215414377,0.518652389443046,importance,0.16792733799361492,UNSAFE
+bert.encoder.layer.3.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.3.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.3.intermediate.dense.weight,0.5926430225372314,0.13808804158999988,1.0,importance,0.17555297648241266,"UNSAFE, HighImportance"
+bert.encoder.layer.3.intermediate.dense.bias,0.5704123377799988,0.13751321520731719,0.5018286878168847,importance,0.1391120383559807,"UNSAFE, HighImportance"
+bert.encoder.layer.3.output.dense.weight,0.5780545473098755,0.13899463045367333,1.0,importance,0.18164859889100718,"UNSAFE, HighImportance"
+bert.encoder.layer.3.output.dense.bias,0.44894877076148987,0.1623307045974292,0.48779428113005713,importance,0.17169098390785756,"UNSAFE, LowSimilarity"
+bert.encoder.layer.3.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.3.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.4.attention.self.query.weight,0.5883994102478027,0.15247791531641774,0.499536336254941,importance,0.13077478502283177,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.4.attention.self.query.bias,0.5706416964530945,0.14719679042425876,0.5154650163374955,importance,0.13872498190589497,"UNSAFE, HighImportance"
+bert.encoder.layer.4.attention.self.key.weight,0.5861461758613586,0.15568103735778366,0.4992808757871975,importance,0.13097143574053424,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.4.attention.self.key.bias,0.29795050621032715,0.4028342248029432,0.49758029490790506,importance,0.15696139122346145,"UNSAFE, LowSimilarity"
+bert.encoder.layer.4.attention.self.value.weight,0.5630099773406982,0.1549491428913966,0.5014671653780212,importance,0.1386149578999434,"UNSAFE, HighImportance"
+bert.encoder.layer.4.attention.self.value.bias,0.46425554156303406,0.1731589470333607,0.5054422437051329,importance,0.16671854004634634,UNSAFE
+bert.encoder.layer.4.attention.output.dense.weight,0.562810480594635,0.15336414215872873,0.4997986445045724,importance,0.138784007899542,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.4.attention.output.dense.bias,0.4640617370605469,0.16364687036766656,0.4854696263957406,importance,0.1664593657366628,"UNSAFE, LowSimilarity"
+bert.encoder.layer.4.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.4.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.4.intermediate.dense.weight,0.5955244898796082,0.13673553199190636,1.0,importance,0.17458469376047717,"UNSAFE, HighImportance"
+bert.encoder.layer.4.intermediate.dense.bias,0.568010151386261,0.13267034889052687,0.48937518575661876,importance,0.13950893951468096,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.4.output.dense.weight,0.5756683945655823,0.13700992107352283,1.0,importance,0.1830970599897491,"UNSAFE, HighImportance"
+bert.encoder.layer.4.output.dense.bias,0.4597879946231842,0.1436777735794526,0.4911960516480788,importance,0.17245517288143764,"UNSAFE, LowSimilarity"
+bert.encoder.layer.4.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.4.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.5.attention.self.query.weight,0.5932883024215698,0.14713775470503782,0.5006345419674788,importance,0.13013092008678706,"UNSAFE, HighImportance"
+bert.encoder.layer.5.attention.self.query.bias,0.5673118233680725,0.1299256447366378,0.7279642084237674,importance,0.1626320766689145,"SAFE, HighImportance"
+bert.encoder.layer.5.attention.self.key.weight,0.5927419662475586,0.1490758581635907,0.49984468432758644,importance,0.1299411407991299,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.5.attention.self.key.bias,0.2980991303920746,0.4025976035647374,0.51902260019968,importance,0.15923809248114004,UNSAFE
+bert.encoder.layer.5.attention.self.value.weight,0.5772866606712341,0.14544580568387638,0.4992638076442395,importance,0.13539536973364238,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.5.attention.self.value.bias,0.47481784224510193,0.1841558328174167,0.49597006060734855,importance,0.16024336713993392,"UNSAFE, LowSimilarity"
+bert.encoder.layer.5.attention.output.dense.weight,0.5741302967071533,0.14526465074894795,0.4998222548542588,importance,0.1364860717274414,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.5.attention.output.dense.bias,0.46056458353996277,0.15806837505383198,0.5186280498963214,importance,0.1724279565642651,UNSAFE
+bert.encoder.layer.5.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.5.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.5.intermediate.dense.weight,0.5954444408416748,0.13542983967056016,1.0,importance,0.1748833323218397,"UNSAFE, HighImportance"
+bert.encoder.layer.5.intermediate.dense.bias,0.5681092143058777,0.1334694203189491,0.5074398392845426,importance,0.1410385678857119,"UNSAFE, HighImportance"
+bert.encoder.layer.5.output.dense.weight,0.5746824741363525,0.1342895462316553,1.0,importance,0.18410086255515987,"UNSAFE, HighImportance"
+bert.encoder.layer.5.output.dense.bias,0.45438456535339355,0.14833772955856084,0.5091030733238877,importance,0.17531257246022985,UNSAFE
+bert.encoder.layer.5.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.5.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.6.attention.self.query.weight,0.5970770120620728,0.14270898821006345,0.49919648419175383,importance,0.12946399624358465,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.6.attention.self.query.bias,0.5776729583740234,0.13838436777175384,0.5028568260745351,importance,0.13671623089217702,"UNSAFE, HighImportance"
+bert.encoder.layer.6.attention.self.key.weight,0.5968422889709473,0.14104329428833662,0.4992660338688165,importance,0.12979709005151402,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.6.attention.self.key.bias,0.29810863733291626,0.47672541641202687,0.5113873145062986,importance,0.13877631688814643,UNSAFE
+bert.encoder.layer.6.attention.self.value.weight,0.5725358128547668,0.14508913755570196,0.49991816281850415,importance,0.13703395872167348,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.6.attention.self.value.bias,0.47732052206993103,0.1574213777390085,0.5082985552614487,importance,0.16606311636594304,UNSAFE
+bert.encoder.layer.6.attention.output.dense.weight,0.5671067237854004,0.14433752551922674,0.5003937091091779,importance,0.13894040796708973,"UNSAFE, HighImportance"
+bert.encoder.layer.6.attention.output.dense.bias,0.4631823003292084,0.1501105365823589,0.4911322092681443,importance,0.1700769298873482,"UNSAFE, LowSimilarity"
+bert.encoder.layer.6.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.6.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.6.intermediate.dense.weight,0.5964012742042542,0.13320612110980218,1.0,importance,0.1749183750264061,"UNSAFE, HighImportance"
+bert.encoder.layer.6.intermediate.dense.bias,0.5662066340446472,0.1303650460563256,0.8308440907777148,importance,0.17266769269562024,"SAFE, HighImportance"
+bert.encoder.layer.6.output.dense.weight,0.5734047889709473,0.13285276837384047,1.0,importance,0.1849604281344102,"UNSAFE, HighImportance"
+bert.encoder.layer.6.output.dense.bias,0.45720338821411133,0.15446844029964496,0.510667917544059,importance,0.17333088929303955,UNSAFE
+bert.encoder.layer.6.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.6.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.7.attention.self.query.weight,0.5993199944496155,0.13757667853672095,0.5004111196751603,importance,0.12961895343858695,"UNSAFE, HighImportance"
+bert.encoder.layer.7.attention.self.query.bias,0.5931376814842224,0.13579185126407484,0.4914215829974681,importance,0.13110105764476615,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.7.attention.self.key.weight,0.6003703474998474,0.13784120129016836,0.5007456405758195,importance,0.12926829018066374,"UNSAFE, HighImportance"
+bert.encoder.layer.7.attention.self.key.bias,0.29811057448387146,0.38592322792023587,0.5212980194820372,importance,0.1639252042763606,UNSAFE
+bert.encoder.layer.7.attention.self.value.weight,0.5710008144378662,0.1390800649734384,0.5001231236724517,importance,0.1385116385376051,"UNSAFE, HighImportance"
+bert.encoder.layer.7.attention.self.value.bias,0.46838006377220154,0.17012627202104136,0.46929581772237705,importance,0.16205506116622526,"UNSAFE, LowSimilarity"
+bert.encoder.layer.7.attention.output.dense.weight,0.5643876194953918,0.14170214502376727,0.5003183295120961,importance,0.14023663652608215,"UNSAFE, HighImportance"
+bert.encoder.layer.7.attention.output.dense.bias,0.4652010202407837,0.1530271559147784,0.5023699023004851,importance,0.17012844770034716,UNSAFE
+bert.encoder.layer.7.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.7.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.7.intermediate.dense.weight,0.593731701374054,0.13379063746272607,1.0,importance,0.17595672780099247,"UNSAFE, HighImportance"
+bert.encoder.layer.7.intermediate.dense.bias,0.560653030872345,0.1304551945176144,0.5062631592406913,importance,0.14386011515326205,"UNSAFE, HighImportance"
+bert.encoder.layer.7.output.dense.weight,0.5634437203407288,0.13568571238999205,1.0,importance,0.18866094068626227,"UNSAFE, HighImportance"
+bert.encoder.layer.7.output.dense.bias,0.4582267999649048,0.15894657449068683,0.4770517815184316,importance,0.1682584296633354,"UNSAFE, LowSimilarity"
+bert.encoder.layer.7.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.7.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.8.attention.self.query.weight,0.5930419564247131,0.13699472544057062,0.5010310502276802,importance,0.13179311049414727,"UNSAFE, HighImportance"
+bert.encoder.layer.8.attention.self.query.bias,0.5683974623680115,0.12509387596621646,0.7456196856973056,importance,0.164791719506712,"SAFE, HighImportance"
+bert.encoder.layer.8.attention.self.key.weight,0.5958611965179443,0.13508763062861945,0.4993307151755288,importance,0.13102079619286894,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.8.attention.self.key.bias,0.2979356348514557,0.34900573457390016,0.5216986286759546,importance,0.1738692453956428,UNSAFE
+bert.encoder.layer.8.attention.self.value.weight,0.5570804476737976,0.1441419494208236,0.4988593416352222,importance,0.14204544275734524,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.8.attention.self.value.bias,0.46155908703804016,0.1697266919327961,0.5052715485424796,importance,0.16823413136271115,UNSAFE
+bert.encoder.layer.8.attention.output.dense.weight,0.5596376657485962,0.14083873760132182,0.4994977547827647,importance,0.14183084198058307,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.8.attention.output.dense.bias,0.4603249132633209,0.1577666040369043,0.4776159856746647,importance,0.1679060873223069,"UNSAFE, LowSimilarity"
+bert.encoder.layer.8.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.8.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.8.intermediate.dense.weight,0.5849431157112122,0.14108639234664955,1.0,importance,0.17824907972578172,"UNSAFE, HighImportance"
+bert.encoder.layer.8.intermediate.dense.bias,0.5555328726768494,0.13408141489979503,0.5004425466057023,importance,0.14436973010379403,"UNSAFE, HighImportance"
+bert.encoder.layer.8.output.dense.weight,0.5464876294136047,0.14114593218666277,1.0,importance,0.1947504465450518,"UNSAFE, HighImportance"
+bert.encoder.layer.8.output.dense.bias,0.4680453836917877,0.13566242507533455,0.514251406768408,importance,0.17405880363491413,UNSAFE
+bert.encoder.layer.8.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.8.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.9.attention.self.query.weight,0.5795238018035889,0.1442094661730215,0.5007246012704613,importance,0.13500497806701228,"UNSAFE, HighImportance"
+bert.encoder.layer.9.attention.self.query.bias,0.5904697775840759,0.10171721705734604,0.7539718841347463,importance,0.16131011689885805,"SAFE, HighImportance"
+bert.encoder.layer.9.attention.self.key.weight,0.5807003378868103,0.14385263356303452,0.498549255979196,importance,0.13448814607506032,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.9.attention.self.key.bias,0.2978868782520294,0.2714483134145283,0.4945281986559599,importance,0.1911223710443776,"UNSAFE, LowSimilarity"
+bert.encoder.layer.9.attention.self.value.weight,0.5415030121803284,0.15078960746269876,0.5014444011363355,importance,0.14615069378106998,"UNSAFE, HighImportance"
+bert.encoder.layer.9.attention.self.value.bias,0.46862486004829407,0.17291660432196088,0.4886252626559695,importance,0.16355960378909137,"UNSAFE, LowSimilarity"
+bert.encoder.layer.9.attention.output.dense.weight,0.5456578731536865,0.1502120327418892,0.5005495838065723,importance,0.14483847497213204,"UNSAFE, HighImportance"
+bert.encoder.layer.9.attention.output.dense.bias,0.47185683250427246,0.15270997235076006,0.5221953020867135,importance,0.1702919225526314,UNSAFE
+bert.encoder.layer.9.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.9.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.9.intermediate.dense.weight,0.5696279406547546,0.15694209996192043,1.0,importance,0.18141425716824983,"UNSAFE, HighImportance"
+bert.encoder.layer.9.intermediate.dense.bias,0.552457332611084,0.1429328585662658,0.504550190477109,importance,0.14427662679913197,"UNSAFE, HighImportance"
+bert.encoder.layer.9.output.dense.weight,0.5303239822387695,0.15788699051868044,1.0,importance,0.19776019259290256,"UNSAFE, HighImportance"
+bert.encoder.layer.9.output.dense.bias,0.46432438492774963,0.1566691512695898,0.5252204221562108,importance,0.17225526634133262,UNSAFE
+bert.encoder.layer.9.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.9.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.10.attention.self.query.weight,0.5592857003211975,0.16627496779486156,0.5015659639825761,importance,0.1379318198548712,"UNSAFE, HighImportance"
+bert.encoder.layer.10.attention.self.query.bias,0.5540822148323059,0.1503096588690937,0.5181404284380019,importance,0.14380288675017014,"UNSAFE, HighImportance"
+bert.encoder.layer.10.attention.self.key.weight,0.5563106536865234,0.1668841926852781,0.5026368376730492,importance,0.13886040118855608,"UNSAFE, HighImportance"
+bert.encoder.layer.10.attention.self.key.bias,0.29777950048446655,0.48905414695215293,0.4960794061322069,importance,0.13419708195936958,"UNSAFE, LowSimilarity"
+bert.encoder.layer.10.attention.self.value.weight,0.5405443906784058,0.15477514119277425,0.5004297179369304,importance,0.14567045796458172,"UNSAFE, HighImportance"
+bert.encoder.layer.10.attention.self.value.bias,0.4636218547821045,0.15967369497412387,0.4979872629214871,importance,0.16879798525368295,"UNSAFE, LowSimilarity"
+bert.encoder.layer.10.attention.output.dense.weight,0.541896402835846,0.15613853464487132,0.4986572992494845,importance,0.144836244677966,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.10.attention.output.dense.bias,0.4621315896511078,0.1697686298533831,0.5332133516547624,importance,0.17116609969619906,UNSAFE
+bert.encoder.layer.10.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.10.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.10.intermediate.dense.weight,0.5637254118919373,0.16329068067982838,1.0,importance,0.1825174818904118,"UNSAFE, HighImportance"
+bert.encoder.layer.10.intermediate.dense.bias,0.547785222530365,0.1513684756482953,0.4823311404980743,importance,0.1422161704473171,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.10.output.dense.weight,0.5260701179504395,0.1645684480986619,1.0,importance,0.19796798842654126,"UNSAFE, HighImportance"
+bert.encoder.layer.10.output.dense.bias,0.4754088819026947,0.14809273084950042,0.5564601525190502,importance,0.17389666288494685,UNSAFE
+bert.encoder.layer.10.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.10.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.11.attention.self.query.weight,0.5676712989807129,0.15758298683952798,0.5026391110067946,importance,0.1368156866330058,"UNSAFE, HighImportance"
+bert.encoder.layer.11.attention.self.query.bias,0.5565891861915588,0.1223988811584143,0.7402195681466632,importance,0.16929633776772524,"SAFE, HighImportance"
+bert.encoder.layer.11.attention.self.key.weight,0.563988208770752,0.1599354549641817,0.499265781588762,importance,0.13728703561452862,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.11.attention.self.key.bias,0.2978449761867523,0.429606193104364,0.4969335550850643,importance,0.14988229100136474,"UNSAFE, LowSimilarity"
+bert.encoder.layer.11.attention.self.value.weight,0.5398180484771729,0.15055203721070226,0.5051819659553737,importance,0.14709406518140794,"UNSAFE, HighImportance"
+bert.encoder.layer.11.attention.self.value.bias,0.4724219739437103,0.18400511647503626,0.5122517775272759,importance,0.16275645505405045,UNSAFE
+bert.encoder.layer.11.attention.output.dense.weight,0.5430912375450134,0.14969049182304317,0.5004131947737881,importance,0.14573285139259892,"UNSAFE, HighImportance"
+bert.encoder.layer.11.attention.output.dense.bias,0.4971911907196045,0.13696920048079136,0.5610201488437572,importance,0.1693471516014299,UNSAFE
+bert.encoder.layer.11.attention.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.11.attention.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.11.intermediate.dense.weight,0.565738320350647,0.16009438370610585,1.0,importance,0.18236936177707985,"UNSAFE, HighImportance"
+bert.encoder.layer.11.intermediate.dense.bias,0.5610880255699158,0.14597936725282246,0.4886142994385753,importance,0.13949798318812137,"UNSAFE, HighImportance, LowSimilarity"
+bert.encoder.layer.11.output.dense.weight,0.5443756580352783,0.14076840159814846,1.0,importance,0.195743467022764,"UNSAFE, HighImportance"
+bert.encoder.layer.11.output.dense.bias,0.5051993727684021,0.09796076344965282,0.6547411754350908,importance,0.18463996123156737,"SAFE, HighImportance"
+bert.encoder.layer.11.output.LayerNorm.weight,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.encoder.layer.11.output.LayerNorm.bias,0.297196626663208,0.0,0.5,importance,0.263551265001297,SAFE
+bert.pooler.dense.weight,0.6215240359306335,0.07948051860225314,1.0,importance,0.1741972216497044,"SAFE, HighImportance"
+bert.pooler.dense.bias,0.41628751158714294,0.2186090080775443,0.5119162205547872,importance,0.17239917645456618,UNSAFE

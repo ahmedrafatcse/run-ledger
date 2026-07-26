@@ -1,0 +1,110 @@
+{
+  "anchor_path": "D:\\Brac\\Thesis\\subtask\\test_models\\model_2\\pytorch_model.bin",
+  "parameters": {
+    "w_base": 1.0,
+    "alpha_base": 0.5,
+    "safe_percentiles": [
+      1,
+      2,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      40,
+      50,
+      60
+    ]
+  },
+  "results": [
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 1,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 2,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 5,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 10,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 15,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 20,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 25,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 30,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 40,
+      "sst2_cacc": 0.9288990825688074,
+      "sst2_asr": 0.10810810810810811,
+      "fin_cacc": 0.682741116751269,
+      "fin_asr": 0.5164835164835165
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 50,
+      "sst2_cacc": 0.9277522935779816,
+      "sst2_asr": 0.11261261261261261,
+      "fin_cacc": 0.6776649746192893,
+      "fin_asr": 0.5201465201465202
+    },
+    {
+      "client": "sst2C_finP",
+      "safe_percentile": 60,
+      "sst2_cacc": 0.9277522935779816,
+      "sst2_asr": 0.11261261261261261,
+      "fin_cacc": 0.6776649746192893,
+      "fin_asr": 0.5201465201465202
+    }
+  ]
+}
