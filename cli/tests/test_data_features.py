@@ -56,7 +56,7 @@ def setup_data():
     # Ingest sample runs into the fresh batch
     result = run_cli("scan", str(SAMPLE_FOLDER), "--batch", BATCH_NAME)
     assert result.returncode == 0, result.stderr
-    assert "Successfully ingested 6 run(s)" in result.stdout
+    assert "Successfully ingested 9 run(s)" in result.stdout
 
 # ------------------------------------------------------------
 # v1 – Basic metric block search
@@ -160,3 +160,51 @@ def test_v3_summary_output(setup_data):
     # Should find run4 and run5
     assert "run4.json" in stdout or "run5.json" in stdout, "Summary should list at least one source file"
     print("✅ metrics.accuracy > 0.9 (summary) --- table displayed")
+
+
+# ------------------------------------------------------------
+# v4 – Array‑aware search (new)
+# ------------------------------------------------------------
+def test_array_basic_search(setup_data):
+    """Search inside an array: client.results[].threshold > 0.96"""
+    result = run_cli("search", "--metric", "client.results[].threshold",
+                     "--op", "gt", "--value", "0.96",
+                     "--batch", BATCH_NAME, "--json")
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    # run7 has 0.99, run8 has 0.99 (plus non‑numeric values safely ignored)
+    assert data["totalElements"] == 2
+    print("✅ Array basic search (threshold > 0.96) --- 2 runs found")
+
+def test_array_text_search(setup_data):
+    """Search inside an array: client.results[].status = 'error'"""
+    result = run_cli("search", "--metric", "client.results[].status",
+                     "--op", "eq", "--value", "error",
+                     "--batch", BATCH_NAME, "--json")
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    # Only run8 has status = "error"
+    assert data["totalElements"] == 1
+    print("✅ Array text search (status = 'error') --- 1 run found")
+
+def test_array_stress_nested_search(setup_data):
+    """Search inside nested arrays: phases[].calibration.points[].threshold > 0.97"""
+    result = run_cli("search", "--metric", "phases[].calibration.points[].threshold",
+                     "--op", "gt", "--value", "0.97",
+                     "--batch", BATCH_NAME, "--json")
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    # run9 has 0.99 (phase1) and 0.98 (phase2) – both > 0.97
+    assert data["totalElements"] == 1
+    print("✅ Array stress nested search (threshold > 0.97) --- 1 run found")
+
+def test_array_mixed_types_safe(setup_data):
+    """Search inside an array with mixed types: client.results[].threshold > 0.7"""
+    result = run_cli("search", "--metric", "client.results[].threshold",
+                     "--op", "gt", "--value", "0.7",
+                     "--batch", BATCH_NAME, "--json")
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    # run7 (0.99,0.95) and run8 (0.99,'none',0.5) – non‑numeric safely ignored
+    assert data["totalElements"] == 2
+    print("✅ Array mixed‑type safety (threshold > 0.7) --- 2 runs found")

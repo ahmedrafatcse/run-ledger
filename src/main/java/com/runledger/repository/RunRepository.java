@@ -206,6 +206,359 @@ public interface RunRepository extends JpaRepository<Run, Long> {
                                           Pageable pageable);
 
     // ================================================================
+    // Array‑aware search methods ([] → [*] translation handled by service)
+    //
+    // :path  – the jsonb path up to (but not including) the array wildcard
+    //          e.g. "client.results[*]"  (already translated from [])
+    // :leaf  – the field name inside each array element, e.g. "cacc"
+    //
+    // #>  returns jsonb → used for type checking
+    // #>> returns text  → used for numeric cast / text comparison
+    // ================================================================
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric > :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric > :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayGreaterThan(@Param("path") String path,
+                                     @Param("leaf") String leaf,
+                                     @Param("value") double value,
+                                     Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric >= :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric >= :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayGreaterThanOrEqual(@Param("path") String path,
+                                            @Param("leaf") String leaf,
+                                            @Param("value") double value,
+                                            Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric < :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric < :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayLessThan(@Param("path") String path,
+                                  @Param("leaf") String leaf,
+                                  @Param("value") double value,
+                                  Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric <= :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric <= :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayLessThanOrEqual(@Param("path") String path,
+                                         @Param("leaf") String leaf,
+                                         @Param("value") double value,
+                                         Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric = :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric = :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayEquals(@Param("path") String path,
+                                @Param("leaf") String leaf,
+                                @Param("value") double value,
+                                Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE elem #>> string_to_array(:leaf, '.') = :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE elem #>> string_to_array(:leaf, '.') = :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayEqualsText(@Param("path") String path,
+                                    @Param("leaf") String leaf,
+                                    @Param("value") String value,
+                                    Pageable pageable);
+
+    // ================================================================
+    // Batch‑filtered array‑aware search methods
+    // ================================================================
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric > :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric > :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayGreaterThanBatch(@Param("path") String path,
+                                          @Param("leaf") String leaf,
+                                          @Param("value") double value,
+                                          @Param("batch") String batch,
+                                          Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric >= :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric >= :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayGreaterThanOrEqualBatch(@Param("path") String path,
+                                                 @Param("leaf") String leaf,
+                                                 @Param("value") double value,
+                                                 @Param("batch") String batch,
+                                                 Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric < :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric < :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayLessThanBatch(@Param("path") String path,
+                                       @Param("leaf") String leaf,
+                                       @Param("value") double value,
+                                       @Param("batch") String batch,
+                                       Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric <= :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric <= :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayLessThanOrEqualBatch(@Param("path") String path,
+                                              @Param("leaf") String leaf,
+                                              @Param("value") double value,
+                                              @Param("batch") String batch,
+                                              Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric = :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE jsonb_typeof(elem #> string_to_array(:leaf, '.')) = 'number'
+              AND (elem #>> string_to_array(:leaf, '.'))::numeric = :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayEqualsBatch(@Param("path") String path,
+                                     @Param("leaf") String leaf,
+                                     @Param("value") double value,
+                                     @Param("batch") String batch,
+                                     Pageable pageable);
+
+    @Query(value = """
+        SELECT r.* FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE elem #>> string_to_array(:leaf, '.') = :value
+        )
+        ORDER BY r.created_at DESC
+        """,
+            countQuery = """
+        SELECT count(*) FROM run r
+        WHERE r.batch = :batch
+          AND EXISTS (
+            SELECT 1 FROM jsonb_path_query(
+                r.payload, ('$.' || :path)::jsonpath
+            ) AS elem
+            WHERE elem #>> string_to_array(:leaf, '.') = :value
+        )
+        """,
+            nativeQuery = true)
+    Page<Run> findByArrayEqualsTextBatch(@Param("path") String path,
+                                         @Param("leaf") String leaf,
+                                         @Param("value") String value,
+                                         @Param("batch") String batch,
+                                         Pageable pageable);
+
+    // ================================================================
     // Metric key discovery
     // ================================================================
 

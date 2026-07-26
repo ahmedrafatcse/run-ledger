@@ -141,3 +141,13 @@ def test_summary_output(setup_data):
     stdout = result.stdout
     assert ".json" in stdout, "Summary table should list source file names"
     print(f"✅ {query} --- summary table displayed")
+
+def test_array_search_on_real_data(setup_data):
+    """Search inside a real array: results[].X > -9999 (catch‑all)"""
+    result = run_cli("search", "--metric", "results[].X",
+                     "--op", "gt", "--value", "-9999",
+                     "--batch", BATCH, "--json")
+    assert result.returncode == 0, result.stderr
+    data = json.loads(result.stdout)
+    assert data["totalElements"] > 0, "Expected at least one run with results[].X"
+    print(f"✅ Array search on real data (results[].X > -9999) --- {data['totalElements']} runs found")

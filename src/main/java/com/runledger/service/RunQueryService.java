@@ -32,7 +32,7 @@ public class RunQueryService {
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value,
                                    String batch, Pageable pageable) {
-        String resolvedPath = resolvePathInternal(metric, batch);       // <-- now calls the private method
+        String resolvedPath = resolvePath(metric, batch);
         return executeQuery(resolvedPath, op, value, batch, pageable);
     }
 
@@ -123,6 +123,12 @@ public class RunQueryService {
                                    String batch, Pageable pageable) {
         boolean hasBatch = (batch != null && !batch.isBlank());
 
+        // Check if the path contains an array bracket notation
+        if (path.contains("[]")) {
+            return executeArrayQuery(path, op, value, batch, pageable);
+        }
+
+        // Scalar path – existing logic
         return switch (op) {
             case "gt"  -> hasBatch
                     ? runRepository.findByMetricGreaterThanBatch(path, parseDouble(value), batch, pageable)
@@ -153,6 +159,65 @@ public class RunQueryService {
         };
     }
 
+    /**
+     * Handles array‑aware queries.
+     *
+     * The path looks like "client.results[].threshold".
+     * We split it into:
+     *   arrayPath = "client.results[*]"   (PostgreSQL jsonpath)
+     *   leaf      = "threshold"           (field name inside each array element)
+     */
+    /**
+     * Handles array‑aware queries.
+     *
+     * The path may contain multiple [] segments, e.g.
+     * "phases[].calibration.points[].threshold".
+     * We replace every [] with [*] to build a valid PostgreSQL jsonpath.
+     * The leaf is the field name after the last [] (or after the last dot).
+     */
+    private Page<Run> executeArrayQuery(String path, String op, String value,
+                                        String batch, Pageable pageable) {
+        boolean hasBatch = (batch != null && !batch.isBlank());
+
+        // Replace all [] with [*] for the jsonb_path_query
+        String jsonbPath = path.replace("[]", "[*]");
+
+        // Leaf is the part after the last dot
+        int lastDot = jsonbPath.lastIndexOf('.');
+        String leaf = jsonbPath.substring(lastDot + 1);
+
+        // The path for jsonb_path_query is everything before the leaf
+        String pathForJsonb = jsonbPath.substring(0, lastDot);
+
+        return switch (op) {
+            case "gt"  -> hasBatch
+                    ? runRepository.findByArrayGreaterThanBatch(pathForJsonb, leaf, parseDouble(value), batch, pageable)
+                    : runRepository.findByArrayGreaterThan(pathForJsonb, leaf, parseDouble(value), pageable);
+            case "gte" -> hasBatch
+                    ? runRepository.findByArrayGreaterThanOrEqualBatch(pathForJsonb, leaf, parseDouble(value), batch, pageable)
+                    : runRepository.findByArrayGreaterThanOrEqual(pathForJsonb, leaf, parseDouble(value), pageable);
+            case "lt"  -> hasBatch
+                    ? runRepository.findByArrayLessThanBatch(pathForJsonb, leaf, parseDouble(value), batch, pageable)
+                    : runRepository.findByArrayLessThan(pathForJsonb, leaf, parseDouble(value), pageable);
+            case "lte" -> hasBatch
+                    ? runRepository.findByArrayLessThanOrEqualBatch(pathForJsonb, leaf, parseDouble(value), batch, pageable)
+                    : runRepository.findByArrayLessThanOrEqual(pathForJsonb, leaf, parseDouble(value), pageable);
+            case "eq"  -> {
+                Double numericValue = tryParseDouble(value);
+                if (numericValue != null) {
+                    yield hasBatch
+                            ? runRepository.findByArrayEqualsBatch(pathForJsonb, leaf, numericValue, batch, pageable)
+                            : runRepository.findByArrayEquals(pathForJsonb, leaf, numericValue, pageable);
+                } else {
+                    yield hasBatch
+                            ? runRepository.findByArrayEqualsTextBatch(pathForJsonb, leaf, value, batch, pageable)
+                            : runRepository.findByArrayEqualsText(pathForJsonb, leaf, value, pageable);
+                }
+            }
+            default -> throw new IllegalArgumentException(
+                    "Unsupported operator: " + op + ". Allowed: gt, gte, lt, lte, eq.");
+        };
+    }
     private double parseDouble(String value) {
         try {
             return Double.parseDouble(value);
