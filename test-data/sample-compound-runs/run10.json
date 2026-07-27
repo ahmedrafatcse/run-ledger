@@ -1,0 +1,32 @@
+{
+  "experiment": "runledger_pointer_test",
+  "status": "completed",
+  "accuracy": 0.88,
+  "nested": {
+    "loss": 0.12,
+    "f1": 0.91
+  },
+  "phases": [
+    {
+      "id": 0,
+      "metrics": { "loss": 0.45, "accuracy": 0.76 }
+    },
+    {
+      "id": 1,
+      "metrics": { "loss": 0.08, "accuracy": 0.94 }
+    },
+    {
+      "id": 2,
+      "metrics": { "loss": 0.23, "accuracy": 0.82 }
+    }
+  ],
+  "deep": {
+    "nested": {
+      "array": [
+        { "value": 10 },
+        { "value": 3 },
+        { "value": 7 }
+      ]
+    }
+  }
+}
