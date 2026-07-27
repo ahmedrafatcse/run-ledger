@@ -97,6 +97,7 @@ class RunControllerTest {
 
         when(runQueryService.queryByMetric(eq("accuracy"), eq("gt"), eq("0.9"), any(Pageable.class)))
                 .thenReturn(page);
+        // No batch, so resolvedPath = metric, no need to mock resolvePath
 
         mockMvc.perform(get("/api/runs")
                         .param("metric", "accuracy")
@@ -113,8 +114,12 @@ class RunControllerTest {
         List<Run> runs = List.of(r1);
         Page<Run> page = new PageImpl<>(runs, Pageable.unpaged(), runs.size());
 
+        // Mock the service method used for searching
         when(runQueryService.queryByMetric(eq("accuracy"), eq("gt"), eq("0.9"), eq("sweep-X"), any(Pageable.class)))
                 .thenReturn(page);
+        // The controller separately resolves the path for pointer/block extraction:
+        when(runQueryService.resolvePath(eq("accuracy"), eq("sweep-X")))
+                .thenReturn("accuracy");
 
         mockMvc.perform(get("/api/runs")
                         .param("metric", "accuracy")
@@ -202,7 +207,6 @@ class RunControllerTest {
         List<Run> runs = List.of(run);
         Page<Run> page = new PageImpl<>(runs, Pageable.unpaged(), runs.size());
 
-        // Mock the service method used by the controller
         when(runQueryService.queryByMultipleFilters(any(), any(Pageable.class)))
                 .thenReturn(page);
 

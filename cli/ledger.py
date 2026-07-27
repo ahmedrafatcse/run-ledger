@@ -21,7 +21,6 @@ import os
 import sys
 import subprocess
 import time
-import uuid
 from pathlib import Path
 
 import requests
@@ -180,8 +179,8 @@ def fetch_verbose_metrics(batch: str) -> list:
         return []
 
 def perform_search(metric=None, op=None, value=None, q=None, fuzzy=False,
-                   batch=None, page=0, size=PAGE_SIZE, block=None):
-    """Single‑condition GET search (backward compatible)."""
+                   batch=None, page=0, size=PAGE_SIZE, pointers=True):
+    """Single‑condition GET search. Never sends block – CLI handles truncation."""
     params = {
         "page": page,
         "size": size,
@@ -197,8 +196,8 @@ def perform_search(metric=None, op=None, value=None, q=None, fuzzy=False,
         params["metric"] = metric
         params["op"] = op
         params["value"] = value
-        if block is not None:
-            params["block"] = block
+        if pointers:
+            params["pointers"] = "true"
     else:
         raise ValueError("Either --q or (--metric, --op, --value) must be provided")
 
@@ -213,16 +212,14 @@ def perform_search(metric=None, op=None, value=None, q=None, fuzzy=False,
         console.print(f"[red]Error searching: {e}[/red]")
         return None
 
-def perform_multi_search(filters, combine, batch=None, page=0, size=PAGE_SIZE, block=None):
-    """Multi‑condition POST search."""
+def perform_multi_search(filters, combine, batch=None, page=0, size=PAGE_SIZE):
+    """Multi‑condition POST search. No block parameter."""
     body = {
         "filters": filters,
         "combine": combine,
     }
     if batch:
         body["batch"] = batch
-    if block is not None:
-        body["block"] = block
 
     try:
         resp = requests.post(f"{API_BASE}/search", json=body)
@@ -254,7 +251,24 @@ def navigate_json_pointer(doc, pointer: str):
 
 def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
     payload = run.get("payload", {})
-    source_file = payload.get("_source", {}).get("file", "unknown")
+    # Guard against non‑dict payloads
+    if isinstance(payload, dict):
+        source_file = payload.get("_source", {}).get("file", "unknown")
+    else:
+        source_file = "unknown"
+
+    # Show matched pointers if available
+    matched = run.get("matched")
+    if matched:
+        console.print("  Matches:")
+        for m in matched:
+            val = m.get("value")
+            if isinstance(val, float):
+                val_str = f"{val:.6f}"
+            else:
+                val_str = str(val)
+            console.print(f"    • {m['pointer']} = {val_str}")
+        console.print()
 
     if dot_path is None:
         label = "-- full run (full‑text/fuzzy match)"
@@ -265,7 +279,8 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
         console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}"))
         return
 
-    parts = dot_path.split(".")
+    # Strip "[]" so JSON Pointer navigation works
+    parts = [seg.replace("[]", "") for seg in dot_path.split(".")]
     max_block = len(parts) - 1
 
     if block_levels is None:
@@ -277,30 +292,44 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
             return
 
     for block in sorted(levels, reverse=True):
-        ancestor_parts = parts[:len(parts) - (block + 1)]
-        pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
-        node = navigate_json_pointer(payload, pointer) if pointer else payload
-        depth_label = ""
-        if block == max_block:
-            depth_label = " (full run)"
-        elif block == 0:
-            depth_label = " (tightest match)"
-
-        try:
-            pretty = json.dumps(node, indent=2)
-        except Exception:
-            pretty = str(node)
-
-        console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}  |  metric: {dot_path}  |  depth: {block}{depth_label}"))
+        if block == 0 and matched:
+            # For array paths with block=0, show each matched snippet individually
+            for i, m in enumerate(matched):
+                snippet = m.get("snippet")
+                try:
+                    pretty = json.dumps(snippet, indent=2)
+                except Exception:
+                    pretty = str(snippet)
+                title = f"Run {run['id']} · {source_file}  |  metric: {dot_path}  |  depth: 0 (match {i+1}/{len(matched)})"
+                console.print(Panel(pretty, title=title))
+        else:
+            ancestor_parts = parts[:len(parts) - (block + 1)]
+            pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
+            node = navigate_json_pointer(payload, pointer) if pointer else payload
+            depth_label = ""
+            if block == max_block:
+                depth_label = " (full run)"
+            elif block == 0:
+                depth_label = " (tightest match)"
+            try:
+                pretty = json.dumps(node, indent=2) if node is not None else "null"
+            except Exception:
+                pretty = str(node)
+            console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}  |  metric: {dot_path}  |  depth: {block}{depth_label}"))
 
 # ------------------------------------------------------------
 # Export helpers
 # ------------------------------------------------------------
-def build_export_blocks(content, dot_path, block_levels):
+def build_export_blocks(content, dot_path, block_levels, include_pointers=True):
     blocks = []
     for run in content:
         payload = run.get("payload", {})
-        source_file = payload.get("_source", {}).get("file", "unknown")
+        if isinstance(payload, dict):
+            source_file = payload.get("_source", {}).get("file", "unknown")
+        else:
+            source_file = "unknown"
+
+        matched = run.get("matched") if include_pointers else None
 
         if dot_path is None:
             blocks.append({
@@ -308,11 +337,12 @@ def build_export_blocks(content, dot_path, block_levels):
                 "sourceFile": source_file,
                 "metric": "(full‑text/fuzzy match)",
                 "depth": "full",
-                "content": payload
+                "content": payload,
+                "matches": matched
             })
             continue
 
-        parts = dot_path.split(".")
+        parts = [seg.replace("[]", "") for seg in dot_path.split(".")]
         max_block = len(parts) - 1
 
         levels = block_levels if block_levels is not None else list(range(max_block + 1))
@@ -321,16 +351,33 @@ def build_export_blocks(content, dot_path, block_levels):
             levels = [max_block]
 
         for block in sorted(levels, reverse=True):
-            ancestor_parts = parts[:len(parts) - (block + 1)]
-            pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
-            node = navigate_json_pointer(payload, pointer) if pointer else payload
-            blocks.append({
-                "id": run["id"],
-                "sourceFile": source_file,
-                "metric": dot_path,
-                "depth": block,
-                "content": node
-            })
+            if block == 0 and matched:
+                # One block per matched snippet
+                for i, m in enumerate(matched):
+                    snippet = m.get("snippet")
+                    blocks.append({
+                        "id": run["id"],
+                        "sourceFile": source_file,
+                        "metric": dot_path,
+                        "depth": 0,
+                        "matchIndex": i + 1,
+                        "totalMatches": len(matched),
+                        "content": snippet,
+                        "pointer": m.get("pointer"),
+                        "value": m.get("value")
+                    })
+            else:
+                ancestor_parts = parts[:len(parts) - (block + 1)]
+                pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
+                node = navigate_json_pointer(payload, pointer) if pointer else payload
+                blocks.append({
+                    "id": run["id"],
+                    "sourceFile": source_file,
+                    "metric": dot_path,
+                    "depth": block,
+                    "content": node,
+                    "matches": matched if block != 0 else None
+                })
     return blocks
 
 def format_blocks_as_text(blocks):
@@ -343,7 +390,35 @@ def format_blocks_as_text(blocks):
         lines.append(f"file: {block['sourceFile']}")
         if block.get("metric"):
             lines.append(f"metric: {block['metric']}")
-        lines.append(f"depth: {block['depth']}")
+        depth = block.get("depth")
+        if depth is not None:
+            depth_str = str(depth)
+            if block.get("matchIndex"):
+                depth_str += f" (match {block['matchIndex']}/{block['totalMatches']})"
+            lines.append(f"depth: {depth_str}")
+
+        # Print pointer and value if present (for block‑0 snippets)
+        pointer = block.get("pointer")
+        if pointer:
+            val = block.get("value")
+            if isinstance(val, float):
+                val_str = f"{val:.6f}"
+            else:
+                val_str = str(val)
+            lines.append(f"match: {pointer} = {val_str}")
+
+        # Print all matched pointers if present (for non‑0 blocks with multiple matches)
+        matches = block.get("matches")
+        if matches:
+            lines.append("matches:")
+            for m in matches:
+                val = m.get("value")
+                if isinstance(val, float):
+                    val_str = f"{val:.6f}"
+                else:
+                    val_str = str(val)
+                lines.append(f"  • {m['pointer']} = {val_str}")
+
         lines.append("-" * 70)
         lines.append(json.dumps(block["content"], indent=2))
     return "\n".join(lines) + "\n"
@@ -367,17 +442,21 @@ def cli_search(args):
             for m, op, v in zip(args.metrics, args.ops, args.values)
         ]
 
+    # Determine if pointers are requested
+    pointers_enabled = getattr(args, "pointers", True)  # default True
+
+    # Determine combine (only used for multi‑filter)
+    combine = args.combine if args.combine else "and"
+
     # Decide which search to perform
     if args.q:
         data = perform_search(q=args.q, fuzzy=args.fuzzy, batch=args.batch, page=0)
-    elif filters and (len(filters) > 1 or args.combine):
-        # Multi‑condition search (POST)
-        data = perform_multi_search(filters, args.combine, batch=args.batch, page=0, block=args.block)
+    elif filters and len(filters) > 1:
+        data = perform_multi_search(filters, combine, batch=args.batch, page=0)
     elif filters:
-        # Single condition – still use POST for consistency? Let's fallback to GET for simplicity and backward compat.
         f = filters[0]
         data = perform_search(metric=f["metric"], op=f["op"], value=f["value"],
-                              batch=args.batch, page=0, block=args.block)
+                              batch=args.batch, page=0, pointers=pointers_enabled)
     else:
         console.print("[red]No search parameters provided.[/red]")
         sys.exit(1)
@@ -414,9 +493,8 @@ def cli_search(args):
 
     dot_path = None
     if not args.q and filters and len(filters) == 1:
-        # For single metric, try to resolve a dot‑path for block preview
         metric = filters[0]["metric"]
-        if "." in metric:
+        if "." in metric or "[]" in metric:
             dot_path = metric
         else:
             first_payload = content[0].get("payload", {})
@@ -440,14 +518,17 @@ def cli_export(args):
             for m, op, v in zip(args.metrics, args.ops, args.values)
         ]
 
+    pointers_enabled = getattr(args, "pointers", True)
+    combine = args.combine if args.combine else "and"
+
     if args.q:
         data = perform_search(q=args.q, fuzzy=args.fuzzy, batch=args.batch, page=0)
-    elif filters and (len(filters) > 1 or args.combine):
-        data = perform_multi_search(filters, args.combine, batch=args.batch, page=0, block=args.block)
+    elif filters and len(filters) > 1:
+        data = perform_multi_search(filters, combine, batch=args.batch, page=0)
     elif filters:
         f = filters[0]
         data = perform_search(metric=f["metric"], op=f["op"], value=f["value"],
-                              batch=args.batch, page=0, block=args.block)
+                              batch=args.batch, page=0, pointers=pointers_enabled)
     else:
         console.print("[red]No search parameters provided.[/red]")
         sys.exit(1)
@@ -466,7 +547,7 @@ def cli_export(args):
     dot_path = None
     if not args.q and filters and len(filters) == 1:
         metric = filters[0]["metric"]
-        if "." in metric:
+        if "." in metric or "[]" in metric:
             dot_path = metric
         else:
             first_payload = content[0].get("payload", {})
@@ -476,7 +557,7 @@ def cli_export(args):
     if args.block is not None:
         block_levels = [args.block]
 
-    blocks = build_export_blocks(content, dot_path, block_levels)
+    blocks = build_export_blocks(content, dot_path, block_levels, include_pointers=pointers_enabled)
 
     if args.format == "json":
         out = json.dumps(blocks, indent=2)
@@ -490,8 +571,10 @@ def cli_export(args):
         print(out)
 
 def cli_preview(args):
+    pointers_enabled = getattr(args, "pointers", True)
     data = perform_search(metric=args.metric, op=args.op, value=args.value,
-                          batch=args.batch, page=0, size=1)
+                          batch=args.batch, page=0, size=1,
+                          pointers=pointers_enabled)
     if data is None or not data.get("content"):
         console.print("[red]No matching run found.[/red]")
         sys.exit(1)
@@ -499,7 +582,7 @@ def cli_preview(args):
     run = data["content"][0]
     metric = args.metric
 
-    if "." in metric:
+    if "." in metric or "[]" in metric:
         dot_path = metric
     else:
         dot_path = find_shallowest_path(run.get("payload", {}), metric)
@@ -668,7 +751,7 @@ def main():
                                help="Operator (can be repeated)")
     search_parser.add_argument("--value", action='append', dest='values',
                                help="Value to compare (can be repeated)")
-    search_parser.add_argument("--combine", choices=["and","or"], default="and",
+    search_parser.add_argument("--combine", choices=["and","or"], default=None,
                                help="Combine multiple conditions with AND or OR")
     search_parser.add_argument("--q", help="Full‑text / fuzzy phrase")
     search_parser.add_argument("--fuzzy", action="store_true", help="Enable fuzzy search")
@@ -676,6 +759,11 @@ def main():
     search_parser.add_argument("--summary", action="store_true", help="Show only ID and source file")
     search_parser.add_argument("--json", action="store_true", help="Output raw JSON instead of block format")
     search_parser.add_argument("--block", type=int, help="Show only this block depth (default: all levels)")
+    # Pointers flag: on by default, use --no-pointers to disable
+    search_parser.add_argument("--pointers", dest="pointers", action="store_true", default=True,
+                               help="Show exact match locations (default: True)")
+    search_parser.add_argument("--no-pointers", dest="pointers", action="store_false",
+                               help="Disable match pointers")
 
     # preview
     preview_parser = subparsers.add_parser("preview", help="Show block levels for a metric match")
@@ -683,6 +771,10 @@ def main():
     preview_parser.add_argument("--op", required=True, choices=["gt","gte","lt","lte","eq"])
     preview_parser.add_argument("--value", required=True)
     preview_parser.add_argument("--batch")
+    preview_parser.add_argument("--pointers", dest="pointers", action="store_true", default=True,
+                                help="Show exact match locations (default: True)")
+    preview_parser.add_argument("--no-pointers", dest="pointers", action="store_false",
+                                help="Disable match pointers")
 
     # export – supports same multi‑filter as search
     export_parser = subparsers.add_parser("export", help="Export search results to a file")
@@ -693,7 +785,7 @@ def main():
                                help="Operator (can be repeated)")
     export_parser.add_argument("--value", action='append', dest='values',
                                help="Value to compare (can be repeated)")
-    export_parser.add_argument("--combine", choices=["and","or"], default="and",
+    export_parser.add_argument("--combine", choices=["and","or"], default=None,
                                help="Combine multiple conditions with AND or OR")
     export_parser.add_argument("--q", help="Full‑text / fuzzy phrase")
     export_parser.add_argument("--fuzzy", action="store_true", help="Enable fuzzy search")
@@ -702,6 +794,10 @@ def main():
     export_parser.add_argument("--format", choices=["text","json"], default="text",
                                help="Output format (text or json)")
     export_parser.add_argument("--output", help="File to write to (default: stdout)")
+    export_parser.add_argument("--pointers", dest="pointers", action="store_true", default=True,
+                               help="Show exact match locations (default: True)")
+    export_parser.add_argument("--no-pointers", dest="pointers", action="store_false",
+                               help="Disable match pointers")
 
     # metrics
     metrics_parser = subparsers.add_parser("metrics", help="List available metric keys")
