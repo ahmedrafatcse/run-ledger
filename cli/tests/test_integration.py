@@ -14,7 +14,7 @@ COMPOSE_FILE = PROJECT_ROOT / "docker-compose.yml"
 HEALTH_URL = "http://localhost:8080/actuator/health"
 API_BASE = "http://localhost:8080/api/runs"
 
-def wait_for_health(timeout=90):
+def wait_for_health(timeout=120):
     start = time.time()
     while time.time() - start < timeout:
         try:

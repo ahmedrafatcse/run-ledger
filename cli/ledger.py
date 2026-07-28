@@ -251,11 +251,11 @@ def navigate_json_pointer(doc, pointer: str):
 
 def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
     payload = run.get("payload", {})
-    # Guard against non‑dict payloads
+    # Use experiment name, then source file, then run id
     if isinstance(payload, dict):
-        source_file = payload.get("_source", {}).get("file", "unknown")
+        source_file = payload.get("_source", {}).get("file") or payload.get("experiment") or f"run-{run['id']}"
     else:
-        source_file = "unknown"
+        source_file = f"run-{run['id']}"
 
     # Show matched pointers if available
     matched = run.get("matched")
@@ -293,7 +293,7 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
 
     for block in sorted(levels, reverse=True):
         if block == 0 and matched:
-            # For array paths with block=0, show each matched snippet individually
+            # For block=0, show each matched snippet individually
             for i, m in enumerate(matched):
                 snippet = m.get("snippet")
                 try:
@@ -324,10 +324,11 @@ def build_export_blocks(content, dot_path, block_levels, include_pointers=True):
     blocks = []
     for run in content:
         payload = run.get("payload", {})
+        # Use experiment name, then source file, then run id
         if isinstance(payload, dict):
-            source_file = payload.get("_source", {}).get("file", "unknown")
+            source_file = payload.get("_source", {}).get("file") or payload.get("experiment") or f"run-{run['id']}"
         else:
-            source_file = "unknown"
+            source_file = f"run-{run['id']}"
 
         matched = run.get("matched") if include_pointers else None
 
@@ -352,7 +353,7 @@ def build_export_blocks(content, dot_path, block_levels, include_pointers=True):
 
         for block in sorted(levels, reverse=True):
             if block == 0 and matched:
-                # One block per matched snippet
+                # Always use matched snippets for block=0 (scalar or array)
                 for i, m in enumerate(matched):
                     snippet = m.get("snippet")
                     blocks.append({
@@ -397,7 +398,7 @@ def format_blocks_as_text(blocks):
                 depth_str += f" (match {block['matchIndex']}/{block['totalMatches']})"
             lines.append(f"depth: {depth_str}")
 
-        # Print pointer and value if present (for block‑0 snippets)
+        # Per‑match pointer and value
         pointer = block.get("pointer")
         if pointer:
             val = block.get("value")
@@ -407,7 +408,7 @@ def format_blocks_as_text(blocks):
                 val_str = str(val)
             lines.append(f"match: {pointer} = {val_str}")
 
-        # Print all matched pointers if present (for non‑0 blocks with multiple matches)
+        # List of all matches for ancestor blocks
         matches = block.get("matches")
         if matches:
             lines.append("matches:")
@@ -475,7 +476,9 @@ def cli_search(args):
         table.add_column("Source File", justify="left", style="green")
         for run in content:
             run_id = run["id"]
-            source_file = run.get("payload", {}).get("_source", {}).get("file", "unknown")
+            payload = run.get("payload", {})
+            # use experiment or source file for display
+            source_file = payload.get("experiment") or payload.get("_source", {}).get("file") or f"run-{run_id}"
             table.add_row(str(run_id), source_file)
         console.print(table)
         return
@@ -836,20 +839,31 @@ def main():
 
             deepest = max(verbose_metrics, key=lambda x: x["depth"])
             console.print(f"\n[bold]Block preview for deepest metric '{deepest['key']}':[/bold]")
-            try:
-                resp = requests.get(API_BASE, params={"batch": batch, "size": 1})
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data.get("content"):
-                        run = data["content"][0]
-                        dot_path = deepest["path"]
-                        show_blocks(run, dot_path)
-                    else:
-                        console.print("[yellow]No runs in batch – cannot preview.[/yellow]")
-                else:
-                    console.print(f"[red]Could not fetch run for preview (HTTP {resp.status_code}).[/red]")
-            except Exception as e:
-                console.print(f"[red]Could not auto‑preview: {e}[/red]")
+
+            # Find a run that actually contains the deepest path
+            preview_run = None
+            page = 0
+            while True:
+                resp = requests.get(API_BASE, params={"batch": batch, "size": 10, "page": page})
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                if not data.get("content"):
+                    break
+                for run in data["content"]:
+                    if navigate_json_pointer(run.get("payload", {}), "/" + deepest["path"].replace(".", "/").replace("[]","")):
+                        preview_run = run
+                        break
+                if preview_run:
+                    break
+                page += 1
+                if page >= 10:   # safety limit
+                    break
+
+            if preview_run:
+                show_blocks(preview_run, deepest["path"])
+            else:
+                console.print("[yellow]No run in the batch contains this metric – preview skipped.[/yellow]")
 
             console.print("\n[dim]Tip: run `ledger preview --metric <key> --op <gt|lt|eq> --value <v> --batch <batch>` to explore block levels for any metric.[/dim]")
 

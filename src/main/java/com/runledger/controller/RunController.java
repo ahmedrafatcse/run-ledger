@@ -8,6 +8,7 @@ import com.runledger.dto.RunRequest;
 import com.runledger.dto.RunResponse;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -29,27 +30,27 @@ public class RunController {
     private final RunRepository runRepository;
     private final ObjectMapper objectMapper;
     private final RunQueryService runQueryService;
+    private final RunIngestionService ingestionService;
 
     public RunController(RunRepository runRepository,
                          ObjectMapper objectMapper,
-                         RunQueryService runQueryService) {
+                         RunQueryService runQueryService,
+                         RunIngestionService ingestionService) {
         this.runRepository = runRepository;
         this.objectMapper = objectMapper;
         this.runQueryService = runQueryService;
+        this.ingestionService = ingestionService;
     }
 
     // ---------- Ingest a new run ----------
     @PostMapping
     public ResponseEntity<RunResponse> ingestRun(@Valid @RequestBody RunRequest request) {
-        Run run = new Run();
-        run.setPayload(request.payload().toString());
-        if (request.batch() != null && !request.batch().isBlank()) {
-            run.setBatch(request.batch());
-        }
-        Run saved = runRepository.save(run);
+        Run saved = ingestionService.ingest(request);
+        // Extract payload JsonNode for response
+        JsonNode payload = objectMapper.valueToTree(request.payload());
         return ResponseEntity
                 .created(URI.create("/api/runs/" + saved.getId()))
-                .body(new RunResponse(saved.getId(), request.payload(), saved.getCreatedAt()));
+                .body(new RunResponse(saved.getId(), payload, saved.getCreatedAt()));
     }
 
     // ---------- Retrieve a single run by ID ----------

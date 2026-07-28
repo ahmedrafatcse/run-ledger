@@ -28,15 +28,19 @@ public class BatchSchemaService {
 
     /**
      * Returns a key → path mapping for the given batch.
-     * If the mapping doesn't exist yet, it is built from all runs in the batch.
+     * <p>
+     * Always rebuilds the mapping from the current runs in the batch,
+     * so re‑scans pick up new keys immediately.
      *
      * @param batch the batch name
      * @return unmodifiable map of shorthand key → full dot‑separated path
      */
     public Map<String, String> getOrCreateMapping(String batch) {
-        return batchSchemaRepository.findByBatch(batch)
-                .map(schema -> parseMapping(schema.getKeyMapping()))
-                .orElseGet(() -> buildAndSaveMapping(batch));
+        // Remove any stale mapping
+        batchSchemaRepository.deleteById(batch);
+        batchSchemaRepository.flush();
+
+        return buildAndSaveMapping(batch);
     }
 
     /**
@@ -48,11 +52,11 @@ public class BatchSchemaService {
 
     /**
      * Force rebuild the mapping for a given batch and return it.
+     * (Redundant now because {@link #getOrCreateMapping} rebuilds every time,
+     * but kept for backward compatibility.)
      */
     public Map<String, String> rebuildMapping(String batch) {
-        batchSchemaRepository.findByBatch(batch)
-                .ifPresent(batchSchemaRepository::delete);
-        return buildAndSaveMapping(batch);
+        return getOrCreateMapping(batch);
     }
 
     // ---------- private helpers ----------
@@ -139,11 +143,9 @@ public class BatchSchemaService {
                     String key = entry.getKey();
                     JsonNode value = entry.getValue();
                     String arrayPath = prefix + "[]." + key;
-                    String bracketKey = prefix.replaceAll("\\.", "_") + "[]_" + key;
 
                     if (value.isObject()) {
                         // Recurse deeper if the element itself is an object
-                        // (arrays inside arrays are only one level deep)
                         collectLeafPaths(arrayPath, value, depth + 1, result);
                     } else {
                         // Store with the bracket notation as the shorthand key
