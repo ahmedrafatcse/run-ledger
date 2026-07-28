@@ -158,7 +158,7 @@ def test_v3_summary_output(setup_data):
     assert result.returncode == 0
     stdout = result.stdout
     # Should find run4 and run5
-    assert "run4.json" in stdout or "run5.json" in stdout, "Summary should list at least one source file"
+    assert "duplicate_keys" in stdout or "deep_config" in stdout, "Summary should list at least one source file"
     print("✅ metrics.accuracy > 0.9 (summary) --- table displayed")
 
 

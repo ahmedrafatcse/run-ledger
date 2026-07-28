@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCustom {
 
@@ -207,13 +208,6 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     // ================================================================
     // Array‑aware search methods ([] → [*] translation handled by service)
-    //
-    // :path  – the jsonb path up to (but not including) the array wildcard
-    //          e.g. "client.results[*]"  (already translated from [])
-    // :leaf  – the field name inside each array element, e.g. "cacc"
-    //
-    // #>  returns jsonb → used for type checking
-    // #>> returns text  → used for numeric cast / text comparison
     // ================================================================
 
     @Query(value = """
@@ -649,4 +643,19 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
                                  @Param("threshold") double threshold,
                                  @Param("batch") String batch,
                                  Pageable pageable);
+
+    // ================================================================
+    // Run identity lookup (V6 — versioning model)
+    // ================================================================
+
+    /**
+     * Returns the most recent version of a run identified by its
+     * (batch, source_file, source_index) composite key.
+     * Used by the ingestion service to decide whether to insert a new
+     * version or treat the re‑scan as idempotent.
+     */
+    Optional<Run> findTopByBatchAndSourceFileAndSourceIndexOrderByVersionDesc(
+            @Param("batch") String batch,
+            @Param("sourceFile") String sourceFile,
+            @Param("sourceIndex") int sourceIndex);
 }

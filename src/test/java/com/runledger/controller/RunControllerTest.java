@@ -1,9 +1,11 @@
 package com.runledger.controller;
 
 import com.runledger.config.SecurityConfig;
+import com.runledger.dto.RunRequest;
 import com.runledger.entity.Run;
 import com.runledger.exception.GlobalExceptionHandler;
 import com.runledger.repository.RunRepository;
+import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +22,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,6 +36,7 @@ class RunControllerTest {
 
     @MockitoBean private RunRepository runRepository;
     @MockitoBean private RunQueryService runQueryService;
+    @MockitoBean private RunIngestionService ingestionService;
 
     private Run run(Long id, String payloadJson) {
         Run r = new Run();
@@ -46,7 +50,8 @@ class RunControllerTest {
     @Test
     void postValidRun_shouldReturn201() throws Exception {
         Run saved = run(1L, "{\"accuracy\":0.95}");
-        when(runRepository.save(any(Run.class))).thenReturn(saved);
+        // Now the controller delegates to ingestionService, not runRepository
+        when(ingestionService.ingest(any(RunRequest.class))).thenReturn(saved);
 
         mockMvc.perform(post("/api/runs")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -59,6 +64,7 @@ class RunControllerTest {
 
     @Test
     void postMissingPayload_shouldReturn400() throws Exception {
+        // Validation fails before the service is called, so no stubbing needed
         mockMvc.perform(post("/api/runs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -97,7 +103,6 @@ class RunControllerTest {
 
         when(runQueryService.queryByMetric(eq("accuracy"), eq("gt"), eq("0.9"), any(Pageable.class)))
                 .thenReturn(page);
-        // No batch, so resolvedPath = metric, no need to mock resolvePath
 
         mockMvc.perform(get("/api/runs")
                         .param("metric", "accuracy")
@@ -114,10 +119,8 @@ class RunControllerTest {
         List<Run> runs = List.of(r1);
         Page<Run> page = new PageImpl<>(runs, Pageable.unpaged(), runs.size());
 
-        // Mock the service method used for searching
         when(runQueryService.queryByMetric(eq("accuracy"), eq("gt"), eq("0.9"), eq("sweep-X"), any(Pageable.class)))
                 .thenReturn(page);
-        // The controller separately resolves the path for pointer/block extraction:
         when(runQueryService.resolvePath(eq("accuracy"), eq("sweep-X")))
                 .thenReturn("accuracy");
 
