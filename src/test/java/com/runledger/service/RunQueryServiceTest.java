@@ -338,4 +338,43 @@ class RunQueryServiceTest {
                 List.of(), "results", "sst2_cacc", "gt", "0.9");
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void aggregate_shouldReturnGroupedResults() {
+        // Mock the native query
+        Query queryMock = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(queryMock);
+        when(queryMock.setParameter(anyString(), any())).thenReturn(queryMock);
+
+        // Simulate two grouped rows: experiment="A" avg=0.95, experiment="B" avg=0.88
+        List<Object[]> rows = List.of(
+                new Object[]{0.95, "A"},
+                new Object[]{0.88, "B"}
+        );
+        when(queryMock.getResultList()).thenReturn(rows);
+
+        List<Map<String, Object>> results = runQueryService.aggregate("AVG", "accuracy", "experiment", null);
+
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).get("result")).isEqualTo(0.95);
+        assertThat(results.get(0).get("group")).isEqualTo("A");
+        assertThat(results.get(1).get("result")).isEqualTo(0.88);
+        assertThat(results.get(1).get("group")).isEqualTo("B");
+    }
+
+    @Test
+    void aggregate_withoutGroupBy_shouldReturnSingleRow() {
+        Query queryMock = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(queryMock);
+        when(queryMock.setParameter(anyString(), any())).thenReturn(queryMock);
+
+        List<Object> rows = List.of(0.92);   // single scalar, not Object[]
+        when(queryMock.getResultList()).thenReturn(rows);
+
+        List<Map<String, Object>> results = runQueryService.aggregate("MAX", "accuracy", null, null);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).get("result")).isEqualTo(0.92);
+        assertThat(results.get(0)).doesNotContainKey("group");
+    }
 }

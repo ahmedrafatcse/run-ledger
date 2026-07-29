@@ -48,7 +48,7 @@ except Exception:
 # Configuration
 # ------------------------------------------------------------
 API_BASE = "http://localhost:8080/api/runs"
-COMPOSE_FILE = os.path.join(os.path.dirname(__file__), "..", "docker-compose.yml")
+COMPOSE_FILE = os.path.join(os.path.dirname(__file__), "docker-compose.yml")
 HEALTH_URL = "http://localhost:8080/actuator/health"
 PAGE_SIZE = 10
 
@@ -86,11 +86,15 @@ def wait_for_backend(timeout=60):
     return False
 
 def start_backend():
-    if not os.path.exists(COMPOSE_FILE):
-        console.print("[red]docker-compose.yml not found. Are you in the project root?[/red]")
+    compose_file = COMPOSE_FILE
+    if not os.path.exists(compose_file):
+        console.print("[red]Cannot find docker-compose.yml[/red]")
         sys.exit(1)
     console.print("Starting RunLedger backend...")
-    subprocess.run(f"docker compose -f {COMPOSE_FILE} up -d", shell=True, check=True)
+    subprocess.run(
+        ["docker", "compose", "-f", compose_file, "-p", "runledger", "up", "-d"],
+        shell=True, check=True
+    )
     if wait_for_backend():
         console.print("[green]RunLedger backend is running.[/green]")
     else:
@@ -98,11 +102,20 @@ def start_backend():
         sys.exit(1)
 
 def stop_backend():
-    if os.path.exists(COMPOSE_FILE):
-        subprocess.run(f"docker compose -f {COMPOSE_FILE} down", shell=True, check=True)
+    compose_file = COMPOSE_FILE
+    if os.path.exists(compose_file):
+        subprocess.run(
+            ["docker", "compose", "-f", compose_file, "-p", "runledger", "down"],
+            shell=True, check=True
+        )
         console.print("RunLedger backend stopped.")
     else:
         console.print("[red]Cannot find docker-compose.yml[/red]")
+
+def ensure_backend():
+    """Start the backend if it's not already running."""
+    if not backend_running():
+        start_backend()
 
 # ------------------------------------------------------------
 # Ingestion
@@ -1166,6 +1179,7 @@ def main():
             has_data = False
 
         if not has_data:
+            ensure_backend()
             from cli.guided import run_guided_search
             run_guided_search()
         else:
@@ -1267,6 +1281,7 @@ def main():
     elif args.command == "aggregate":
         cli_aggregate(args)
     elif args.command == "guided":
+        ensure_backend()
         from cli.guided import run_guided_search
         run_guided_search()
     else:
