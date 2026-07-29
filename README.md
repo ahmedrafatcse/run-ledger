@@ -1,179 +1,189 @@
 # RunLedger
 
-A self‑hosted, SQL‑queryable experiment run registry.  
-Ingest any JSON artifact, search by metric, and (soon) verify tamper‑evidence.
+**Zero-instrumentation experiment registry and search engine.**  
+Point to a folder of JSON experiment files and instantly search, filter, aggregate, diff, and export your results—no SDK, no code changes.
 
-## Quick start
-
-1. **Start the database**  
-   ```bash
-   docker compose up -d
-   ```
-
-2. **Run the application**
-   ```bash
-   ./mvnw spring-boot:run
-   ```
-
-3. **Ingest a run**
-   ```bash
-   curl -X POST http://localhost:8080/api/runs \
-     -H "Content-Type: application/json" \
-     -d '{"payload":{"experiment":"test","metrics":{"accuracy":0.95}}}'
-   ```
-
-4. **Search runs**
-   ```bash
-   curl "http://localhost:8080/api/runs?metric=accuracy&op=gt&value=0.90"
-   ```
-
-## API Reference
-
-Full documentation: [docs/api.md](docs/api.md)
-
-### Quick endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/runs` | Ingest a single run (JSON with a `payload` field) |
-| `GET` | `/api/runs/{id}` | Retrieve a single run by ID |
-| `GET` | `/api/runs?metric=...&op=...&value=...` | Block search (metric filtering) |
-
-### Operators
-
-| Operator | Meaning |
-|----------|---------|
-| `gt` | Greater than |
-| `gte` | Greater than or equal to |
-| `lt` | Less than |
-| `lte` | Less than or equal to |
-| `eq` | Equal to (numeric or text) |
-
-### Example requests
-
-#### Ingest a run
+## Quick Start
 
 ```bash
-curl -X POST http://localhost:8080/api/runs \
-  -H "Content-Type: application/json" \
-  -d '{"payload":{"experiment":"WAG_vs_SLERP","config":{"lr":0.001},"metrics":{"accuracy":0.94,"asr":0.02}}}'
-```
-
-#### Get run by ID
-
-```bash
-curl http://localhost:8080/api/runs/1
-```
-
-#### Find runs with accuracy > 0.9
-
-```bash
-curl "http://localhost:8080/api/runs?metric=accuracy&op=gt&value=0.9"
-```
-
-#### Find runs with loss <= 0.15
-
-```bash
-curl "http://localhost:8080/api/runs?metric=loss&op=lte&value=0.15"
-```
-
-#### Text equality (e.g., status = "completed")
-
-```bash
-curl "http://localhost:8080/api/runs?metric=status&op=eq&value=completed"
-```
-
-## Observability
-
-RunLedger includes Actuator endpoints for health checks and metrics.
-
-- **Health** (includes database connectivity): `GET /actuator/health`
-- **Application info**: `GET /actuator/info`
-- **Metrics**: `GET /actuator/metrics`
-
-## Tech stack
-
-- **Language:** Java 17
-- **Framework:** Spring Boot 4.0
-- **Database:** PostgreSQL 16 (JSONB)
-- **Migrations:** Flyway
-- **Testing:** JUnit 5, Mockito, Testcontainers
-- **Build:** Maven
-- **Containerisation:** Docker, Docker Compose
-
-## Project structure
-
-```
-run-ledger/
-├── src/main/java/com/runledger/
-│   ├── controller/          # REST endpoints
-│   ├── dto/                 # Request / response records
-│   ├── entity/              # JPA entities
-│   ├── repository/          # Spring Data JPA repositories
-│   ├── service/             # Business logic
-│   ├── config/              # Configuration (security, logging)
-│   ├── security/            # Authentication/authorisation (future)
-│   ├── exception/           # Global exception handler
-│   └── util/                # Helper utilities
-├── src/main/resources/
-│   ├── application.yml      # Main configuration
-│   └── db/migration/        # Flyway SQL scripts
-├── src/test/                # Unit & integration tests
-├── docker-compose.yml       # PostgreSQL container
-├── pom.xml                  # Maven build
-└── README.md
-```
-
-## Why RunLedger?
-
-Existing experiment trackers either require SDK lock‑in (MLflow, Aim) or are generic databases that leave schema design and indexing up to the user (Datasette, ClickHouse). RunLedger fills the gap:
-
-- **Zero SDK lock‑in** – works with any language or tool that can write JSON to disk or `curl`.
-- **SQL‑powered querying** – safe parameterised API for everyday searches, with a planned sandboxed raw SQL endpoint for advanced users.
-- **Opinionated JSONB schema** – avoids sparse‑column pollution; no migrations needed when metrics change.
-- **Self‑hosted & lightweight** – one `docker compose up` command to start the database, then run the Spring Boot app.
-- **Tamper‑evidence (coming soon)** – cryptographic hash chain to prove runs haven’t been altered after ingestion.
-
-## Development
-
-### Prerequisites
-
-- Java 17+
-- Docker (for PostgreSQL)
-- Maven (or use the included `mvnw` wrapper)
-
-### Run tests
-
-```bash
-./mvnw test
-```
-
-### Build JAR
-
-```bash
-./mvnw clean package
-```
-
-### Run with Docker (app + database)
-
-```bash
+# 1. Start the backend
 docker compose up -d
-./mvnw spring-boot:run
+
+# 2. Ingest your experiment files
+runledger scan ~/experiments --batch my-sweep
+
+# 3. Search
+runledger search --metric accuracy --op gt --value 0.9 --batch my-sweep
+
+# 4. Aggregate
+runledger aggregate --metric accuracy --agg AVG --group-by experiment --batch my-sweep
 ```
 
-## Roadmap
+New to the tool? Try the guided wizard:
 
-- [x] Block search (parameterised metric filtering)
-- [x] Health & metrics endpoints
-- [x] Robust error handling
-- [ ] Pagination & sorting
-- [ ] Full‑text & fuzzy search (already have DB indexes)
-- [ ] Sandboxed raw SQL endpoint
-- [ ] Tamper‑evidence (hash chain + integrity verification)
-- [ ] Batch ingestion (zip upload)
-- [ ] Swagger UI (when compatible with Spring Boot 4)
+```bash
+runledger guided
+```
+
+## Key Features
+
+### 🔍 Search any JSON field, no schema required
+- Structured numeric/text comparisons on arbitrary dot-paths (`metrics.accuracy`, `config.optimizer.learning_rate`).
+- Full-text phrase search with stemming.
+- Fuzzy trigram search for typos.
+- Compound AND/OR queries: combine multiple conditions.
+- Batch isolation: group runs by folder and filter within a batch.
+
+### 📊 Aggregates & group-by
+Answer research questions directly:
+
+```bash
+runledger aggregate --metric accuracy --agg AVG --group-by experiment --batch sweep
+```
+
+Supported functions: `AVG`, `MAX`, `MIN`, `SUM`, `COUNT`. Group by any scalar field.
+
+### 🎯 Exact match pointers (“JSON line numbers”)
+For array searches (`results[].sst2_cacc < 0.8`), the CLI shows exactly which array elements matched:
+
+```text
+Matches:
+  • results[0].sst2_cacc = 0.924312
+  • results[3].sst2_cacc = 0.933486
+```
+
+Works for scalar, array, and compound conditions.
+
+### 🔬 Block-depth control
+Limit output to the relevant part of a large JSON payload with `--block 0` (tightest match), `--block 1` (parent), etc.
+
+### 📁 JSONL ingestion
+Ingest one-JSON-object-per-line logs (common in training scripts) with `--jsonl`.
+
+### 🔎 Run diff
+Compare any two runs side-by-side:
+
+```bash
+runledger diff 12 15
+```
+
+Or see every version of a re-scanned run with `--history`.
+
+### 💾 Saved searches
+Save frequent queries and re-run them with a single command:
+
+```bash
+runledger search --metric accuracy --op gt --value 0.9 --batch sweep --save best-accuracy
+runledger search --saved best-accuracy
+```
+
+### 🧭 Interactive & guided modes
+- Filter-as-you-type interactive search (`runledger interactive`).
+- Step-by-step wizard for first-time users (`runledger guided`).
+
+### 🔒 Self-hosted, local-first
+Runs in Docker with a single `docker compose up -d`.  
+All data stays on your machine. No internet, no accounts, no vendor lock-in.
+
+## Installation
+
+### From PyPI (CLI only)
+
+```bash
+pip install runledger-cli
+```
+
+### From source
+
+```bash
+git clone https://github.com/yourusername/run-ledger.git
+cd run-ledger
+docker compose up -d          # starts PostgreSQL + Spring Boot
+pip install -e .              # installs the CLI
+```
+
+## Quick Tour
+
+### Scan & Discover
+
+```bash
+runledger scan experiments/ --batch my-sweep
+```
+
+The CLI prints a schema summary showing every metric found, its full dot-path, and depth. Array keys are shown with `[]` notation (e.g., `results[].cacc`).
+
+### Search
+
+```bash
+# Single condition
+runledger search --metric loss --op lt --value 0.2 --batch my-sweep --summary
+
+# Compound AND
+runledger search --metric accuracy --op gt --value 0.9 --metric loss --op lt --value 0.2 --combine and
+
+# Full-text
+runledger search --q "weighted averaging"
+
+# Fuzzy
+runledger search --q "weighted avaraging" --fuzzy
+```
+
+### Aggregate
+
+```bash
+runledger aggregate --metric accuracy --agg AVG --group-by config.learning_rate --batch my-sweep
+```
+
+### Diff
+
+```bash
+runledger diff 12 15
+runledger diff --history 12 --batch my-sweep
+```
+
+### Export
+
+```bash
+runledger export --metric accuracy --op gt --value 0.9 --batch my-sweep --block 0 --output results.txt
+```
+
+### Saved searches
+
+```bash
+runledger search --metric accuracy --op gt --value 0.9 --batch sweep --save best-accuracy
+runledger search --saved best-accuracy
+runledger saved list
+runledger saved delete best-accuracy
+```
+
+## Metrics-Path Convention
+
+RunLedger uses **dot-separated paths** to address any value in a JSON payload.
+
+| Example | Meaning |
+| -------- | ------- |
+| `accuracy` | Top-level field |
+| `metrics.loss` | Nested field |
+| `results[].sst2_cacc` | Field inside each element of an array |
+| `phases[].metrics.loss` | Nested field inside array elements |
+
+**Shorthand keys:** After scanning a batch, the CLI shows a shorthand key for every leaf field. Typing `cacc` will automatically resolve to `client.results[].cacc` if that’s the only (or shallowest) occurrence. Use the full path when there’s ambiguity.
+
+Discover available metrics with:
+
+```bash
+runledger metrics --batch my-sweep
+runledger metrics --batch my-sweep --verbose   # shows full paths
+```
+
+## API
+
+See [`docs/api.md`](docs/api.md) for the complete REST API reference.
+
+## Usage Examples
+
+See [`docs/examples.md`](docs/examples.md) for real-world workflows.
 
 ## License
 
-MIT (or your preferred license)
-```
+MIT

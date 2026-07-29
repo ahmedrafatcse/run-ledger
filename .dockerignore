@@ -1,0 +1,32 @@
+# Build output
+target/
+
+# Test data
+test-data/
+
+# Python cache
+__pycache__/
+*.pyc
+cli/__pycache__/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md          # keep README for potential future use
+docs/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Python tests
+cli/tests/

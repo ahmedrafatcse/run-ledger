@@ -16,7 +16,9 @@ services:
   app:
     build: .
     ports:
-      - "8080:8080"
+      # Only accessible from this machine (localhost). Any local user can connect;
+      # for shared servers, add authentication or a reverse proxy.
+      - "127.0.0.1:8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/runledger
       SPRING_DATASOURCE_USERNAME: runledger

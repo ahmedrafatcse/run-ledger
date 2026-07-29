@@ -59,7 +59,7 @@ class RunLedgerApplicationTests {
     void singleRunIngestion_shouldReturn201() throws Exception {
         mockMvc.perform(post("/api/runs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"payload\":{\"accuracy\":0.88}}"))
+                        .content("{\"payload\":{\"_source\":{\"file\":\"test1\",\"index\":0},\"accuracy\":0.88}}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.payload.accuracy").value(0.88))
@@ -82,7 +82,7 @@ class RunLedgerApplicationTests {
     void singleRunRetrieval_shouldReturn200_and404() throws Exception {
         String response = mockMvc.perform(post("/api/runs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"payload\":{\"accuracy\":0.95}}"))
+                        .content("{\"payload\":{\"_source\":{\"file\":\"test2\",\"index\":0},\"accuracy\":0.95}}"))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         int id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
@@ -102,13 +102,13 @@ class RunLedgerApplicationTests {
     void blockSearchNumeric_shouldFilterCorrectly() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.95}}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"num1\",\"index\":0},\"metrics\":{\"accuracy\":0.95}}}"));
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.80}}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"num2\",\"index\":0},\"metrics\":{\"accuracy\":0.80}}}"));
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.91}}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"num3\",\"index\":0},\"metrics\":{\"accuracy\":0.91}}}"));
 
         mockMvc.perform(get("/api/runs")
                         .param("metric", "metrics.accuracy")
@@ -123,10 +123,10 @@ class RunLedgerApplicationTests {
     void blockSearchText_shouldFilterCorrectly() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"status\":\"completed\"}}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"text1\",\"index\":0},\"metrics\":{\"status\":\"completed\"}}}"));
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"status\":\"running\"}}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"text2\",\"index\":0},\"metrics\":{\"status\":\"running\"}}}"));
 
         mockMvc.perform(get("/api/runs")
                         .param("metric", "metrics.status")
@@ -144,7 +144,7 @@ class RunLedgerApplicationTests {
     void batchIsolation_ingestWithBatch_shouldStoreBatch() throws Exception {
         mockMvc.perform(post("/api/runs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"payload\":{\"metrics\":{\"accuracy\":0.95}},\"batch\":\"sweep-A\"}"))
+                        .content("{\"payload\":{\"_source\":{\"file\":\"batch1\",\"index\":0},\"metrics\":{\"accuracy\":0.95}},\"batch\":\"sweep-A\"}"))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/runs")
@@ -161,10 +161,10 @@ class RunLedgerApplicationTests {
     void batchIsolation_metricsEndpoint_shouldReturnCorrectKeysPerBatch() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"acc\":0.9,\"loss\":0.1}},\"batch\":\"batch-1\"}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"m1\",\"index\":0},\"metrics\":{\"acc\":0.9,\"loss\":0.1}},\"batch\":\"batch-1\"}"));
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"f1\":0.8,\"precision\":0.7}},\"batch\":\"batch-2\"}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"m2\",\"index\":0},\"metrics\":{\"f1\":0.8,\"precision\":0.7}},\"batch\":\"batch-2\"}"));
 
         mockMvc.perform(get("/api/runs/metrics").param("batch", "batch-1"))
                 .andExpect(status().isOk())
@@ -182,10 +182,10 @@ class RunLedgerApplicationTests {
     void batchIsolation_searchWithinBatch_shouldReturnOnlyBatchRuns() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"score\":0.95}},\"batch\":\"batch-A\"}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"iso1\",\"index\":0},\"metrics\":{\"score\":0.95}},\"batch\":\"batch-A\"}"));
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"score\":0.85}},\"batch\":\"batch-B\"}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"iso2\",\"index\":0},\"metrics\":{\"score\":0.85}},\"batch\":\"batch-B\"}}"));
 
         mockMvc.perform(get("/api/runs")
                         .param("metric", "metrics.score")
@@ -212,7 +212,7 @@ class RunLedgerApplicationTests {
     void batchMetricDiscovery_returnsShorthandKeysFromMapping() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.95}},\"batch\":\"batch-shorthand\"}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"sh1\",\"index\":0},\"metrics\":{\"accuracy\":0.95}},\"batch\":\"batch-shorthand\"}"));
 
         mockMvc.perform(get("/api/runs/metrics").param("batch", "batch-shorthand"))
                 .andExpect(status().isOk())
@@ -224,10 +224,10 @@ class RunLedgerApplicationTests {
     void shorthandSearch_resolvesKeyCorrectly() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.95}},\"batch\":\"batch-resolve\"}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"sh2\",\"index\":0},\"metrics\":{\"accuracy\":0.95}},\"batch\":\"batch-resolve\"}"));
 
         mockMvc.perform(get("/api/runs")
-                        .param("metric", "accuracy")     // plain key
+                        .param("metric", "accuracy")
                         .param("op", "gt")
                         .param("value", "0.9")
                         .param("batch", "batch-resolve"))
@@ -240,10 +240,10 @@ class RunLedgerApplicationTests {
     void dotPathSearch_withoutBatch_works() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"metrics\":{\"accuracy\":0.95}}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"dot1\",\"index\":0},\"metrics\":{\"accuracy\":0.95}}}"));
 
         mockMvc.perform(get("/api/runs")
-                        .param("metric", "metrics.accuracy")   // full dot‑path, no batch
+                        .param("metric", "metrics.accuracy")
                         .param("op", "gt")
                         .param("value", "0.9"))
                 .andExpect(status().isOk())
@@ -258,7 +258,7 @@ class RunLedgerApplicationTests {
     void fullTextPhraseSearch_findsMatchingRun() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"experiment\":\"backdoor_defense\",\"notes\":\"applied weighted averaging to merge\"}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"ft1\",\"index\":0},\"experiment\":\"backdoor_defense\",\"notes\":\"applied weighted averaging to merge\"}}"));
 
         mockMvc.perform(get("/api/runs")
                         .param("q", "weighted averaging"))
@@ -274,9 +274,8 @@ class RunLedgerApplicationTests {
     void fuzzySearch_findsApproximateMatch() throws Exception {
         mockMvc.perform(post("/api/runs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"payload\":{\"experiment\":\"backdoor_defense\",\"notes\":\"applied weighted averaging\"}}"));
+                .content("{\"payload\":{\"_source\":{\"file\":\"fz1\",\"index\":0},\"experiment\":\"backdoor_defense\",\"notes\":\"applied weighted averaging\"}}"));
 
-        // "weighted avaraging" should still match "weighted averaging" via trigram similarity
         mockMvc.perform(get("/api/runs")
                         .param("q", "weighted avaraging")
                         .param("fuzzy", "true"))
@@ -298,5 +297,39 @@ class RunLedgerApplicationTests {
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value(containsString("op")));
         System.out.println("Invalid operator validation --- SUCCESS");
+    }
+
+    @Test
+    void savedSearch_saveLoadDelete_shouldWork() throws Exception {
+        String params = "{\"metrics\":[\"accuracy\"],\"ops\":[\"gt\"],\"values\":[\"0.9\"],\"combine\":\"and\"}";
+
+        // 1. Save (paramsJson is a JSON string, not an object)
+        mockMvc.perform(post("/api/saved")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"test-save\",\"batch\":\"sample\",\"paramsJson\":\""
+                                + params.replace("\"", "\\\"") + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("test-save"));
+
+        // 2. Load – paramsJson is stored as a JSON string, normalized with spaces
+        mockMvc.perform(get("/api/saved/test-save").param("batch", "sample"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paramsJson").isString())
+                .andExpect(jsonPath("$.paramsJson").value(org.hamcrest.Matchers.containsString("\"metrics\": [\"accuracy\"]")))
+                .andExpect(jsonPath("$.paramsJson").value(org.hamcrest.Matchers.containsString("\"ops\": [\"gt\"]")))
+                .andExpect(jsonPath("$.paramsJson").value(org.hamcrest.Matchers.containsString("\"values\": [\"0.9\"]")));
+
+        // 3. List
+        mockMvc.perform(get("/api/saved").param("batch", "sample"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("test-save"));
+
+        // 4. Delete
+        mockMvc.perform(delete("/api/saved/test-save").param("batch", "sample"))
+                .andExpect(status().isNoContent());
+
+        // 5. Confirm deleted
+        mockMvc.perform(get("/api/saved/test-save").param("batch", "sample"))
+                .andExpect(status().isNotFound());
     }
 }

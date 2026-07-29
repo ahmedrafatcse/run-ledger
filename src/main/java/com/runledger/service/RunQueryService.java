@@ -114,7 +114,7 @@ public class RunQueryService {
     }
 
     // ---------------------------------------------------------------
-    // Multi‑condition AND/OR query
+    // Multi‑condition AND/OR query (now filters to latest versions)
     // ---------------------------------------------------------------
     public Page<Run> queryByMultipleFilters(MultiFilterRequest request, Pageable pageable) {
         List<ResolvedFilter> resolved = new ArrayList<>();
@@ -125,13 +125,13 @@ public class RunQueryService {
 
         CompoundQueryBuilder.CompoundQuery q = compoundQueryBuilder.build(resolved, request.combine());
 
-        String dataSql = "SELECT r.* FROM run r WHERE " + q.whereClause() + " ORDER BY r.created_at DESC";
-        String countSql = "SELECT count(*) FROM run r WHERE " + q.countWhere();
+        String dataSql = "SELECT r.* FROM run r WHERE r.latest = true AND " + q.whereClause() + " ORDER BY r.created_at DESC";
+        String countSql = "SELECT count(*) FROM run r WHERE r.latest = true AND " + q.countWhere();
 
         if (request.batch() != null && !request.batch().isBlank()) {
             String batchParam = "batch_" + UUID.randomUUID().toString().replace("-", "");
-            dataSql = "SELECT r.* FROM run r WHERE r.batch = :" + batchParam + " AND " + q.whereClause() + " ORDER BY r.created_at DESC";
-            countSql = "SELECT count(*) FROM run r WHERE r.batch = :" + batchParam + " AND " + q.countWhere();
+            dataSql = "SELECT r.* FROM run r WHERE r.latest = true AND r.batch = :" + batchParam + " AND " + q.whereClause() + " ORDER BY r.created_at DESC";
+            countSql = "SELECT count(*) FROM run r WHERE r.latest = true AND r.batch = :" + batchParam + " AND " + q.countWhere();
             q.params().put(batchParam, request.batch());
         }
 
@@ -175,6 +175,7 @@ public class RunQueryService {
             CROSS JOIN LATERAL jsonb_array_elements(r.payload #> string_to_array(:arrayPath, '.'))
                                 WITH ORDINALITY AS arr(elem, idx)
             WHERE r.id = ANY(string_to_array(:ids, ',')::bigint[])
+              AND r.latest = true
               AND jsonb_typeof(arr.elem #> string_to_array(:leafParts, ',')) = :jsonType
               AND (""" + predicate + ")";
 
@@ -199,6 +200,123 @@ public class RunQueryService {
                     .add(new MatchDetail(pointer, snippet, val));
         }
         return result;
+    }
+
+    public Map<Long, List<MatchDetail>> getCompoundArrayMatches(
+            List<Long> runIds, String arrayRoot, List<ResolvedFilter> arrayFilters, String combine) {
+        if (runIds.isEmpty() || arrayFilters.isEmpty()) return Map.of();
+
+        String idsCsv = runIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+
+        List<ResolvedFilter> elementFilters = new ArrayList<>();
+        for (ResolvedFilter f : arrayFilters) {
+            int idx = f.getPath().indexOf("[]");
+            String leafPart = f.getPath().substring(idx + 2);
+            if (leafPart.startsWith(".")) leafPart = leafPart.substring(1);
+            elementFilters.add(new ResolvedFilter(leafPart, f.getOp(), f.getValue()));
+        }
+
+        CompoundQueryBuilder.CompoundQuery cq = compoundQueryBuilder.buildElementPredicate(elementFilters, combine);
+
+        String sql = """
+            SELECT r.id,
+                   (arr.idx - 1) AS array_index,
+                   arr.elem            AS snippet,
+                   arr.elem #> string_to_array(:leaf, ',') AS value
+            FROM run r
+            CROSS JOIN LATERAL jsonb_array_elements(r.payload #> string_to_array(:arrayPath, '.'))
+                                WITH ORDINALITY AS arr(elem, idx)
+            WHERE r.id = ANY(string_to_array(:ids, ',')::bigint[])
+              AND r.latest = true
+              AND """ + cq.whereClause();
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("ids", idsCsv);
+        query.setParameter("arrayPath", arrayRoot);
+        String representativeLeaf = elementFilters.get(0).getPath().replace(",", ".");
+        query.setParameter("leaf", representativeLeaf);
+
+        for (var entry : cq.params().entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = query.getResultList();
+        Map<Long, List<MatchDetail>> result = new HashMap<>();
+        for (Object[] row : rows) {
+            Long id = ((Number) row[0]).longValue();
+            int arrayIdx = ((Number) row[1]).intValue();
+            String snippetJson = (String) row[2];
+            JsonNode snippet = safeReadTree(snippetJson);
+            Object val = convertValue(row[3]);
+            String leafSample = elementFilters.get(0).getPath().replace(",", ".");
+            String pointer = arrayRoot + "[" + arrayIdx + "]." + leafSample;
+            result.computeIfAbsent(id, k -> new ArrayList<>())
+                    .add(new MatchDetail(pointer, snippet, val));
+        }
+        return result;
+    }
+
+    // ---------------------------------------------------------------
+    // Aggregate query
+    // ---------------------------------------------------------------
+    public List<Map<String, Object>> aggregate(String agg, String metric, String groupBy, String batch) {
+        Set<String> allowed = Set.of("AVG", "MAX", "MIN", "SUM", "COUNT");
+        if (!allowed.contains(agg.toUpperCase())) {
+            throw new IllegalArgumentException("Unsupported aggregate: " + agg + ". Allowed: " + allowed);
+        }
+
+        String metricExpr = agg.equalsIgnoreCase("COUNT") && (metric == null || metric.isBlank())
+                ? "*"
+                : "(r.payload #>> string_to_array(:metric, '.'))::numeric";
+
+        StringBuilder sql = new StringBuilder("SELECT ");
+        sql.append(agg.toUpperCase()).append("(").append(metricExpr).append(") AS result");
+
+        if (groupBy != null && !groupBy.isBlank()) {
+            sql.append(", (r.payload #>> string_to_array(:groupBy, '.')) AS group_val");
+        }
+
+        sql.append(" FROM run r WHERE r.latest = true");
+
+        if (batch != null && !batch.isBlank()) {
+            sql.append(" AND r.batch = :batch");
+        }
+
+        if (groupBy != null && !groupBy.isBlank()) {
+            sql.append(" GROUP BY group_val ORDER BY result DESC");
+        }
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        if (!agg.equalsIgnoreCase("COUNT") || (metric != null && !metric.isBlank())) {
+            query.setParameter("metric", metric);
+        }
+        if (groupBy != null && !groupBy.isBlank()) {
+            query.setParameter("groupBy", groupBy);
+        }
+        if (batch != null && !batch.isBlank()) {
+            query.setParameter("batch", batch);
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Object> rows = query.getResultList();
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (Object row : rows) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            if (groupBy != null && !groupBy.isBlank()) {
+                // Multiple columns: expect Object[] with [result, group_val]
+                Object[] cols = (Object[]) row;
+                Number resultValue = (Number) cols[0];
+                entry.put("result", resultValue.doubleValue());
+                entry.put("group", cols[1] != null ? cols[1].toString() : null);
+            } else {
+                // Single column: scalar (BigDecimal, Double, etc.)
+                Number resultValue = (Number) row;
+                entry.put("result", resultValue.doubleValue());
+            }
+            results.add(entry);
+        }
+        return results;
     }
 
     // ---------------------------------------------------------------

@@ -1,11 +1,18 @@
 package com.runledger.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.runledger.dto.Filter;
+import com.runledger.dto.MatchDetail;
 import com.runledger.dto.MultiFilterRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,8 +22,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.*;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,8 +40,21 @@ class RunQueryServiceTest {
     @Mock
     private CompoundQueryBuilder compoundQueryBuilder;
 
+    @Mock
+    private EntityManager entityManager;
+
+    private ObjectMapper objectMapper = new ObjectMapper()
+            .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+
     @InjectMocks
     private RunQueryService runQueryService;
+
+    @BeforeEach
+    void setUp() {
+        // Re-inject objectMapper after @InjectMocks because it’s not a mock
+        runQueryService = new RunQueryService(runRepository, batchSchemaService,
+                compoundQueryBuilder, entityManager, objectMapper);
+    }
 
     // ---------------------------------------------------------------
     // Greater than / Greater than or equal
@@ -220,7 +238,7 @@ class RunQueryServiceTest {
     }
 
     // ---------------------------------------------------------------
-    // Multi‑filter AND/OR search (corrected)
+    // Multi‑filter AND/OR search
     // ---------------------------------------------------------------
 
     @Test
@@ -229,7 +247,8 @@ class RunQueryServiceTest {
                 List.of(new Filter("accuracy", "gt", "0.9"), new Filter("loss", "lt", "0.2")),
                 "and",
                 "test-batch",
-                null
+                null,   // block
+                null    // pointers (null → default true)
         );
 
         when(batchSchemaService.getOrCreateMapping("test-batch"))
@@ -252,7 +271,71 @@ class RunQueryServiceTest {
         Page<Run> result = runQueryService.queryByMultipleFilters(request, PageRequest.of(0, 10));
 
         assertThat(result).isNotEmpty();
-        // Verify the custom repository method was invoked
         verify(runRepository, times(1)).findByCompoundFilter(anyString(), anyMap(), anyString(), any(Pageable.class));
+    }
+
+    // ---------------------------------------------------------------
+    // Pointer localisation tests (NEW)
+    // ---------------------------------------------------------------
+
+    @Test
+    void getScalarMatch_shouldReturnMatchDetailForMatchingScalar() {
+        Run run = new Run();
+        run.setPayload("{\"accuracy\":0.95, \"loss\":0.12}");
+        List<MatchDetail> matches = runQueryService.getScalarMatch(run, "accuracy", "gt", "0.9");
+
+        assertThat(matches).hasSize(1);
+        assertThat(matches.get(0).pointer()).isEqualTo("accuracy");
+        assertThat((Double) matches.get(0).value()).isEqualTo(0.95);
+        assertThat(matches.get(0).snippet()).isNotNull();
+    }
+
+    @Test
+    void getScalarMatch_shouldReturnEmptyForNonMatchingScalar() {
+        Run run = new Run();
+        run.setPayload("{\"accuracy\":0.85}");
+        List<MatchDetail> matches = runQueryService.getScalarMatch(run, "accuracy", "gt", "0.9");
+
+        assertThat(matches).isEmpty();
+    }
+
+    @Test
+    void getScalarMatch_shouldReturnEmptyForMissingPath() {
+        Run run = new Run();
+        run.setPayload("{\"accuracy\":0.95}");
+        List<MatchDetail> matches = runQueryService.getScalarMatch(run, "loss", "lt", "0.2");
+
+        assertThat(matches).isEmpty();
+    }
+
+    @Test
+    void getArrayMatches_shouldReturnCorrectPointers() {
+        // Mock EntityManager native query
+        Query mockQuery = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery);
+        when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
+
+        // Simulate one row returned by the query: run id=1, array index=2, snippet JSON, value
+        String snippetJson = "{\"budget\":0.01,\"method\":\"proxy\",\"sst2_cacc\":0.92}";
+        Object[] row = new Object[]{1L, 3L, snippetJson, 0.92};
+        List<Object[]> rows = List.<Object[]>of(row);
+        when(mockQuery.getResultList()).thenReturn(rows);
+
+        Map<Long, List<MatchDetail>> result = runQueryService.getArrayMatches(
+                List.of(1L), "results", "sst2_cacc", "gt", "0.9");
+
+        assertThat(result).containsKey(1L);
+        List<MatchDetail> details = result.get(1L);
+        assertThat(details).hasSize(1);
+        assertThat(details.get(0).pointer()).isEqualTo("results[3].sst2_cacc");
+        assertThat(details.get(0).value()).isEqualTo(0.92);
+        assertThat(details.get(0).snippet()).isNotNull();
+    }
+
+    @Test
+    void getArrayMatches_shouldHandleEmptyInput() {
+        Map<Long, List<MatchDetail>> result = runQueryService.getArrayMatches(
+                List.of(), "results", "sst2_cacc", "gt", "0.9");
+        assertThat(result).isEmpty();
     }
 }

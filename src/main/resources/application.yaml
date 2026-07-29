@@ -2,6 +2,9 @@
 # Central Config File for the Backend
 # MERN equivalent would be: env + config files
 
+server:
+  port: 8080
+
 spring:
   application:
     name: run-ledger

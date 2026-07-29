@@ -53,4 +53,12 @@ public class Run {
      */
     @Column(name = "payload_hash")
     private String payloadHash;
+
+    /**
+     * True for the most recent version of a run identity.
+     * Older versions are marked false during ingestion.
+     * Search queries always filter to latest = true.
+     */
+    @Column(name = "latest", nullable = false)
+    private boolean latest = true;
 }
