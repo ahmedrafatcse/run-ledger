@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
@@ -170,5 +171,30 @@ class RunVersioningIntegrationTest {
         // Also verify total versions ≤3 (original + at most 2 new ones, one may have collided)
         long totalVersions = runRepository.count();
         assert totalVersions >= 2 && totalVersions <= 3 : "Expected 2-3 total versions, got " + totalVersions;
+    }
+
+    @Test
+    void getVersions_shouldReturnOrderedVersions() throws Exception {
+        // 1. Ingest original
+        mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"payload\":" + SOURCE_JSON + ",\"batch\":\"version-batch\"}"))
+                .andExpect(status().isCreated());
+
+        // 2. Ingest modified (new version)
+        mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"payload\":" + MODIFIED_JSON + ",\"batch\":\"version-batch\"}"))
+                .andExpect(status().isCreated());
+
+        // 3. Call /versions endpoint
+        mockMvc.perform(get("/api/runs/versions")
+                        .param("batch", "version-batch")
+                        .param("sourceFile", "run.json")
+                        .param("sourceIndex", "0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].payload.experiment").value("version_test"))
+                .andExpect(jsonPath("$[1].payload.experiment").value("version_test_modified"));
     }
 }

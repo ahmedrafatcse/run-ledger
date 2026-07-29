@@ -10,8 +10,8 @@ import pytest
 import requests
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-COMPOSE_FILE = PROJECT_ROOT / "docker-compose.yml"
-HEALTH_URL = "http://localhost:8080/actuator/health"
+COMPOSE_FILE = PROJECT_ROOT / "docker-compose.test.yml"
+HEALTH_URL = "http://localhost:8081/actuator/health"
 API_BASE = "http://localhost:8080/api/runs"
 
 def wait_for_health(timeout=120):
