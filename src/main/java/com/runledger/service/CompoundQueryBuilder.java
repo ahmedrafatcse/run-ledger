@@ -1,6 +1,5 @@
 package com.runledger.service;
 
-import com.runledger.dto.Filter;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -13,11 +12,7 @@ public class CompoundQueryBuilder {
 
     /**
      * Build a parameterised SQL WHERE clause and count clause for a list of
-     * resolved filters. Each filter's path is already resolved (scalar or array).
-     *
-     * @param filters list of resolved filters (path, op, value)
-     * @param combine "and" or "or"
-     * @return a record containing the WHERE fragment, COUNT fragment, and the parameter map
+     * resolved filters (run‑level). Each filter's path references {@code r.payload}.
      */
     public CompoundQuery build(List<ResolvedFilter> filters, String combine) {
         paramCounter = 0;
@@ -34,12 +29,35 @@ public class CompoundQueryBuilder {
 
         String conjunction = " " + combine.toUpperCase() + " ";
         String whereClause = clauses.stream().collect(Collectors.joining(conjunction, "(", ")"));
-
-        // The count query uses the same WHERE clause
         String countWhere = whereClause;
 
         return new CompoundQuery(whereClause, countWhere, params);
     }
+
+    /**
+     * Build a parameterised WHERE clause for element‑level predicates.
+     * Each filter's path is relative to an array element (e.g. "sst2_cacc").
+     * The generated SQL references {@code arr.elem} instead of {@code r.payload}.
+     *
+     * @param filters list of resolved filters (paths are leaf paths inside the element)
+     * @param combine "and" or "or"
+     * @return a CompoundQuery containing the element‑level WHERE clause, count fragment, and parameter map
+     */
+    public CompoundQuery buildElementPredicate(List<ResolvedFilter> filters, String combine) {
+        paramCounter = 0;
+        Map<String, Object> params = new LinkedHashMap<>();
+        List<String> clauses = new ArrayList<>();
+
+        for (ResolvedFilter f : filters) {
+            clauses.add(buildElementScalarClause(f, params));
+        }
+
+        String conjunction = " " + combine.toUpperCase() + " ";
+        String whereClause = clauses.stream().collect(Collectors.joining(conjunction, "(", ")"));
+        return new CompoundQuery(whereClause, whereClause, params);
+    }
+
+    // ── Run‑level clause builders (reference r.payload) ──
 
     private String buildScalarClause(ResolvedFilter f, Map<String, Object> params) {
         String pathParam = "p" + paramCounter++;
@@ -67,7 +85,6 @@ public class CompoundQueryBuilder {
                 yield "(r.payload #>> string_to_array(:" + pathParam + ", '.'))::numeric <= :" + v;
             }
             case "eq"  -> {
-                // Try numeric first, fallback to text
                 Double num = tryParseDouble(f.getValue());
                 if (num != null) {
                     String v = "v" + paramCounter++;
@@ -85,7 +102,6 @@ public class CompoundQueryBuilder {
 
     private String buildArrayClause(ResolvedFilter f, Map<String, Object> params) {
         String path = f.getPath();
-        // Replace [] with [*] for jsonb_path_query
         String jsonbPath = path.replace("[]", "[*]");
         int lastDot = jsonbPath.lastIndexOf('.');
         String leaf = jsonbPath.substring(lastDot + 1);
@@ -108,7 +124,6 @@ public class CompoundQueryBuilder {
                     yield "EXISTS (SELECT 1 FROM jsonb_path_query(r.payload, ('$.' || :" + pathParam +
                             ")::jsonpath) AS elem WHERE " + numericGuard + " AND " + comparison + ")";
                 } else {
-                    // text equality
                     params.put(v, f.getValue());
                     yield "EXISTS (SELECT 1 FROM jsonb_path_query(r.payload, ('$.' || :" + pathParam +
                             ")::jsonpath) AS elem WHERE elem #>> string_to_array(:" + leafParam +
@@ -118,6 +133,51 @@ public class CompoundQueryBuilder {
             default -> throw new IllegalArgumentException("Unsupported operator: " + f.getOp());
         };
     }
+
+    // ── Element‑level clause builder (references arr.elem) ──
+
+    private String buildElementScalarClause(ResolvedFilter f, Map<String, Object> params) {
+        String pathParam = "p" + paramCounter++;
+        params.put(pathParam, f.getPath());
+
+        return switch (f.getOp()) {
+            case "gt"  -> {
+                String v = "v" + paramCounter++;
+                params.put(v, Double.parseDouble(f.getValue()));
+                yield "(arr.elem #>> string_to_array(:" + pathParam + ", '.'))::numeric > :" + v;
+            }
+            case "gte" -> {
+                String v = "v" + paramCounter++;
+                params.put(v, Double.parseDouble(f.getValue()));
+                yield "(arr.elem #>> string_to_array(:" + pathParam + ", '.'))::numeric >= :" + v;
+            }
+            case "lt"  -> {
+                String v = "v" + paramCounter++;
+                params.put(v, Double.parseDouble(f.getValue()));
+                yield "(arr.elem #>> string_to_array(:" + pathParam + ", '.'))::numeric < :" + v;
+            }
+            case "lte" -> {
+                String v = "v" + paramCounter++;
+                params.put(v, Double.parseDouble(f.getValue()));
+                yield "(arr.elem #>> string_to_array(:" + pathParam + ", '.'))::numeric <= :" + v;
+            }
+            case "eq"  -> {
+                Double num = tryParseDouble(f.getValue());
+                if (num != null) {
+                    String v = "v" + paramCounter++;
+                    params.put(v, num);
+                    yield "(arr.elem #>> string_to_array(:" + pathParam + ", '.'))::numeric = :" + v;
+                } else {
+                    String v = "v" + paramCounter++;
+                    params.put(v, f.getValue());
+                    yield "arr.elem #>> string_to_array(:" + pathParam + ", '.') = :" + v;
+                }
+            }
+            default -> throw new IllegalArgumentException("Unsupported operator: " + f.getOp());
+        };
+    }
+
+    // ── Utility ──
 
     private String opSymbol(String op) {
         return switch (op) {

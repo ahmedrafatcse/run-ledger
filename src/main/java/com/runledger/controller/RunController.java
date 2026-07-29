@@ -2,12 +2,14 @@ package com.runledger.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.runledger.dto.Filter;
 import com.runledger.dto.MatchDetail;
 import com.runledger.dto.MultiFilterRequest;
 import com.runledger.dto.RunRequest;
 import com.runledger.dto.RunResponse;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import com.runledger.service.ResolvedFilter;
 import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
 import jakarta.validation.Valid;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/runs")
@@ -46,11 +49,25 @@ public class RunController {
     @PostMapping
     public ResponseEntity<RunResponse> ingestRun(@Valid @RequestBody RunRequest request) {
         Run saved = ingestionService.ingest(request);
-        // Extract payload JsonNode for response
-        JsonNode payload = objectMapper.valueToTree(request.payload());
+        JsonNode payload = request.payload();
         return ResponseEntity
                 .created(URI.create("/api/runs/" + saved.getId()))
                 .body(new RunResponse(saved.getId(), payload, saved.getCreatedAt()));
+    }
+
+    // ---------- Aggregate endpoint ----------
+    @GetMapping("/aggregate")
+    public ResponseEntity<?> aggregate(
+            @RequestParam String agg,
+            @RequestParam String metric,
+            @RequestParam(required = false) String groupBy,
+            @RequestParam(required = false) String batch) {
+        try {
+            List<Map<String, Object>> results = runQueryService.aggregate(agg, metric, groupBy, batch);
+            return ResponseEntity.ok(results);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // ---------- Retrieve a single run by ID ----------
@@ -59,6 +76,16 @@ public class RunController {
         return runRepository.findById(id)
                 .map(run -> ResponseEntity.ok(toRunResponse(run)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/versions")
+    public ResponseEntity<List<RunResponse>> getVersions(
+            @RequestParam String batch,
+            @RequestParam String sourceFile,
+            @RequestParam int sourceIndex) {
+        List<Run> runs = runRepository.findByBatchAndSourceFileAndSourceIndexOrderByVersionAsc(
+                batch, sourceFile, sourceIndex);
+        return ResponseEntity.ok(runs.stream().map(this::toRunResponse).toList());
     }
 
     // ---------- Unified GET: text search, block search, or batch listing ----------
@@ -114,8 +141,8 @@ public class RunController {
                     : runQueryService.queryByMetric(metric, op, value, unsortedPageable);
 
             // Build response list with optional block truncation and matched pointers
-            List<RunResponse> responses = buildResponses(runs.getContent(), resolvedPath,
-                    op, value, block, pointers);
+            List<RunResponse> responses = buildResponsesForSingleMetric(
+                    runs.getContent(), resolvedPath, op, value, block, pointers);
             Page<RunResponse> responsePage = new PageImpl<>(responses, unsortedPageable, runs.getTotalElements());
             return ResponseEntity.ok(responsePage);
         }
@@ -137,7 +164,58 @@ public class RunController {
 
         Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<Run> runs = runQueryService.queryByMultipleFilters(request, unsorted);
-        return ResponseEntity.ok(runs.map(this::toRunResponse));
+
+        // Resolve paths and extract common array path for compound pointers / block-depth
+        List<ResolvedFilter> resolvedFilters = request.filters().stream()
+                .map(f -> new ResolvedFilter(
+                        request.batch() != null && !request.batch().isBlank()
+                                ? runQueryService.resolvePath(f.metric(), request.batch())
+                                : f.metric(),
+                        f.op(), f.value()))
+                .collect(Collectors.toList());
+
+        boolean pointers = request.pointers() != null ? request.pointers() : true;
+
+        // Check if there are any array conditions at all
+        boolean hasArrayConditions = resolvedFilters.stream().anyMatch(f -> f.getPath().contains("[]"));
+
+        if (pointers && !hasArrayConditions) {
+            // All conditions are scalar – build a MatchDetail for each filter
+            List<RunResponse> responses = runs.getContent().stream()
+                    .map(run -> buildScalarCompoundResponse(run, resolvedFilters, request.block()))
+                    .collect(Collectors.toList());
+            Page<RunResponse> responsePage = new PageImpl<>(responses, unsorted, runs.getTotalElements());
+            return ResponseEntity.ok(responsePage);
+        }
+
+        // Determine if all array conditions reference the same array root
+        String commonArrayRoot = findCommonArrayRoot(resolvedFilters);
+        boolean allArraySameRoot = commonArrayRoot != null;
+
+        // For block-depth, use the first resolved path if all metrics agree on a common path
+        String commonPath = findCommonBlockPath(resolvedFilters);
+
+        List<RunResponse> responses;
+        if (pointers && allArraySameRoot) {
+            // Compound pointers on same array
+            responses = buildResponsesForCompoundArray(
+                    runs.getContent(), resolvedFilters, commonArrayRoot, request.combine(),
+                    request.block(), pointers, commonPath);
+        } else {
+            // No pointers or different arrays – simple mapping with optional block
+            responses = runs.getContent().stream()
+                    .map(run -> {
+                        if (request.block() != null && request.block() >= 0 && commonPath != null) {
+                            return toRunResponse(run, commonPath, request.block());
+                        } else {
+                            return toRunResponse(run);
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        Page<RunResponse> responsePage = new PageImpl<>(responses, unsorted, runs.getTotalElements());
+        return ResponseEntity.ok(responsePage);
     }
 
     // ---------- Metric key discovery ----------
@@ -157,13 +235,10 @@ public class RunController {
 
     // ---------- Helper methods ----------
 
-    /**
-     * Builds a list of RunResponses, applying block truncation and matched pointers.
-     */
-    private List<RunResponse> buildResponses(List<Run> runs, String resolvedPath,
-                                             String op, String value,
-                                             Integer block, boolean pointers) {
-        // Pre‑fetch array matches for all runs if needed (one query for the page)
+    /** Single-metric response builder – unchanged from before */
+    private List<RunResponse> buildResponsesForSingleMetric(List<Run> runs, String resolvedPath,
+                                                            String op, String value,
+                                                            Integer block, boolean pointers) {
         Map<Long, List<MatchDetail>> arrayMatchesMap = null;
         boolean isArrayPath = resolvedPath.contains("[]");
         if (pointers && isArrayPath) {
@@ -184,8 +259,6 @@ public class RunController {
             } else {
                 resp = toRunResponse(run);
             }
-
-            // Always add matched when pointers is true (no block restriction)
             if (pointers) {
                 List<MatchDetail> matched;
                 if (isArrayPath) {
@@ -200,6 +273,97 @@ public class RunController {
             responses.add(resp);
         }
         return responses;
+    }
+
+    /** Compound array pointer extraction */
+    private List<RunResponse> buildResponsesForCompoundArray(
+            List<Run> runs, List<ResolvedFilter> filters, String commonArrayRoot,
+            String combine, Integer block, boolean pointers, String blockPath) {
+
+        List<Long> ids = runs.stream().map(Run::getId).toList();
+        // Delegate to RunQueryService for compound array matches
+        Map<Long, List<MatchDetail>> matchesMap = runQueryService.getCompoundArrayMatches(
+                ids, commonArrayRoot, filters, combine);
+
+        List<RunResponse> responses = new ArrayList<>();
+        for (Run run : runs) {
+            RunResponse resp;
+            if (block != null && block >= 0 && blockPath != null) {
+                resp = toRunResponse(run, blockPath, block);
+            } else {
+                resp = toRunResponse(run);
+            }
+            if (pointers) {
+                List<MatchDetail> matched = matchesMap.getOrDefault(run.getId(), List.of());
+                resp.setMatched(matched.isEmpty() ? null : matched);
+            }
+            responses.add(resp);
+        }
+        return responses;
+    }
+
+    /**
+     * Build a RunResponse with scalar compound pointers.
+     * For AND, every filter must hold; for OR, we re-check each one.
+     */
+    private RunResponse buildScalarCompoundResponse(Run run, List<ResolvedFilter> filters, Integer block) {
+        RunResponse resp;
+        if (block != null && block >= 0 && !filters.isEmpty()) {
+            // Use the first filter's path as the block anchor (all scalar paths are valid)
+            resp = toRunResponse(run, filters.get(0).getPath(), block);
+        } else {
+            resp = toRunResponse(run);
+        }
+
+        List<MatchDetail> matched = new ArrayList<>();
+        for (ResolvedFilter f : filters) {
+            // Re-check the condition against the payload
+            List<MatchDetail> single = runQueryService.getScalarMatch(run, f.getPath(), f.getOp(), f.getValue());
+            if (!single.isEmpty()) {
+                matched.add(single.get(0));
+            }
+        }
+        resp.setMatched(matched.isEmpty() ? null : matched);
+        return resp;
+    }
+
+    /** Finds the common array root (part before []) if all array filters share it, else null */
+    private String findCommonArrayRoot(List<ResolvedFilter> filters) {
+        String common = null;
+        for (ResolvedFilter f : filters) {
+            if (f.getPath().contains("[]")) {
+                int idx = f.getPath().indexOf("[]");
+                String root = f.getPath().substring(0, idx);
+                if (common == null) {
+                    common = root;
+                } else if (!common.equals(root)) {
+                    return null;
+                }
+            }
+        }
+        return common;
+    }
+
+    /** Returns a common dot‑path for block‑depth if all filters agree on the path (for non‑array metrics) */
+    private String findCommonBlockPath(List<ResolvedFilter> filters) {
+        String common = null;
+        for (ResolvedFilter f : filters) {
+            String path = f.getPath();
+            if (path.contains("[]")) {
+                if (common == null) {
+                    common = path;
+                } else if (!common.equals(path)) {
+                    return null;
+                }
+            } else {
+                if (common == null) {
+                    common = path;
+                } else if (!common.equals(path)) {
+                    return null;
+                }
+            }
+        }
+        return common;
     }
 
     // ---------- Response builders ----------

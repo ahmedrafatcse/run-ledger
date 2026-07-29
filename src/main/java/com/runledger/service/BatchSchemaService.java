@@ -26,40 +26,19 @@ public class BatchSchemaService {
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * Returns a key → path mapping for the given batch.
-     * <p>
-     * Always rebuilds the mapping from the current runs in the batch,
-     * so re‑scans pick up new keys immediately.
-     *
-     * @param batch the batch name
-     * @return unmodifiable map of shorthand key → full dot‑separated path
-     */
     public Map<String, String> getOrCreateMapping(String batch) {
-        // Remove any stale mapping
         batchSchemaRepository.deleteById(batch);
         batchSchemaRepository.flush();
-
         return buildAndSaveMapping(batch);
     }
 
-    /**
-     * Returns only the shorthand keys (what the user sees).
-     */
     public Set<String> getAvailableKeys(String batch) {
         return getOrCreateMapping(batch).keySet();
     }
 
-    /**
-     * Force rebuild the mapping for a given batch and return it.
-     * (Redundant now because {@link #getOrCreateMapping} rebuilds every time,
-     * but kept for backward compatibility.)
-     */
     public Map<String, String> rebuildMapping(String batch) {
         return getOrCreateMapping(batch);
     }
-
-    // ---------- private helpers ----------
 
     private Map<String, String> buildAndSaveMapping(String batch) {
         List<Run> runs = runRepository.findByBatch(batch, Pageable.unpaged()).getContent();
@@ -69,12 +48,9 @@ public class BatchSchemaService {
             try {
                 JsonNode payload = objectMapper.readTree(run.getPayload());
                 collectLeafPaths("", payload, 0, mapping);
-            } catch (Exception ignored) {
-                // skip malformed JSON payloads
-            }
+            } catch (Exception ignored) {}
         }
 
-        // Save the mapping
         BatchSchema schema = new BatchSchema();
         schema.setBatch(batch);
         schema.setKeyMapping(toJsonString(mapping));
@@ -83,21 +59,6 @@ public class BatchSchemaService {
         return Collections.unmodifiableMap(mapping);
     }
 
-    /**
-     * Recursively walks the JSON tree and records every leaf key.
-     *
-     * <p>For scalar leaves, the key is recorded with its dot‑path.
-     * For arrays of objects, the key is recorded with a {@code []} suffix
-     * (e.g. {@code results[].threshold}) and the shallowest path is kept.
-     *
-     * <p>If the same key exists both as a scalar and inside an array,
-     * both entries are kept independently (different paths).
-     *
-     * @param prefix the dot‑separated path built so far (empty for root)
-     * @param node   the current JSON node
-     * @param depth  how many levels deep from the root (unused for now, but available)
-     * @param result the accumulator: shorthand key → full dot‑path
-     */
     private void collectLeafPaths(String prefix, JsonNode node, int depth,
                                   Map<String, String> result) {
         if (node == null || node.isNull()) return;
@@ -105,51 +66,43 @@ public class BatchSchemaService {
         if (node.isObject()) {
             node.fields().forEachRemaining(entry -> {
                 String key = entry.getKey();
+                if ("_source".equals(key)) {
+                    return;   // skip internal source metadata
+                }
                 JsonNode value = entry.getValue();
                 String path = prefix.isEmpty() ? key : prefix + "." + key;
 
                 if (value.isObject()) {
                     collectLeafPaths(path, value, depth + 1, result);
                 } else if (value.isArray() && isArrayOfObjects(value)) {
-                    // Recurse into each array element to discover all leaf keys
                     collectArrayLeafPaths(path, value, depth + 1, result);
                 } else {
-                    // Scalar leaf – keep only the shallowest occurrence
                     result.merge(key, path, (existing, newPath) ->
                             existing.split("\\.").length <= newPath.split("\\.").length
                                     ? existing : newPath);
                 }
             });
         }
-        // arrays at the root level (edge case) – not expected, but handled
         if (node.isArray() && isArrayOfObjects(node)) {
             collectArrayLeafPaths(prefix, node, depth, result);
         }
     }
 
-    /**
-     * Iterates over every element of an array of objects and collects
-     * leaf keys with bracket notation.
-     *
-     * <p>Each discovered key is stored as {@code prefix[].key}, e.g.
-     * {@code client.results[].threshold}.  If the same key already exists
-     * as a scalar path, both entries are kept independently.
-     */
     private void collectArrayLeafPaths(String prefix, JsonNode array, int depth,
                                        Map<String, String> result) {
         for (JsonNode element : array) {
             if (element != null && element.isObject()) {
                 element.fields().forEachRemaining(entry -> {
                     String key = entry.getKey();
+                    if ("_source".equals(key)) {
+                        return;   // skip source inside arrays (unlikely, but safe)
+                    }
                     JsonNode value = entry.getValue();
                     String arrayPath = prefix + "[]." + key;
 
                     if (value.isObject()) {
-                        // Recurse deeper if the element itself is an object
                         collectLeafPaths(arrayPath, value, depth + 1, result);
                     } else {
-                        // Store with the bracket notation as the shorthand key
-                        // We use the full bracket path as the stored value
                         result.putIfAbsent(key, arrayPath);
                     }
                 });
@@ -157,10 +110,6 @@ public class BatchSchemaService {
         }
     }
 
-    /**
-     * Returns true if the array contains at least one object element.
-     * Arrays of primitives (strings, numbers) are not recursed into.
-     */
     private boolean isArrayOfObjects(JsonNode array) {
         if (array == null || !array.isArray()) return false;
         for (JsonNode element : array) {

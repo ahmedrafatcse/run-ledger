@@ -1,6 +1,7 @@
 package com.runledger.controller;
 
 import com.runledger.config.SecurityConfig;
+import com.runledger.dto.MatchDetail;
 import com.runledger.dto.RunRequest;
 import com.runledger.entity.Run;
 import com.runledger.exception.GlobalExceptionHandler;
@@ -20,10 +21,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -50,7 +51,6 @@ class RunControllerTest {
     @Test
     void postValidRun_shouldReturn201() throws Exception {
         Run saved = run(1L, "{\"accuracy\":0.95}");
-        // Now the controller delegates to ingestionService, not runRepository
         when(ingestionService.ingest(any(RunRequest.class))).thenReturn(saved);
 
         mockMvc.perform(post("/api/runs")
@@ -64,7 +64,6 @@ class RunControllerTest {
 
     @Test
     void postMissingPayload_shouldReturn400() throws Exception {
-        // Validation fails before the service is called, so no stubbing needed
         mockMvc.perform(post("/api/runs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -212,6 +211,8 @@ class RunControllerTest {
 
         when(runQueryService.queryByMultipleFilters(any(), any(Pageable.class)))
                 .thenReturn(page);
+        when(runQueryService.resolvePath(eq("accuracy"), eq("test-batch"))).thenReturn("accuracy");
+        when(runQueryService.resolvePath(eq("loss"), eq("test-batch"))).thenReturn("loss");
 
         String requestBody = """
         {
@@ -220,7 +221,8 @@ class RunControllerTest {
             {"metric": "loss", "op": "lt", "value": "0.2"}
           ],
           "combine": "and",
-          "batch": "test-batch"
+          "batch": "test-batch",
+          "pointers": false
         }
         """;
 
@@ -230,5 +232,151 @@ class RunControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].payload.loss").value(0.18));
+    }
+
+    // ---------- Pointer tests ----------
+    @Test
+    void singleMetricGetWithPointers_shouldReturnMatchedField() throws Exception {
+        Run run = run(1L, "{\"accuracy\":0.95}");
+        Page<Run> page = new PageImpl<>(List.of(run), Pageable.unpaged(), 1);
+        when(runQueryService.queryByMetric(eq("accuracy"), eq("gt"), eq("0.9"), any(Pageable.class)))
+                .thenReturn(page);
+        when(runQueryService.getScalarMatch(eq(run), eq("accuracy"), eq("gt"), eq("0.9")))
+                .thenReturn(List.of(new MatchDetail("accuracy", null, 0.95)));
+
+        mockMvc.perform(get("/api/runs")
+                        .param("metric", "accuracy")
+                        .param("op", "gt")
+                        .param("value", "0.9")
+                        .param("pointers", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].matched[0].pointer").value("accuracy"))
+                .andExpect(jsonPath("$.content[0].matched[0].value").value(0.95));
+    }
+
+    @Test
+    void singleMetricGetWithPointersFalse_shouldOmitMatchedField() throws Exception {
+        Run run = run(1L, "{\"accuracy\":0.95}");
+        Page<Run> page = new PageImpl<>(List.of(run), Pageable.unpaged(), 1);
+        when(runQueryService.queryByMetric(eq("accuracy"), eq("gt"), eq("0.9"), any(Pageable.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/runs")
+                        .param("metric", "accuracy")
+                        .param("op", "gt")
+                        .param("value", "0.9")
+                        .param("pointers", "false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].matched").doesNotExist());
+    }
+
+    @Test
+    void compoundSearchSameArray_shouldReturnPointers() throws Exception {
+        Run run = run(1L, "{\"results\":[{\"sst2_cacc\":0.95,\"fin_asr\":0.5}]}");
+        run.setBatch("defense");
+        Page<Run> page = new PageImpl<>(List.of(run), Pageable.unpaged(), 1);
+        when(runQueryService.queryByMultipleFilters(any(), any(Pageable.class)))
+                .thenReturn(page);
+
+        when(runQueryService.resolvePath(eq("results[].sst2_cacc"), eq("defense")))
+                .thenReturn("results[].sst2_cacc");
+        when(runQueryService.resolvePath(eq("results[].fin_asr"), eq("defense")))
+                .thenReturn("results[].fin_asr");
+
+        Map<Long, List<MatchDetail>> matchMap = Map.of(1L, List.of(
+                new MatchDetail("results[0].sst2_cacc", null, 0.95)
+        ));
+        when(runQueryService.getCompoundArrayMatches(
+                anyList(), eq("results"), anyList(), eq("and")))
+                .thenReturn(matchMap);
+
+        String requestBody = """
+        {
+          "filters": [
+            {"metric": "results[].sst2_cacc", "op": "gt", "value": "0.9"},
+            {"metric": "results[].fin_asr", "op": "gt", "value": "0.4"}
+          ],
+          "combine": "and",
+          "batch": "defense"
+        }
+        """;
+
+        mockMvc.perform(post("/api/runs/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].matched[0].pointer").value("results[0].sst2_cacc"));
+    }
+
+    @Test
+    void compoundSearchDifferentArrays_shouldNotReturnPointers() throws Exception {
+        Run run = run(1L, "{\"results\":[{\"sst2_cacc\":0.95}],\"phases\":[{\"loss\":0.1}]}");
+        run.setBatch("defense");
+        Page<Run> page = new PageImpl<>(List.of(run), Pageable.unpaged(), 1);
+        when(runQueryService.queryByMultipleFilters(any(), any(Pageable.class)))
+                .thenReturn(page);
+
+        when(runQueryService.resolvePath(eq("results[].sst2_cacc"), eq("defense")))
+                .thenReturn("results[].sst2_cacc");
+        when(runQueryService.resolvePath(eq("phases[].loss"), eq("defense")))
+                .thenReturn("phases[].loss");
+
+        String requestBody = """
+        {
+          "filters": [
+            {"metric": "results[].sst2_cacc", "op": "gt", "value": "0.9"},
+            {"metric": "phases[].loss", "op": "lt", "value": "0.2"}
+          ],
+          "combine": "and",
+          "batch": "defense"
+        }
+        """;
+
+        mockMvc.perform(post("/api/runs/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].matched").doesNotExist());
+    }
+
+    // ---------- Mixed scalar + array compound test (NEW) ----------
+    @Test
+    void compoundSearchMixedScalarAndArray_shouldReturnOnlyArrayPointers() throws Exception {
+        Run run = run(1L, "{\"accuracy\":0.94,\"results\":[{\"sst2_cacc\":0.92,\"threshold\":0.8}]}");
+        run.setBatch("defense");
+        Page<Run> page = new PageImpl<>(List.of(run), Pageable.unpaged(), 1);
+        when(runQueryService.queryByMultipleFilters(any(), any(Pageable.class)))
+                .thenReturn(page);
+
+        // Resolve paths for both filters
+        when(runQueryService.resolvePath(eq("accuracy"), eq("defense"))).thenReturn("accuracy");
+        when(runQueryService.resolvePath(eq("results[].sst2_cacc"), eq("defense")))
+                .thenReturn("results[].sst2_cacc");
+
+        // Mock compound array matches (only the array conditions are considered)
+        Map<Long, List<MatchDetail>> matchMap = Map.of(1L, List.of(
+                new MatchDetail("results[0].sst2_cacc", null, 0.92)
+        ));
+        when(runQueryService.getCompoundArrayMatches(
+                anyList(), eq("results"), anyList(), eq("and")))
+                .thenReturn(matchMap);
+
+        String requestBody = """
+        {
+          "filters": [
+            {"metric": "accuracy", "op": "gt", "value": "0.9"},
+            {"metric": "results[].sst2_cacc", "op": "gt", "value": "0.9"}
+          ],
+          "combine": "and",
+          "batch": "defense"
+        }
+        """;
+
+        mockMvc.perform(post("/api/runs/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].matched[0].pointer").value("results[0].sst2_cacc"))
+                .andExpect(jsonPath("$.content[0].matched.length()").value(1));
     }
 }

@@ -13,17 +13,19 @@ import java.util.Optional;
 public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCustom {
 
     // ================================================================
-    // Original block‑search methods (no batch filter)
+    // Original block‑search methods (no batch filter) – with latest=true
     // ================================================================
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric > :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric > :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric > :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric > :value
         """,
             nativeQuery = true)
     Page<Run> findByMetricGreaterThan(@Param("path") String path,
@@ -32,12 +34,14 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
         """,
             nativeQuery = true)
     Page<Run> findByMetricGreaterThanOrEqual(@Param("path") String path,
@@ -46,12 +50,14 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric < :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric < :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric < :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric < :value
         """,
             nativeQuery = true)
     Page<Run> findByMetricLessThan(@Param("path") String path,
@@ -60,12 +66,14 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
         """,
             nativeQuery = true)
     Page<Run> findByMetricLessThanOrEqual(@Param("path") String path,
@@ -74,12 +82,14 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric = :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric = :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric = :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric = :value
         """,
             nativeQuery = true)
     Page<Run> findByMetricEquals(@Param("path") String path,
@@ -88,12 +98,14 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.payload #>> string_to_array(:path, '.') = :value
+        WHERE r.latest = true
+          AND r.payload #>> string_to_array(:path, '.') = :value
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.payload #>> string_to_array(:path, '.') = :value
+        WHERE r.latest = true
+          AND r.payload #>> string_to_array(:path, '.') = :value
         """,
             nativeQuery = true)
     Page<Run> findByMetricEqualsText(@Param("path") String path,
@@ -101,18 +113,20 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
                                      Pageable pageable);
 
     // ================================================================
-    // Batch‑filtered block‑search methods
+    // Batch‑filtered block‑search methods – with latest=true
     // ================================================================
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric > :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric > :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric > :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric > :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
@@ -123,13 +137,15 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric >= :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
@@ -140,13 +156,15 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric < :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric < :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric < :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric < :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
@@ -157,13 +175,15 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric <= :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
@@ -174,13 +194,15 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric = :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric = :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE (r.payload #>> string_to_array(:path, '.'))::numeric = :value
+        WHERE r.latest = true
+          AND (r.payload #>> string_to_array(:path, '.'))::numeric = :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
@@ -191,13 +213,15 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.payload #>> string_to_array(:path, '.') = :value
+        WHERE r.latest = true
+          AND r.payload #>> string_to_array(:path, '.') = :value
           AND r.batch = :batch
         ORDER BY r.created_at DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.payload #>> string_to_array(:path, '.') = :value
+        WHERE r.latest = true
+          AND r.payload #>> string_to_array(:path, '.') = :value
           AND r.batch = :batch
         """,
             nativeQuery = true)
@@ -207,12 +231,13 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
                                           Pageable pageable);
 
     // ================================================================
-    // Array‑aware search methods ([] → [*] translation handled by service)
+    // Array‑aware search methods – with latest=true
     // ================================================================
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -223,7 +248,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -239,7 +265,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -250,7 +277,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -266,7 +294,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -277,7 +306,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -293,7 +323,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -304,7 +335,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -320,7 +352,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -331,7 +364,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -347,7 +381,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -357,7 +392,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE EXISTS (
+        WHERE r.latest = true
+          AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
             ) AS elem
@@ -371,12 +407,13 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
                                     Pageable pageable);
 
     // ================================================================
-    // Batch‑filtered array‑aware search methods
+    // Batch‑filtered array‑aware search methods – with latest=true
     // ================================================================
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -388,7 +425,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -406,7 +444,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -418,7 +457,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -436,7 +476,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -448,7 +489,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -466,7 +508,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -478,7 +521,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -496,7 +540,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -508,7 +553,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -526,7 +572,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -537,7 +584,8 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE r.batch = :batch
+        WHERE r.latest = true
+          AND r.batch = :batch
           AND EXISTS (
             SELECT 1 FROM jsonb_path_query(
                 r.payload, ('$.' || :path)::jsonpath
@@ -553,39 +601,43 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
                                          Pageable pageable);
 
     // ================================================================
-    // Metric key discovery
+    // Metric key discovery (no change needed; runs across versions still have same keys)
     // ================================================================
 
     @Query(value = """
         SELECT DISTINCT key
-        FROM run,
-        LATERAL jsonb_object_keys(payload->'metrics') AS k(key)
+        FROM run r,
+        LATERAL jsonb_object_keys(r.payload->'metrics') AS k(key)
+        WHERE r.latest = true
         """, nativeQuery = true)
     List<String> findDistinctMetricKeys();
 
     @Query(value = """
         SELECT DISTINCT key
-        FROM run,
-        LATERAL jsonb_object_keys(payload->'metrics') AS k(key)
-        WHERE batch = :batch
+        FROM run r,
+        LATERAL jsonb_object_keys(r.payload->'metrics') AS k(key)
+        WHERE r.batch = :batch AND r.latest = true
         """, nativeQuery = true)
     List<String> findDistinctMetricKeysByBatch(@Param("batch") String batch);
 
-    // Batch‑only listing
-    Page<Run> findByBatch(String batch, Pageable pageable);
+    // Batch‑only listing (add latest filter)
+    @Query("SELECT r FROM Run r WHERE r.batch = :batch AND r.latest = true")
+    Page<Run> findByBatch(@Param("batch") String batch, Pageable pageable);
 
     // ================================================================
-    // Full‑text phrase search (over entire JSONB payload)
+    // Full‑text phrase search – with latest=true
     // ================================================================
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE jsonb_to_tsvector('english', r.payload, '"all"')
+        WHERE r.latest = true
+          AND jsonb_to_tsvector('english', r.payload, '"all"')
                @@ phraseto_tsquery('english'::regconfig, cast(:phrase as text))
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE jsonb_to_tsvector('english', r.payload, '"all"')
+        WHERE r.latest = true
+          AND jsonb_to_tsvector('english', r.payload, '"all"')
                @@ phraseto_tsquery('english'::regconfig, cast(:phrase as text))
         """,
             nativeQuery = true)
@@ -594,13 +646,15 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE jsonb_to_tsvector('english', r.payload, '"all"')
+        WHERE r.latest = true
+          AND jsonb_to_tsvector('english', r.payload, '"all"')
                @@ phraseto_tsquery('english'::regconfig, cast(:phrase as text))
           AND r.batch = :batch
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE jsonb_to_tsvector('english', r.payload, '"all"')
+        WHERE r.latest = true
+          AND jsonb_to_tsvector('english', r.payload, '"all"')
                @@ phraseto_tsquery('english'::regconfig, cast(:phrase as text))
           AND r.batch = :batch
         """,
@@ -610,17 +664,19 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
                                   Pageable pageable);
 
     // ================================================================
-    // Fuzzy trigram search (over entire JSONB payload using word_similarity)
+    // Fuzzy trigram search – with latest=true
     // ================================================================
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE word_similarity(:term, r.payload::text) > :threshold
+        WHERE r.latest = true
+          AND word_similarity(:term, r.payload::text) > :threshold
         ORDER BY word_similarity(:term, r.payload::text) DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE word_similarity(:term, r.payload::text) > :threshold
+        WHERE r.latest = true
+          AND word_similarity(:term, r.payload::text) > :threshold
         """,
             nativeQuery = true)
     Page<Run> searchByFuzzy(@Param("term") String term,
@@ -629,13 +685,15 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
 
     @Query(value = """
         SELECT r.* FROM run r
-        WHERE word_similarity(:term, r.payload::text) > :threshold
+        WHERE r.latest = true
+          AND word_similarity(:term, r.payload::text) > :threshold
           AND r.batch = :batch
         ORDER BY word_similarity(:term, r.payload::text) DESC
         """,
             countQuery = """
         SELECT count(*) FROM run r
-        WHERE word_similarity(:term, r.payload::text) > :threshold
+        WHERE r.latest = true
+          AND word_similarity(:term, r.payload::text) > :threshold
           AND r.batch = :batch
         """,
             nativeQuery = true)
@@ -645,17 +703,14 @@ public interface RunRepository extends JpaRepository<Run, Long>, RunRepositoryCu
                                  Pageable pageable);
 
     // ================================================================
-    // Run identity lookup (V6 — versioning model)
+    // Run identity lookup (unchanged)
     // ================================================================
 
-    /**
-     * Returns the most recent version of a run identified by its
-     * (batch, source_file, source_index) composite key.
-     * Used by the ingestion service to decide whether to insert a new
-     * version or treat the re‑scan as idempotent.
-     */
     Optional<Run> findTopByBatchAndSourceFileAndSourceIndexOrderByVersionDesc(
             @Param("batch") String batch,
             @Param("sourceFile") String sourceFile,
             @Param("sourceIndex") int sourceIndex);
+
+    List<Run> findByBatchAndSourceFileAndSourceIndexOrderByVersionAsc(
+            String batch, String sourceFile, int sourceIndex);
 }

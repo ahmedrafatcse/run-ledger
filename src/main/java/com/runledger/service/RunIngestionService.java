@@ -14,6 +14,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class RunIngestionService {
@@ -39,45 +40,42 @@ public class RunIngestionService {
      */
     @Transactional
     public Run ingest(RunRequest request) {
-        // 1. Extract identity from payload
         String payloadStr = request.payload().toString();
         String sourceFile = extractSourceFile(payloadStr);
         int sourceIndex = extractSourceIndex(payloadStr);
-        String batch = (request.batch() != null && !request.batch().isBlank()) ? request.batch() : null;
 
-        // 2. Compute canonical hash of the new payload
+        // If no _source was provided, assign a random identity to avoid collisions
+        if (sourceFile == null || sourceFile.isBlank()) {
+            sourceFile = "anon-" + UUID.randomUUID().toString();
+            sourceIndex = 0;
+        }
+
+        String batch = (request.batch() != null && !request.batch().isBlank()) ? request.batch() : null;
         String newHash = computeCanonicalHash(request.payload());
 
-        // 3. Look up the latest version for this identity
         Optional<Run> latestOpt = runRepository
                 .findTopByBatchAndSourceFileAndSourceIndexOrderByVersionDesc(batch, sourceFile, sourceIndex);
 
         if (latestOpt.isPresent()) {
             Run latest = latestOpt.get();
-            // If the payload hasn't changed, return existing (idempotent)
             if (newHash.equals(latest.getPayloadHash())) {
                 return latest;
             }
-            // Otherwise, create a new version
-            Run newVersion = new Run();
-            newVersion.setPayload(payloadStr);
-            newVersion.setBatch(batch);
-            newVersion.setSourceFile(sourceFile);
-            newVersion.setSourceIndex(sourceIndex);
-            newVersion.setVersion(latest.getVersion() + 1);
-            newVersion.setPayloadHash(newHash);
-            return runRepository.save(newVersion);
-        } else {
-            // First version
-            Run firstVersion = new Run();
-            firstVersion.setPayload(payloadStr);
-            firstVersion.setBatch(batch);
-            firstVersion.setSourceFile(sourceFile);
-            firstVersion.setSourceIndex(sourceIndex);
-            firstVersion.setVersion(1);
-            firstVersion.setPayloadHash(newHash);
-            return runRepository.save(firstVersion);
+            // Mark previous version as not latest
+            latest.setLatest(false);
+            runRepository.save(latest);
         }
+
+        // Create new version (always the latest)
+        Run newVersion = new Run();
+        newVersion.setPayload(payloadStr);
+        newVersion.setBatch(batch);
+        newVersion.setSourceFile(sourceFile);
+        newVersion.setSourceIndex(sourceIndex);
+        newVersion.setVersion(latestOpt.map(r -> r.getVersion() + 1).orElse(1));
+        newVersion.setPayloadHash(newHash);
+        newVersion.setLatest(true);
+        return runRepository.save(newVersion);
     }
 
     // ── Private helpers ──
