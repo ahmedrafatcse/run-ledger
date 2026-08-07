@@ -1,3 +1,7 @@
+Here’s the updated README with the troubleshooting note added right after the installation instructions. The primary command remains `runledger`, but users who hit the Windows PATH issue now have a clear fallback.
+
+---
+
 # RunLedger
 
 **A zero-instrumentation experiment registry.** Point RunLedger at a folder of JSON experiment files and search, filter, aggregate, diff, and export the results; no SDK, no code changes, no cloud.
@@ -13,6 +17,24 @@ pip install runledger-cli
 ```
 
 Requires Docker. If it's not installed, `runledger` detects that on first run and links you straight to the installer; everything else (Postgres, the backend) is managed for you.
+
+### Troubleshooting: `runledger` command not found (Windows)
+
+On some Windows systems, the Python Scripts folder is not automatically added to your PATH. If `runledger` is not recognized after installation, you have two options:
+
+1. **Add the Scripts folder to your PATH permanently** (recommended):
+    - Find where `runledger` was installed: `pip show runledger-cli | findstr Location`
+    - Navigate to that folder, then up one level to the `Scripts` directory.
+    - Add that `Scripts` path to your system PATH via **System Properties > Environment Variables**.
+    - Restart your terminal.
+
+2. **Use the Python module fallback** (works immediately, no PATH changes):
+   ```bash
+   python -m cli.ledger
+   ```
+   All subcommands and the guided wizard work exactly the same way; just prefix every command with `python -m cli.ledger`.
+
+Once the PATH is configured, `runledger` will work as shown in the examples below.
 
 <details>
 <summary>Installing from source</summary>
