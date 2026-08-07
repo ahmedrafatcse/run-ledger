@@ -333,11 +333,13 @@ def navigate_json_pointer(doc, pointer: str):
 
 def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
     payload = run.get("payload", {})
+    # Use experiment name, then source file, then run id
     if isinstance(payload, dict):
         source_file = payload.get("_source", {}).get("file") or payload.get("experiment") or f"run-{run['id']}"
     else:
         source_file = f"run-{run['id']}"
 
+    # Show matched pointers if available
     matched = run.get("matched")
     if matched:
         console.print("  Matches:")
@@ -359,6 +361,7 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
         console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}"))
         return
 
+    # Strip "[]" so JSON Pointer navigation works
     parts = [seg.replace("[]", "") for seg in dot_path.split(".")]
     max_block = len(parts) - 1
 
@@ -372,6 +375,7 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
 
     for block in sorted(levels, reverse=True):
         if block == 0 and matched:
+            # For block=0, show each matched snippet individually
             for i, m in enumerate(matched):
                 snippet = m.get("snippet")
                 try:
@@ -381,9 +385,19 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
                 title = f"Run {run['id']} · {source_file}  |  metric: {dot_path}  |  depth: 0 (match {i+1}/{len(matched)})"
                 console.print(Panel(pretty, title=title))
         else:
-            ancestor_parts = parts[:len(parts) - (block + 1)]
-            pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
-            node = navigate_json_pointer(payload, pointer) if pointer else payload
+            if block > 0 and matched:
+                # Use the first match's concrete pointer for precise navigation
+                # Example: "clients[1].sweep[0].fin_asr" → "/clients/1/sweep"
+                concrete = matched[0]['pointer']
+                segments = concrete.replace('[', '.').replace(']', '').split('.')
+                ancestor_segments = segments[:len(segments) - (block + 1)]
+                pointer = "/" + "/".join(ancestor_segments) if ancestor_segments else ""
+                node = navigate_json_pointer(payload, pointer) if pointer else payload
+            else:
+                ancestor_parts = parts[:len(parts) - (block + 1)]
+                pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
+                node = navigate_json_pointer(payload, pointer) if pointer else payload
+
             depth_label = ""
             if block == max_block:
                 depth_label = " (full run)"
@@ -394,7 +408,6 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
             except Exception:
                 pretty = str(node)
             console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}  |  metric: {dot_path}  |  depth: {block}{depth_label}"))
-
 # ------------------------------------------------------------
 # Export helpers
 # ------------------------------------------------------------
@@ -444,9 +457,16 @@ def build_export_blocks(content, dot_path, block_levels, include_pointers=True):
                         "value": m.get("value")
                     })
             else:
-                ancestor_parts = parts[:len(parts) - (block + 1)]
-                pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
-                node = navigate_json_pointer(payload, pointer) if pointer else payload
+                if block > 0 and matched:
+                    concrete = matched[0]['pointer']
+                    segments = concrete.replace('[', '.').replace(']', '').split('.')
+                    ancestor_segments = segments[:len(segments) - (block + 1)]
+                    pointer = "/" + "/".join(ancestor_segments) if ancestor_segments else ""
+                    node = navigate_json_pointer(payload, pointer) if pointer else payload
+                else:
+                    ancestor_parts = parts[:len(parts) - (block + 1)]
+                    pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
+                    node = navigate_json_pointer(payload, pointer) if pointer else payload
                 blocks.append({
                     "id": run["id"],
                     "sourceFile": source_file,
