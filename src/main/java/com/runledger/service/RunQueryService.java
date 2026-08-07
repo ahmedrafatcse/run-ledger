@@ -159,29 +159,93 @@ public class RunQueryService {
         }
     }
 
-    public Map<Long, List<MatchDetail>> getArrayMatches(List<Long> runIds, String arrayPath,
-                                                        String leafParts, String op, String value) {
+    /**
+     * Extracts exact array‑element pointers for paths with any number of nested arrays.
+     * Example: "clients[].sweep[].fin_asr" returns pointers like "clients[1].sweep[0].fin_asr".
+     */
+    public Map<Long, List<MatchDetail>> getArrayMatches(List<Long> runIds, String fullPath,
+                                                        String op, String value) {
         if (runIds.isEmpty()) return Map.of();
 
         String idsCsv = runIds.stream().map(String::valueOf).collect(Collectors.joining(","));
 
-        String predicate = buildArrayPredicate(op, value);
-        String sql = """
-            SELECT r.id,
-                   (arr.idx - 1) AS array_index,
-                   arr.elem            AS snippet,
-                   arr.elem #> string_to_array(:leafParts, ',') AS value
-            FROM run r
-            CROSS JOIN LATERAL jsonb_array_elements(r.payload #> string_to_array(:arrayPath, '.'))
-                                WITH ORDINALITY AS arr(elem, idx)
-            WHERE r.id = ANY(string_to_array(:ids, ',')::bigint[])
-              AND r.latest = true
-              AND jsonb_typeof(arr.elem #> string_to_array(:leafParts, ',')) = :jsonType
-              AND (""" + predicate + ")";
+        // Parse the full path into segments: e.g. "clients[].sweep[].fin_asr"
+        List<String> segments = new ArrayList<>();
+        int start = 0;
+        while (start < fullPath.length()) {
+            int bracket = fullPath.indexOf("[]", start);
+            int dot = fullPath.indexOf('.', start);
+            if (bracket == -1 && dot == -1) {
+                segments.add(fullPath.substring(start));
+                break;
+            }
+            if (bracket != -1 && (dot == -1 || bracket < dot)) {
+                if (bracket > start) segments.add(fullPath.substring(start, bracket));
+                segments.add("[]");
+                start = bracket + 2;
+                if (start < fullPath.length() && fullPath.charAt(start) == '.') start++;
+            } else {
+                if (dot > start) segments.add(fullPath.substring(start, dot));
+                start = dot + 1;
+            }
+        }
 
-        Query query = entityManager.createNativeQuery(sql);
+        // Build SQL with nested lateral joins that chain correctly
+        StringBuilder from = new StringBuilder("FROM run r");
+        List<String> arrayPaths = new ArrayList<>();
+        List<String> indexAliases = new ArrayList<>();
+        int arrayCount = 0;
+        List<String> pathSegments = new ArrayList<>();   // non‑array segments from the last "[]"
+
+        for (String seg : segments) {
+            if (seg.equals("[]")) {
+                // The path up to this array is whatever non‑array segments we collected after the previous "[]"
+                String current = pathSegments.isEmpty() ? "" : String.join(".", pathSegments);
+                arrayPaths.add(current);
+                String alias = "arr" + arrayCount;
+                String idxAlias = "idx" + arrayCount;
+                // First unnest uses r.payload; subsequent ones use the previous array's element
+                String source = (arrayCount == 0) ? "r.payload" : ("arr" + (arrayCount - 1) + ".elem");
+                from.append(" CROSS JOIN LATERAL jsonb_array_elements(")
+                        .append(source).append(" #> string_to_array(:arrayPath")
+                        .append(arrayCount).append(", '.')) WITH ORDINALITY AS ").append(alias)
+                        .append("(elem, ").append(idxAlias).append(")");
+                indexAliases.add(idxAlias);
+                arrayCount++;
+                // Reset pathSegments for the next level
+                pathSegments.clear();
+            } else {
+                pathSegments.add(seg);
+            }
+        }
+
+        // The leaf is the concatenation of segments after the last "[]" (already in pathSegments)
+        String leafParts = String.join(",", pathSegments);
+
+        // Use the innermost array alias for the predicate
+        String innermostAlias = "arr" + (arrayCount - 1);
+        String predicate = buildArrayPredicate(op, value, innermostAlias);
+
+        StringBuilder sql = new StringBuilder("SELECT r.id, ");
+        for (int i = 0; i < arrayCount; i++) {
+            sql.append("(").append(indexAliases.get(i)).append(" - 1) AS idx").append(i).append(", ");
+        }
+        sql.append(innermostAlias).append(".elem AS snippet, ")
+                .append(innermostAlias).append(".elem #> string_to_array(:leafParts, ',') AS value ")
+                .append(from)
+                .append(" WHERE r.id = ANY(string_to_array(:ids, ',')::bigint[])")
+                .append(" AND r.latest = true")
+                .append(" AND jsonb_typeof(").append(innermostAlias)
+                .append(".elem #> string_to_array(:leafParts, ',')) = :jsonType")
+                .append(" AND (")
+                .append(predicate)
+                .append(")");
+
+        Query query = entityManager.createNativeQuery(sql.toString());
         query.setParameter("ids", idsCsv);
-        query.setParameter("arrayPath", arrayPath);
+        for (int i = 0; i < arrayCount; i++) {
+            query.setParameter("arrayPath" + i, arrayPaths.get(i));
+        }
         query.setParameter("leafParts", leafParts);
         query.setParameter("jsonType", isNumeric(value) ? "number" : "string");
         setPredicateParams(query, op, value);
@@ -191,17 +255,31 @@ public class RunQueryService {
         Map<Long, List<MatchDetail>> result = new HashMap<>();
         for (Object[] row : rows) {
             Long id = ((Number) row[0]).longValue();
-            int idx = ((Number) row[1]).intValue();
-            String snippetJson = (String) row[2];
+            // Build pointer string from segments + indices
+            StringBuilder pointer = new StringBuilder();
+            int segIdx = 0;
+            for (String seg : segments) {
+                if (seg.equals("[]")) {
+                    int idx = ((Number) row[1 + segIdx]).intValue();
+                    pointer.append("[").append(idx).append("]");
+                    segIdx++;
+                } else {
+                    if (pointer.length() > 0 && segIdx > 0) pointer.append(".");
+                    pointer.append(seg);
+                }
+            }
+            String snippetJson = (String) row[1 + arrayCount];
             JsonNode snippet = safeReadTree(snippetJson);
-            Object val = convertValue(row[3]);
-            String pointer = arrayPath + "[" + idx + "]." + leafParts.replace(",", ".");
+            Object val = convertValue(row[2 + arrayCount]);
             result.computeIfAbsent(id, k -> new ArrayList<>())
-                    .add(new MatchDetail(pointer, snippet, val));
+                    .add(new MatchDetail(pointer.toString(), snippet, val));
         }
         return result;
     }
 
+    // ---------------------------------------------------------------
+    // Compound array pointer extraction (unchanged)
+    // ---------------------------------------------------------------
     public Map<Long, List<MatchDetail>> getCompoundArrayMatches(
             List<Long> runIds, String arrayRoot, List<ResolvedFilter> arrayFilters, String combine) {
         if (runIds.isEmpty() || arrayFilters.isEmpty()) return Map.of();
@@ -233,7 +311,7 @@ public class RunQueryService {
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("ids", idsCsv);
         query.setParameter("arrayPath", arrayRoot);
-        String representativeLeaf = elementFilters.get(0).getPath().replace(",", ".");
+        String representativeLeaf = elementFilters.get(0).getPath().replace(".", ",");
         query.setParameter("leaf", representativeLeaf);
 
         for (var entry : cq.params().entrySet()) {
@@ -304,13 +382,11 @@ public class RunQueryService {
         for (Object row : rows) {
             Map<String, Object> entry = new LinkedHashMap<>();
             if (groupBy != null && !groupBy.isBlank()) {
-                // Multiple columns: expect Object[] with [result, group_val]
                 Object[] cols = (Object[]) row;
                 Number resultValue = (Number) cols[0];
                 entry.put("result", resultValue.doubleValue());
                 entry.put("group", cols[1] != null ? cols[1].toString() : null);
             } else {
-                // Single column: scalar (BigDecimal, Double, etc.)
                 Number resultValue = (Number) row;
                 entry.put("result", resultValue.doubleValue());
             }
@@ -320,7 +396,7 @@ public class RunQueryService {
     }
 
     // ---------------------------------------------------------------
-    // Internal helpers
+    // Internal helpers (unchanged)
     // ---------------------------------------------------------------
 
     private String resolvePathInternal(String metric, String batch) {
@@ -428,17 +504,19 @@ public class RunQueryService {
 
     // --- Pointer helpers ---
 
-    private String buildArrayPredicate(String op, String value) {
+    // Updated to accept an alias for nested arrays
+    private String buildArrayPredicate(String op, String value, String alias) {
         boolean numeric = isNumeric(value);
+        String elemRef = alias + ".elem";
         return switch (op) {
             case "gt", "gte", "lt", "lte" -> {
                 if (!numeric) throw new IllegalArgumentException("Operator " + op + " requires a numeric value");
-                yield "(arr.elem #>> string_to_array(:leafParts, ','))::numeric " +
+                yield "(" + elemRef + " #>> string_to_array(:leafParts, ','))::numeric " +
                         opSymbol(op) + " :val";
             }
             case "eq" -> numeric
-                    ? "(arr.elem #>> string_to_array(:leafParts, ','))::numeric = :val"
-                    : "arr.elem #>> string_to_array(:leafParts, ',') = :val";
+                    ? "(" + elemRef + " #>> string_to_array(:leafParts, ','))::numeric = :val"
+                    : elemRef + " #>> string_to_array(:leafParts, ',') = :val";
             default -> throw new IllegalArgumentException("Unsupported operator: " + op);
         };
     }

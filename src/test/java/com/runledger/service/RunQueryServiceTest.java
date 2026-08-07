@@ -12,7 +12,6 @@ import jakarta.persistence.Query;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -51,7 +50,6 @@ class RunQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Re-inject objectMapper after @InjectMocks because it’s not a mock
         runQueryService = new RunQueryService(runRepository, batchSchemaService,
                 compoundQueryBuilder, entityManager, objectMapper);
     }
@@ -247,8 +245,8 @@ class RunQueryServiceTest {
                 List.of(new Filter("accuracy", "gt", "0.9"), new Filter("loss", "lt", "0.2")),
                 "and",
                 "test-batch",
-                null,   // block
-                null    // pointers (null → default true)
+                null,
+                null
         );
 
         when(batchSchemaService.getOrCreateMapping("test-batch"))
@@ -275,7 +273,7 @@ class RunQueryServiceTest {
     }
 
     // ---------------------------------------------------------------
-    // Pointer localisation tests (NEW)
+    // Pointer localisation tests
     // ---------------------------------------------------------------
 
     @Test
@@ -315,14 +313,14 @@ class RunQueryServiceTest {
         when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery);
         when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
 
-        // Simulate one row returned by the query: run id=1, array index=2, snippet JSON, value
         String snippetJson = "{\"budget\":0.01,\"method\":\"proxy\",\"sst2_cacc\":0.92}";
         Object[] row = new Object[]{1L, 3L, snippetJson, 0.92};
         List<Object[]> rows = List.<Object[]>of(row);
         when(mockQuery.getResultList()).thenReturn(rows);
 
+        // Updated to 4-argument call – full path, op, value
         Map<Long, List<MatchDetail>> result = runQueryService.getArrayMatches(
-                List.of(1L), "results", "sst2_cacc", "gt", "0.9");
+                List.of(1L), "results[].sst2_cacc", "gt", "0.9");
 
         assertThat(result).containsKey(1L);
         List<MatchDetail> details = result.get(1L);
@@ -334,19 +332,22 @@ class RunQueryServiceTest {
 
     @Test
     void getArrayMatches_shouldHandleEmptyInput() {
+        // Updated to 4-argument call
         Map<Long, List<MatchDetail>> result = runQueryService.getArrayMatches(
-                List.of(), "results", "sst2_cacc", "gt", "0.9");
+                List.of(), "results[].sst2_cacc", "gt", "0.9");
         assertThat(result).isEmpty();
     }
 
+    // ---------------------------------------------------------------
+    // Aggregate tests
+    // ---------------------------------------------------------------
+
     @Test
     void aggregate_shouldReturnGroupedResults() {
-        // Mock the native query
         Query queryMock = mock(Query.class);
         when(entityManager.createNativeQuery(anyString())).thenReturn(queryMock);
         when(queryMock.setParameter(anyString(), any())).thenReturn(queryMock);
 
-        // Simulate two grouped rows: experiment="A" avg=0.95, experiment="B" avg=0.88
         List<Object[]> rows = List.of(
                 new Object[]{0.95, "A"},
                 new Object[]{0.88, "B"}
@@ -368,7 +369,7 @@ class RunQueryServiceTest {
         when(entityManager.createNativeQuery(anyString())).thenReturn(queryMock);
         when(queryMock.setParameter(anyString(), any())).thenReturn(queryMock);
 
-        List<Object> rows = List.of(0.92);   // single scalar, not Object[]
+        List<Object> rows = List.of(0.92);
         when(queryMock.getResultList()).thenReturn(rows);
 
         List<Map<String, Object>> results = runQueryService.aggregate("MAX", "accuracy", null, null);

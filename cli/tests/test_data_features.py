@@ -57,7 +57,7 @@ def setup_data():
     # Ingest sample runs into the fresh batch
     result = run_cli("scan", str(SAMPLE_FOLDER), "--batch", BATCH_NAME)
     assert result.returncode == 0, result.stderr
-    assert "Successfully ingested 9 run(s)" in result.stdout
+    assert "Successfully ingested 10 run(s)" in result.stdout
 
 # ------------------------------------------------------------
 # v1 – Basic metric block search
@@ -252,3 +252,72 @@ def test_jsonl_ingestion(setup_data):
 
         # Clean up the temporary batch
         requests.delete(f"{API_BASE}/batch/{batch}")  # if this endpoint exists, otherwise manual cleanup
+
+def test_nested_array_block_depth():
+    """Verify block‑depth on nested arrays using direct API calls."""
+    import uuid
+    import requests
+
+    batch = f"nest-{uuid.uuid4().hex[:6]}"
+
+    # 1. Ingest the nested file directly via the API
+    payload = {
+        "experiment": "nested_arrays_block_test",
+        "clients": [
+            {
+                "client_name": "clean_client",
+                "sweep": [
+                    {"w_base": 0.5, "fin_asr": 0.12, "sst2_asr": 0.07},
+                    {"w_base": 0.75, "fin_asr": 0.09, "sst2_asr": 0.06}
+                ]
+            },
+            {
+                "client_name": "poisoned_client",
+                "sweep": [
+                    {"w_base": 0.5, "fin_asr": 0.45, "sst2_asr": 0.88},
+                    {"w_base": 1.0, "fin_asr": 0.28, "sst2_asr": 0.72}
+                ]
+            }
+        ]
+    }
+    resp = requests.post(API_BASE, json={"payload": payload, "batch": batch})
+    assert resp.status_code == 201, f"ingest failed: {resp.text}"
+
+    # 2. Search for fin_asr < 0.3 with block=0
+    params = {"metric": "clients[].sweep[].fin_asr", "op": "lt", "value": "0.3",
+              "batch": batch, "block": "0", "size": "1", "pointers": "true"}
+    resp = requests.get(API_BASE, params=params)
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["totalElements"] == 1
+    run = data["content"][0]
+
+    # 3. Verify matched pointers exist
+    matched = run.get("matched")
+    assert matched is not None, "matched pointers missing"
+    assert len(matched) == 3, f"expected 3 matches, got {len(matched)}"
+
+    # 4. block=1 should return the sweep array (a list)
+    params["block"] = "1"
+    resp = requests.get(API_BASE, params=params)
+    assert resp.status_code == 200, resp.text
+    data1 = resp.json()
+    block1_payload = data1["content"][0]["payload"]
+    assert isinstance(block1_payload, list), f"block=1 payload should be a list, got {type(block1_payload)}"
+    assert any("fin_asr" in json.dumps(elem) for elem in block1_payload)
+
+    # 5. block=2 should return the client object
+    params["block"] = "2"
+    resp = requests.get(API_BASE, params=params)
+    assert resp.status_code == 200, resp.text
+    data2 = resp.json()
+    block2_payload = data2["content"][0]["payload"]
+    assert isinstance(block2_payload, dict) and block2_payload.get("client_name") == "clean_client"
+
+    # 6. block=3 should return the clients array
+    params["block"] = "3"
+    resp = requests.get(API_BASE, params=params)
+    assert resp.status_code == 200, resp.text
+    data3 = resp.json()
+    block3_payload = data3["content"][0]["payload"]
+    assert isinstance(block3_payload, list) and len(block3_payload) > 0

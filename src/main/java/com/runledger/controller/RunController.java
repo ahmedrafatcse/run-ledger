@@ -55,21 +55,6 @@ public class RunController {
                 .body(new RunResponse(saved.getId(), payload, saved.getCreatedAt()));
     }
 
-    // ---------- Aggregate endpoint ----------
-    @GetMapping("/aggregate")
-    public ResponseEntity<?> aggregate(
-            @RequestParam String agg,
-            @RequestParam String metric,
-            @RequestParam(required = false) String groupBy,
-            @RequestParam(required = false) String batch) {
-        try {
-            List<Map<String, Object>> results = runQueryService.aggregate(agg, metric, groupBy, batch);
-            return ResponseEntity.ok(results);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
     // ---------- Retrieve a single run by ID ----------
     @GetMapping("/{id}")
     public ResponseEntity<RunResponse> getRun(@PathVariable Long id) {
@@ -175,12 +160,10 @@ public class RunController {
                 .collect(Collectors.toList());
 
         boolean pointers = request.pointers() != null ? request.pointers() : true;
-
-        // Check if there are any array conditions at all
         boolean hasArrayConditions = resolvedFilters.stream().anyMatch(f -> f.getPath().contains("[]"));
 
         if (pointers && !hasArrayConditions) {
-            // All conditions are scalar – build a MatchDetail for each filter
+            // All scalar conditions → build scalar compound pointers
             List<RunResponse> responses = runs.getContent().stream()
                     .map(run -> buildScalarCompoundResponse(run, resolvedFilters, request.block()))
                     .collect(Collectors.toList());
@@ -188,21 +171,16 @@ public class RunController {
             return ResponseEntity.ok(responsePage);
         }
 
-        // Determine if all array conditions reference the same array root
         String commonArrayRoot = findCommonArrayRoot(resolvedFilters);
         boolean allArraySameRoot = commonArrayRoot != null;
-
-        // For block-depth, use the first resolved path if all metrics agree on a common path
         String commonPath = findCommonBlockPath(resolvedFilters);
 
         List<RunResponse> responses;
         if (pointers && allArraySameRoot) {
-            // Compound pointers on same array
             responses = buildResponsesForCompoundArray(
                     runs.getContent(), resolvedFilters, commonArrayRoot, request.combine(),
                     request.block(), pointers, commonPath);
         } else {
-            // No pointers or different arrays – simple mapping with optional block
             responses = runs.getContent().stream()
                     .map(run -> {
                         if (request.block() != null && request.block() >= 0 && commonPath != null) {
@@ -216,6 +194,21 @@ public class RunController {
 
         Page<RunResponse> responsePage = new PageImpl<>(responses, unsorted, runs.getTotalElements());
         return ResponseEntity.ok(responsePage);
+    }
+
+    // ---------- Aggregate endpoint ----------
+    @GetMapping("/aggregate")
+    public ResponseEntity<?> aggregate(
+            @RequestParam String agg,
+            @RequestParam String metric,
+            @RequestParam(required = false) String groupBy,
+            @RequestParam(required = false) String batch) {
+        try {
+            List<Map<String, Object>> results = runQueryService.aggregate(agg, metric, groupBy, batch);
+            return ResponseEntity.ok(results);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // ---------- Metric key discovery ----------
@@ -235,7 +228,7 @@ public class RunController {
 
     // ---------- Helper methods ----------
 
-    /** Single-metric response builder – unchanged from before */
+    /** Single-metric response builder */
     private List<RunResponse> buildResponsesForSingleMetric(List<Run> runs, String resolvedPath,
                                                             String op, String value,
                                                             Integer block, boolean pointers) {
@@ -243,24 +236,13 @@ public class RunController {
         boolean isArrayPath = resolvedPath.contains("[]");
         if (pointers && isArrayPath) {
             List<Long> ids = runs.stream().map(Run::getId).toList();
-            int arrayIdx = resolvedPath.indexOf("[]");
-            String arrayPart = resolvedPath.substring(0, arrayIdx);
-            String leafPart = resolvedPath.substring(arrayIdx + 2);
-            if (leafPart.startsWith(".")) leafPart = leafPart.substring(1);
-            String leafParts = leafPart.replace(".", ",");
-            arrayMatchesMap = runQueryService.getArrayMatches(ids, arrayPart, leafParts, op, value);
+            arrayMatchesMap = runQueryService.getArrayMatches(ids, resolvedPath, op, value);
         }
 
         List<RunResponse> responses = new ArrayList<>();
         for (Run run : runs) {
-            RunResponse resp;
-            if (block != null && block >= 0) {
-                resp = toRunResponse(run, resolvedPath, block);
-            } else {
-                resp = toRunResponse(run);
-            }
+            List<MatchDetail> matched = null;
             if (pointers) {
-                List<MatchDetail> matched;
                 if (isArrayPath) {
                     matched = arrayMatchesMap != null
                             ? arrayMatchesMap.getOrDefault(run.getId(), List.of())
@@ -268,7 +250,23 @@ public class RunController {
                 } else {
                     matched = runQueryService.getScalarMatch(run, resolvedPath, op, value);
                 }
-                resp.setMatched(matched.isEmpty() ? null : matched);
+            }
+
+            RunResponse resp;
+            if (block != null && block >= 0) {
+                // Prefer concrete pointer from the first match when available
+                String concretePointer = (matched != null && !matched.isEmpty())
+                        ? matched.get(0).pointer()
+                        : null;
+                resp = concretePointer != null
+                        ? toRunResponse(run, concretePointer, block, true)
+                        : toRunResponse(run, resolvedPath, block);
+            } else {
+                resp = toRunResponse(run);
+            }
+
+            if (pointers) {
+                resp.setMatched(matched == null || matched.isEmpty() ? null : matched);
             }
             responses.add(resp);
         }
@@ -281,48 +279,50 @@ public class RunController {
             String combine, Integer block, boolean pointers, String blockPath) {
 
         List<Long> ids = runs.stream().map(Run::getId).toList();
-        // Delegate to RunQueryService for compound array matches
         Map<Long, List<MatchDetail>> matchesMap = runQueryService.getCompoundArrayMatches(
                 ids, commonArrayRoot, filters, combine);
 
         List<RunResponse> responses = new ArrayList<>();
         for (Run run : runs) {
+            List<MatchDetail> matched = pointers ? matchesMap.getOrDefault(run.getId(), List.of()) : null;
             RunResponse resp;
             if (block != null && block >= 0 && blockPath != null) {
-                resp = toRunResponse(run, blockPath, block);
+                String concretePointer = (matched != null && !matched.isEmpty())
+                        ? matched.get(0).pointer()
+                        : null;
+                resp = concretePointer != null
+                        ? toRunResponse(run, concretePointer, block, true)
+                        : toRunResponse(run, blockPath, block);
             } else {
                 resp = toRunResponse(run);
             }
             if (pointers) {
-                List<MatchDetail> matched = matchesMap.getOrDefault(run.getId(), List.of());
-                resp.setMatched(matched.isEmpty() ? null : matched);
+                resp.setMatched(matched == null || matched.isEmpty() ? null : matched);
             }
             responses.add(resp);
         }
         return responses;
     }
 
-    /**
-     * Build a RunResponse with scalar compound pointers.
-     * For AND, every filter must hold; for OR, we re-check each one.
-     */
     private RunResponse buildScalarCompoundResponse(Run run, List<ResolvedFilter> filters, Integer block) {
-        RunResponse resp;
-        if (block != null && block >= 0 && !filters.isEmpty()) {
-            // Use the first filter's path as the block anchor (all scalar paths are valid)
-            resp = toRunResponse(run, filters.get(0).getPath(), block);
-        } else {
-            resp = toRunResponse(run);
-        }
-
         List<MatchDetail> matched = new ArrayList<>();
         for (ResolvedFilter f : filters) {
-            // Re-check the condition against the payload
             List<MatchDetail> single = runQueryService.getScalarMatch(run, f.getPath(), f.getOp(), f.getValue());
             if (!single.isEmpty()) {
                 matched.add(single.get(0));
             }
         }
+
+        RunResponse resp;
+        if (block != null && block >= 0 && !filters.isEmpty() && !matched.isEmpty()) {
+            // Use the first match's concrete pointer for block extraction
+            resp = toRunResponse(run, matched.get(0).pointer(), block, true);
+        } else if (block != null && block >= 0 && !filters.isEmpty()) {
+            resp = toRunResponse(run, filters.get(0).getPath(), block);
+        } else {
+            resp = toRunResponse(run);
+        }
+
         resp.setMatched(matched.isEmpty() ? null : matched);
         return resp;
     }
@@ -387,6 +387,17 @@ public class RunController {
         }
     }
 
+    /** Overloaded version that accepts a concrete pointer (with numeric indices) */
+    private RunResponse toRunResponse(Run run, String concretePointer, int block, boolean useConcretePointer) {
+        try {
+            JsonNode fullPayload = objectMapper.readTree(run.getPayload());
+            JsonNode truncated = extractAncestorFromPointer(fullPayload, concretePointer, block);
+            return new RunResponse(run.getId(), truncated, run.getCreatedAt());
+        } catch (Exception e) {
+            throw new RuntimeException("Stored payload is not valid JSON", e);
+        }
+    }
+
     // ---------- Block‑depth extraction ----------
 
     private JsonNode extractAncestor(JsonNode root, String dotPath, int block) {
@@ -436,6 +447,34 @@ public class RunController {
         for (int i = 0; i < ancestorPartsCount; i++) {
             String clean = parts[i].replace("[]", "");
             pointer.append("/").append(clean);
+        }
+        JsonNode ancestor = root.at(pointer.toString());
+        return ancestor.isMissingNode() ? root : ancestor;
+    }
+
+    /**
+     * Extracts the ancestor JSON node from a concrete match pointer (e.g., "clients[1].sweep[0].fin_asr")
+     * at the given block depth. block = 0 returns the immediate parent of the leaf,
+     * block = 1 returns its grandparent, etc.
+     */
+    private JsonNode extractAncestorFromPointer(JsonNode root, String concretePointer, int block) {
+        if (concretePointer == null || concretePointer.isBlank() || block < 0) {
+            return root;
+        }
+
+        // Replace "[" and "]" with dots to get a uniform dot-separated path,
+        // then split.  e.g. "clients[1].sweep[0].fin_asr" → "clients.1.sweep.0.fin_asr"
+        String[] parts = concretePointer.replaceAll("\\[", ".").replaceAll("\\]", "").split("\\.");
+
+        int totalLevels = parts.length;              // number of segments to the leaf
+        int targetLevel = totalLevels - (block + 1); // how many segments to keep
+        if (targetLevel <= 0) {
+            return root;   // beyond root → full payload
+        }
+
+        StringBuilder pointer = new StringBuilder();
+        for (int i = 0; i < targetLevel; i++) {
+            pointer.append("/").append(parts[i]);
         }
         JsonNode ancestor = root.at(pointer.toString());
         return ancestor.isMissingNode() ? root : ancestor;
