@@ -176,7 +176,7 @@ class RunQueryServiceTest {
     @Test
     void shouldResolveShorthandKeyUsingBatchMapping() {
         when(batchSchemaService.getOrCreateMapping("batch1"))
-                .thenReturn(Map.of("accuracy", "metrics.accuracy"));
+                .thenReturn(Map.of("accuracy", List.of("metrics.accuracy")));   // <-- updated
 
         var dummyRuns = List.of(new Run());
         Page<Run> dummyPage = new PageImpl<>(dummyRuns, Pageable.unpaged(), dummyRuns.size());
@@ -208,7 +208,7 @@ class RunQueryServiceTest {
     @Test
     void shouldReturnRawKeyWhenNoMappingExists() {
         when(batchSchemaService.getOrCreateMapping("batch1"))
-                .thenReturn(Map.of());
+                .thenReturn(Collections.emptyMap());   // <-- updated
 
         var dummyRuns = List.of(new Run());
         Page<Run> dummyPage = new PageImpl<>(dummyRuns, Pageable.unpaged(), dummyRuns.size());
@@ -250,7 +250,7 @@ class RunQueryServiceTest {
         );
 
         when(batchSchemaService.getOrCreateMapping("test-batch"))
-                .thenReturn(Map.of("accuracy", "accuracy", "loss", "metrics.loss"));
+                .thenReturn(Map.of("accuracy", List.of("accuracy"), "loss", List.of("metrics.loss")));   // <-- updated
 
         HashMap<String, Object> mutableParams = new HashMap<>();
         mutableParams.put("p0", "accuracy");
