@@ -9,49 +9,87 @@ from pathlib import Path
 import pytest
 import requests
 
+# ------------------------------------------------------------
+# Global settings – will be overridden dynamically by the fixture
+# ------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 COMPOSE_FILE = PROJECT_ROOT / "docker-compose.test.yml"
-HEALTH_URL = "http://localhost:8081/actuator/health"
-API_BASE = "http://localhost:8080/api/runs"
 
-def wait_for_health(timeout=120):
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            resp = requests.get(HEALTH_URL, timeout=2)
-            if resp.status_code == 200:
-                return True
-        except Exception:
-            pass
-        time.sleep(2)
-    return False
+# Prevent CLI from ever auto‑starting Docker
+os.environ["RUNLEDGER_NO_DOCKER"] = "1"
+
+# These will be set to the actual random host port once the stack is up
+HEALTH_URL = None
+API_BASE = None
+
+
+def get_host_port(project, service="app", container_port="8080"):
+    """
+    Return the host port that Docker assigned to *container_port* for the
+    given service inside the Compose project.
+    """
+    cmd = [
+        "docker", "compose", "-f", str(COMPOSE_FILE), "-p", project,
+        "port", service, container_port
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(PROJECT_ROOT))
+    # Example output: "0.0.0.0:54321" or "127.0.0.1:12345"
+    return result.stdout.strip().split(":")[-1]
+
 
 @pytest.fixture(scope="session")
 def docker_stack():
-    """Start the Docker Compose stack and wait for it to be healthy."""
+    """Start a completely isolated test stack with random host ports."""
+    project = f"rl-test-{uuid.uuid4().hex[:8]}"
+    compose_cmd = [
+        "docker", "compose", "-f", str(COMPOSE_FILE),
+        "-p", project,
+        "up", "-d", "--build"
+    ]
+    subprocess.run(compose_cmd, cwd=str(PROJECT_ROOT), check=True, capture_output=True)
+
+    # Dynamically discover the random port Docker assigned to the app
+    host_port = get_host_port(project)
+    health_url = f"http://localhost:{host_port}/actuator/health"
+    api_base = f"http://localhost:{host_port}/api/runs"
+
+    # Update global variables so all tests use the correct address
+    globals()["HEALTH_URL"] = health_url
+    globals()["API_BASE"] = api_base
+
+    # Make CLI commands (run_cli) use the same port
+    os.environ["RUNLEDGER_BASE_URL"] = f"http://localhost:{host_port}"
+    os.environ["RUNLEDGER_PORT"] = host_port
+
+    # Wait for the backend to become healthy
+    for _ in range(60):
+        try:
+            if requests.get(health_url, timeout=2).status_code == 200:
+                break
+        except Exception:
+            time.sleep(2)
+    else:
+        pytest.fail("Backend did not become healthy")
+
+    yield api_base   # tests that need it can receive it, but most use globals
+
+    # Tear everything down
     subprocess.run(
-        ["docker", "compose", "-f", str(COMPOSE_FILE), "up", "-d", "--build"],
-        cwd=str(PROJECT_ROOT),
-        check=True,
-        capture_output=True,
-    )
-    if not wait_for_health():
-        subprocess.run(
-            ["docker", "compose", "-f", str(COMPOSE_FILE), "down"],
-            cwd=str(PROJECT_ROOT),
-            capture_output=True,
-        )
-        pytest.fail("Backend did not become healthy in time")
-    yield
-    subprocess.run(
-        ["docker", "compose", "-f", str(COMPOSE_FILE), "down"],
-        cwd=str(PROJECT_ROOT),
-        capture_output=True,
+        ["docker", "compose", "-f", str(COMPOSE_FILE), "-p", project, "down", "-v"],
+        cwd=str(PROJECT_ROOT), capture_output=True
     )
 
+
 def run_cli(*args):
+    """Run the CLI in a subprocess, inheriting the environment (port, no-docker)."""
     cmd = ["python", str(PROJECT_ROOT / "cli" / "ledger.py"), *args]
-    return subprocess.run(cmd, capture_output=True, encoding='utf-8', cwd=str(PROJECT_ROOT))
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        encoding='utf-8',
+        cwd=str(PROJECT_ROOT)
+    )
+
 
 @pytest.fixture
 def sample_folder():
@@ -71,12 +109,14 @@ def sample_folder():
         (folder / "bad.json").write_text("this is not json")
         yield folder
 
+
 pytestmark = pytest.mark.integration
+
 
 def test_full_golden_path(docker_stack, sample_folder):
     batch = f"golden-{uuid.uuid4()}"
 
-    # 1. scan folder (non‑interactive)
+    # 1. scan folder
     result = run_cli("scan", str(sample_folder), "--batch", batch)
     assert result.returncode == 0, result.stderr
     assert "Successfully ingested 4 run(s)" in result.stdout
@@ -111,7 +151,7 @@ def test_full_golden_path(docker_stack, sample_folder):
     assert result.returncode == 0, result.stderr
     assert "running" in result.stdout.lower()
 
-    # 6. deep API verification
+    # 6. deep API verification (uses dynamic API_BASE)
     resp = requests.get(API_BASE, params={"batch": batch})
     assert resp.status_code == 200
     runs = resp.json()["content"]
@@ -123,13 +163,14 @@ def test_full_golden_path(docker_stack, sample_folder):
     for r in runs:
         assert r["payload"]["_source"]["file"] in ["run1.json", "run2.json", "batch.json"]
         assert r["createdAt"] is not None
-    # Verify ordering (descending by createdAt)
     timestamps = [r["createdAt"] for r in runs]
     assert timestamps == sorted(timestamps, reverse=True), "runs must be ordered by createdAt desc"
+
 
 def test_scan_nonexistent_folder(docker_stack):
     result = run_cli("scan", "/no/such/path")
     assert result.returncode != 0 or "Folder not found" in result.stdout
+
 
 def test_scan_corrupt_file_skipped(docker_stack, sample_folder):
     batch = f"corrupt-{uuid.uuid4()}"
@@ -137,10 +178,12 @@ def test_scan_corrupt_file_skipped(docker_stack, sample_folder):
     assert result.returncode == 0, result.stderr
     assert "Successfully ingested 4 run(s)" in result.stdout
 
+
 def test_metrics_empty_batch(docker_stack):
     result = run_cli("metrics", "--batch", f"nonexistent-{uuid.uuid4()}")
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout) == []
+
 
 def test_search_no_results(docker_stack, sample_folder):
     batch = f"noresults-{uuid.uuid4()}"
@@ -151,20 +194,18 @@ def test_search_no_results(docker_stack, sample_folder):
     assert data["totalElements"] == 0
     assert data["content"] == []
 
+
 def test_multi_filter_and_returns_results():
-    # Ensure the compound test data folder exists
     compound_dir = "test-data/sample-compound-runs"
     if not os.path.isdir(compound_dir):
         pytest.skip(f"Folder {compound_dir} not found")
 
-    # Scan the folder with explicit UTF-8 encoding to avoid UnicodeDecodeError
     scan_result = subprocess.run(
         ["python", "cli/ledger.py", "scan", compound_dir, "--batch", "compound-int"],
         capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
     assert scan_result.returncode == 0, f"Scan failed: {scan_result.stderr}"
 
-    # Search with AND
     result = subprocess.run(
         ["python", "cli/ledger.py", "search", "--metric", "accuracy", "--op", "gt", "--value", "0.9",
          "--metric", "loss", "--op", "lt", "--value", "0.2", "--combine", "and", "--batch", "compound-int"],
@@ -172,6 +213,4 @@ def test_multi_filter_and_returns_results():
     )
     assert result.returncode == 0, f"Search failed: {result.stderr}"
     assert result.stdout is not None, "stdout is None (decoding issue)"
-
-    # compound_run1.json has accuracy=0.95, loss=0.15 → should match
     assert "compound_run1" in result.stdout, f"Output: {result.stdout}"

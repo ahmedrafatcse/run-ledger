@@ -112,6 +112,14 @@ def fetch_verbose_metrics(batch):
         return resp.json()
     return []
 
+def build_shorthand_map(batch):
+    """Return dict {shorthand_key: [full_path, ...]} from verbose metrics."""
+    entries = fetch_verbose_metrics(batch)
+    mapping = {}
+    for e in entries:
+        mapping.setdefault(e['key'], []).append(e['path'])
+    return mapping
+
 def perform_search(metric=None, op=None, value=None, q=None, fuzzy=False, batch=None, pointers=True, block=None):
     params = {"page": 0, "size": 50, "sort": "created_at,desc"}
     if batch:
@@ -179,12 +187,18 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
         console.print()
 
     if dot_path is None:
-        try:
-            pretty = json.dumps(payload, indent=2)
-        except Exception:
-            pretty = str(payload)
-        console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}"))
-        return
+        # If we have matched pointers, derive a path from the first concrete pointer
+        if matched:
+            concrete = matched[0]['pointer']
+            parts = concrete.replace('[', '.').replace(']', '').split('.')
+            dot_path = '.'.join(parts)
+        else:
+            try:
+                pretty = json.dumps(payload, indent=2)
+            except Exception:
+                pretty = str(payload)
+            console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}"))
+            return
 
     parts = [seg.replace("[]", "") for seg in dot_path.split(".")]
     max_block = len(parts) - 1
@@ -207,9 +221,17 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
                 title = f"Run {run['id']} · {source_file}  |  metric: {dot_path}  |  depth: 0 (match {i+1}/{len(matched)})"
                 console.print(Panel(pretty, title=title))
         else:
-            ancestor_parts = parts[:len(parts) - (block + 1)]
-            pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
-            node = navigate_json_pointer(payload, pointer) if pointer else payload
+            if block > 0 and matched:
+                concrete = matched[0]['pointer']
+                segments = concrete.replace('[', '.').replace(']', '').split('.')
+                ancestor_segments = segments[:len(segments) - (block + 1)]
+                pointer = "/" + "/".join(ancestor_segments) if ancestor_segments else ""
+                node = navigate_json_pointer(payload, pointer) if pointer else payload
+            else:
+                ancestor_parts = parts[:len(parts) - (block + 1)]
+                pointer = "/" + "/".join(ancestor_parts) if ancestor_parts else ""
+                node = navigate_json_pointer(payload, pointer) if pointer else payload
+
             depth_label = ""
             if block == max_block:
                 depth_label = " (full run)"
@@ -243,15 +265,14 @@ def run_guided_search():
                          "Answer a few questions and we'll find your best experiments.",
                          title="Welcome"))
 
-    # ── Step 1: Folder & Batch ──
-    console.print("\n[bold][Step 1/5] Select your experiment folder[/bold]")
-    folder = Prompt.ask("Folder path (drag‑and‑drop or type)",
-                        default="")
-    batch  = Prompt.ask("Batch name (optional, default: folder name)", default="")
+    # 1. Folder
+    folder = Prompt.ask("[bold]Folder containing your JSON/JSONL files[/bold]\n"
+                        "(drag‑and‑drop or type a path)")
+    batch  = Prompt.ask("[bold]Batch name (optional, default: folder name)[/bold]", default="")
     if not batch:
         batch = Path(folder).name
 
-    # ── Step 2: Scan if needed ──
+    # 2. Scan if needed
     console.print(f"\n[bold][Step 2/5] Ingest data from '{batch}'[/bold]")
     metrics = fetch_verbose_metrics(batch)
     if metrics:
@@ -267,6 +288,9 @@ def run_guided_search():
             console.print("[red]Metric discovery failed. Exiting.[/red]")
             return
 
+    # Build shorthand -> full paths map
+    shorthand_map = build_shorthand_map(batch)
+
     # Show schema summary table
     table = Table(title="Available Metrics")
     table.add_column("#", justify="right")
@@ -276,14 +300,14 @@ def run_guided_search():
         table.add_row(str(i), m["key"], m["path"])
     console.print(table)
 
-    # ── Step 3: Build conditions ──
+    # 3. Build one or more conditions
     console.print(f"\n[bold][Step 3/5] Define your search conditions[/bold]")
     filters = []
     combine = "and"
     first_condition = True
 
     while True:
-        # Metric selection (filter‑as‑you‑type)
+        # Metric selection (filter‑as‑you‑type with explicit path and sub‑list support)
         metric_names = [m["key"] for m in metrics]
         selected_metric = None
         filtered = metric_names[:]
@@ -304,6 +328,32 @@ def run_guided_search():
             console.print(ftable)
 
             query = Prompt.ask("Type to filter metrics (or 'all' to reset, number to select)", default="")
+
+            # Explicit dot‑path / array‑path – accept directly
+            if '.' in query or '[]' in query:
+                selected_metric = query
+                break
+
+            # Shorthand with multiple possible full paths – show sub‑list
+            if query in shorthand_map:
+                paths = shorthand_map[query]
+                if len(paths) == 1:
+                    selected_metric = paths[0]
+                    break
+                else:
+                    sub_table = Table(title=f"Select full path for '{query}'")
+                    sub_table.add_column("#", justify="right")
+                    sub_table.add_column("Full Path", style="cyan")
+                    for i, p in enumerate(paths, 1):
+                        sub_table.add_row(str(i), p)
+                    console.print(sub_table)
+                    sub_choice = Prompt.ask("Choose a path", default="1")
+                    if sub_choice.isdigit():
+                        idx = int(sub_choice) - 1
+                        if 0 <= idx < len(paths):
+                            selected_metric = paths[idx]
+                            break
+
             if query.lower() == "all":
                 filtered = metric_names[:]
                 continue
@@ -335,24 +385,24 @@ def run_guided_search():
         conds = " [bold yellow]" + f" {combine.upper()} ".join(f"{f['metric']} {f['op']} {f['value']}" for f in filters) + "[/bold yellow]"
         console.print(f"\n[bold]Current filter(s):[/bold]{conds}")
 
-        if first_condition and len(metric_names) > 1:
-            another = Confirm.ask("Add another condition?", default=False)
-            if not another:
-                break
-            if len(filters) >= 2:
-                combine = Prompt.ask("Combine with", choices=["and", "or"], default="and")
-        else:
+        # Ask for another condition
+        another = Confirm.ask("Add another condition?", default=False)
+        if not another:
             break
+
+        # If this is about to be the second condition, ask for combine operator BEFORE adding it
+        if len(filters) == 1:
+            combine = Prompt.ask("Combine with", choices=["and", "or"], default="and")
         first_condition = False
 
-    # ── Step 4: Block depth ──
+    # Block depth
     console.print(f"\n[bold][Step 4/5] Choose output detail[/bold]")
     block = None
     if Confirm.ask("Limit output to a specific block depth? (block‑0 = tightest match)", default=False):
         block = Prompt.ask("Block depth", default="0")
         block = int(block)
 
-    # ── Step 5: Search & Results ──
+    # 5. Run search
     console.print(f"\n[bold][Step 5/5] Searching...[/bold]")
     if len(filters) == 1:
         f = filters[0]
@@ -366,7 +416,7 @@ def run_guided_search():
         for run in data["content"]:
             show_blocks(run, filters[0]["metric"] if len(filters) == 1 else None, [block] if block is not None else None)
 
-    # ── Post‑search menu ──
+    # Post‑search menu
     while True:
         console.print("\n[bold]What would you like to do next?[/bold]")
         console.print("  [1] Save this search")
@@ -385,23 +435,20 @@ def run_guided_search():
             if save_search(name, batch, params):
                 console.print(f"[green]Saved search '{name}'.[/green]")
         elif choice == "2":
-            # Simple text export to a file
             out_file = Prompt.ask("Output file path", default="runledger_export.txt")
             if data and data.get("content"):
-                from ledgger import build_export_blocks, format_blocks_as_text
+                from ledger import build_export_blocks, format_blocks_as_text
                 blocks = build_export_blocks(data["content"], filters[0]["metric"] if len(filters) == 1 else None, [block] if block is not None else None, include_pointers=True)
                 Path(out_file).write_text(format_blocks_as_text(blocks), encoding="utf-8")
                 console.print(f"[green]Exported {len(blocks)} block(s) to {out_file}[/green]")
             else:
                 console.print("[yellow]No data to export.[/yellow]")
         elif choice == "3":
-            # Restart the guided flow
             run_guided_search()
             return
         elif choice == "4":
             id1 = Prompt.ask("First Run ID")
             id2 = Prompt.ask("Second Run ID")
-            # Quick diff using the API
             resp1 = requests.get(f"{API_BASE}/{id1}")
             resp2 = requests.get(f"{API_BASE}/{id2}")
             if resp1.status_code == 200 and resp2.status_code == 200:

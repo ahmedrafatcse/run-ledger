@@ -47,9 +47,10 @@ except Exception:
 # ------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------
-API_BASE = "http://localhost:8080/api/runs"
+_BASE = os.environ.get("RUNLEDGER_BASE_URL", "http://localhost:8080")
+API_BASE = f"{_BASE}/api/runs"
+HEALTH_URL = f"{_BASE}/actuator/health"
 COMPOSE_FILE = os.path.join(os.path.dirname(__file__), "docker-compose.yml")
-HEALTH_URL = "http://localhost:8080/actuator/health"
 PAGE_SIZE = 10
 
 console = Console()
@@ -353,13 +354,19 @@ def show_blocks(run: dict, dot_path: str = None, block_levels: list = None):
         console.print()
 
     if dot_path is None:
-        label = "-- full run (full‑text/fuzzy match)"
-        try:
-            pretty = json.dumps(payload, indent=2)
-        except Exception:
-            pretty = str(payload)
-        console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}"))
-        return
+        # If we have matched pointers, derive a path from the first concrete pointer
+        if matched:
+            concrete = matched[0]['pointer']
+            parts = concrete.replace('[', '.').replace(']', '').split('.')
+            dot_path = '.'.join(parts)
+        else:
+            label = "-- full run (full‑text/fuzzy match)"
+            try:
+                pretty = json.dumps(payload, indent=2)
+            except Exception:
+                pretty = str(payload)
+            console.print(Panel(pretty, title=f"Run {run['id']} · {source_file}"))
+            return
 
     # Strip "[]" so JSON Pointer navigation works
     parts = [seg.replace("[]", "") for seg in dot_path.split(".")]
@@ -576,6 +583,14 @@ def compute_delta(val1, val2):
 # ------------------------------------------------------------
 # Non‑interactive CLI outputs
 # ------------------------------------------------------------
+def build_shorthand_map(batch):
+    """Return dict {shorthand_key: [full_path, ...]} from verbose metrics."""
+    entries = fetch_verbose_metrics(batch)
+    mapping = {}
+    for e in entries:
+        mapping.setdefault(e['key'], []).append(e['path'])
+    return mapping
+
 def cli_metrics(args):
     if args.verbose:
         entries = fetch_verbose_metrics(args.batch)
@@ -812,6 +827,9 @@ def interactive_search(batch: str = None):
             console.print("[yellow]No metrics available yet. Ingest some runs first.[/yellow]")
             break
 
+        # Build shorthand -> full paths map
+        shorthand_map = build_shorthand_map(batch)
+
         selected_metric = None
         filtered = metrics[:]
         while True:
@@ -831,6 +849,32 @@ def interactive_search(batch: str = None):
             console.print(table)
 
             query = Prompt.ask("Type to filter metrics (or 'all' to reset, number to select)", default="")
+
+            # Explicit dot‑path / array‑path – accept directly
+            if '.' in query or '[]' in query:
+                selected_metric = query
+                break
+
+            # Shorthand with multiple possible full paths – show sub‑list
+            if query in shorthand_map:
+                paths = shorthand_map[query]
+                if len(paths) == 1:
+                    selected_metric = paths[0]
+                    break
+                else:
+                    sub_table = Table(title=f"Select full path for '{query}'")
+                    sub_table.add_column("#", justify="right")
+                    sub_table.add_column("Full Path", style="cyan")
+                    for i, p in enumerate(paths, 1):
+                        sub_table.add_row(str(i), p)
+                    console.print(sub_table)
+                    sub_choice = Prompt.ask("Choose a path", default="1")
+                    if sub_choice.isdigit():
+                        idx = int(sub_choice) - 1
+                        if 0 <= idx < len(paths):
+                            selected_metric = paths[idx]
+                            break
+
             if query.lower() == "all":
                 filtered = metrics[:]
                 continue

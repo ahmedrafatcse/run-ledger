@@ -92,19 +92,21 @@ public class RunQueryService {
         if (batch == null || batch.isBlank()) {
             return runRepository.findDistinctMetricKeys();
         }
-        Collection<String> keys = batchSchemaService.getAvailableKeys(batch);
-        return keys.stream().sorted().toList();
+        Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
+        return mapping.keySet().stream().sorted().toList();
     }
 
     public List<Map<String, Object>> getAvailableMetricsVerbose(String batch) {
-        Map<String, String> mapping = batchSchemaService.getOrCreateMapping(batch);
+        Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
         List<Map<String, Object>> result = new ArrayList<>();
         for (var entry : mapping.entrySet()) {
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("key", entry.getKey());
-            item.put("path", entry.getValue());
-            item.put("depth", entry.getValue().split("\\.").length);
-            result.add(item);
+            for (String path : entry.getValue()) {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("key", entry.getKey());
+                item.put("path", path);
+                item.put("depth", path.split("\\.").length);
+                result.add(item);
+            }
         }
         return result;
     }
@@ -404,8 +406,11 @@ public class RunQueryService {
             return metric;
         }
         if (batch != null && !batch.isBlank()) {
-            return batchSchemaService.getOrCreateMapping(batch)
-                    .getOrDefault(metric, metric);
+            Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
+            List<String> paths = mapping.get(metric);
+            if (paths != null && !paths.isEmpty()) {
+                return paths.get(0);   // shallowest occurrence is always first
+            }
         }
         return metric;
     }
