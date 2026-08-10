@@ -12,6 +12,10 @@ dependencies   = [
     "requests",
     "rich",
 ]
+
+[project.urls]
+Repository = "https://github.com/ahmedrafatcse/run-ledger"
+
 [project.scripts]
 runledger      = "cli.ledger:main"
 

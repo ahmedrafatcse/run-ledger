@@ -61,7 +61,7 @@ Then try `runledger guided` again. If you still see a port conflict (`port is al
 <summary>Installing from source</summary>
 
 ```bash
-git clone https://github.com/yourusername/run-ledger.git
+git clone https://github.com/ahmedrafatcse/run-ledger.git
 cd run-ledger
 docker compose up -d
 pip install -e .

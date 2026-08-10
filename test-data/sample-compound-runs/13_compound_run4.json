@@ -1,8 +1,0 @@
-{
-  "experiment": "compound_test",
-  "batch": "batch-compound",
-  "runs": [
-    { "id": "a", "score": 0.7 },
-    { "id": "b", "score": 0.99 }
-  ]
-}
