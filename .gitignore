@@ -1,10 +1,39 @@
+# -----------------------------------------------------------
+# Java / Maven
+# -----------------------------------------------------------
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+# -----------------------------------------------------------
+# Python (CLI)
+# -----------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.whl
+pip-wheel-metadata/
+.pytest_cache/
+venv/
+.venv/
+env/
+.env/
+
+# -----------------------------------------------------------
+# IDE & Editors
+# -----------------------------------------------------------
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
 .apt_generated
 .classpath
 .factorypath
@@ -12,22 +41,34 @@ target/
 .settings
 .springBeans
 .sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# -----------------------------------------------------------
+# Docker
+# -----------------------------------------------------------
+docker-compose.override.yml
+
+# -----------------------------------------------------------
+# Operating System
+# -----------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# -----------------------------------------------------------
+# Environment & Secrets
+# -----------------------------------------------------------
+*.env
+*.local
+*.secret
+*.token
+
+# -----------------------------------------------------------
+# Test data (keep only public samples)
+# -----------------------------------------------------------
+test-data/*
+!test-data/sample-runs/

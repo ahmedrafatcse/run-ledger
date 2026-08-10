@@ -1,5 +1,0 @@
-[
-  {"experiment": "multi-depth-test", "run": 1, "model": {"pos": "root_level_pos", "layers": [{"type": "conv", "pos": 10}, {"type": "fc", "pos": 20}]}},
-  {"experiment": "multi-depth-test", "run": 2, "model": {"layers": [{"type": "conv", "pos": 30}, {"type": "conv", "pos": 40}]}},
-  {"experiment": "multi-depth-test", "run": 3, "model": {"layers": [{"blocks": [{"pos": 50}, {"pos": 60}]}]}}
-]

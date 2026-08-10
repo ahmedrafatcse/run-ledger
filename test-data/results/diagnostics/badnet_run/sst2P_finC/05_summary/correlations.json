@@ -1,8 +1,0 @@
-{
-  "importance_vs_conflict": 0.30287364279321066,
-  "importance_vs_similarity": 0.4142060782803593,
-  "importance_vs_eff_client": -0.7964387867012759,
-  "conflict_vs_similarity": 0.07755276022581771,
-  "conflict_vs_eff_client": -0.7104027515258017,
-  "similarity_vs_eff_client": 0.009564258102754337
-}
