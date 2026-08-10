@@ -59,7 +59,7 @@ console = Console()
 # Helpers
 # ------------------------------------------------------------
 def check_docker():
-    result = subprocess.run("docker version", shell=True,
+    result = subprocess.run(["docker", "version"],
                             capture_output=True, text=True)
     if result.returncode != 0:
         console.print("[bold red]Docker is not installed or not reachable.[/bold red]")
@@ -94,7 +94,7 @@ def start_backend():
     console.print("Starting RunLedger backend...")
     subprocess.run(
         ["docker", "compose", "-f", compose_file, "-p", "runledger", "up", "-d"],
-        shell=True, check=True
+        check=True
     )
     if wait_for_backend():
         console.print("[green]RunLedger backend is running.[/green]")
@@ -107,7 +107,7 @@ def stop_backend():
     if os.path.exists(compose_file):
         subprocess.run(
             ["docker", "compose", "-f", compose_file, "-p", "runledger", "down"],
-            shell=True, check=True
+            check=True
         )
         console.print("RunLedger backend stopped.")
     else:
