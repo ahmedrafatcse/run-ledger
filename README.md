@@ -19,7 +19,7 @@ Backed by Postgres, served by a Spring Boot API, fronted by a Python CLI.
 pip install runledger-cli
 ```
 
-Requires Docker. If Docker isn't installed, `runledger` detects that on first run and links you straight to the installer; everything else (Postgres, the backend) is managed for you.
+**You need Docker** — the only required dependency beyond Python. The backend (Postgres + the Java API) runs entirely inside Docker containers. `runledger` starts and stops them automatically; you never touch a database, a server, or a config file. If Docker isn't installed, the CLI detects that on first run and links you straight to the installer.
 
 ### Troubleshooting: command not found
 
@@ -78,7 +78,7 @@ runledger search --metric accuracy --op gt --value 0.9 --batch my-sweep
 runledger aggregate --metric accuracy --agg AVG --group-by experiment --batch my-sweep
 ```
 
-New here? Run `runledger` with no arguments — the guided wizard walks you through your first scan and search.
+New here? Run `runledger` with no arguments, the guided wizard walks you through your first scan and search.
 
 > **Tip:** you can also use `python -m cli.ledger` interchangeably with `runledger` on any platform.
 
