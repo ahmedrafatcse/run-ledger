@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: runledger
+      POSTGRES_USER: runledger
+      POSTGRES_PASSWORD: runledger
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U runledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ahmedrafatdev/runledger:latest
+    ports:
+      # Only accessible from this machine (localhost). Any local user can connect;
+      # for shared servers, add authentication or a reverse proxy.
+      - "127.0.0.1:8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/runledger
+      SPRING_DATASOURCE_USERNAME: runledger
+      SPRING_DATASOURCE_PASSWORD: runledger
+    depends_on:
+      postgres:
+        condition: service_healthy
