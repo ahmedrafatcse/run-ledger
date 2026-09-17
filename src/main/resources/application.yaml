@@ -6,9 +6,11 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: dev
   application:
     name: run-ledger
-  datasource: # database settings
+  datasource:
     url: jdbc:postgresql://localhost:5432/runledger
     username: runledger_app
     password: runledger
