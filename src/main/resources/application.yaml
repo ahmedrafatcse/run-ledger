@@ -10,7 +10,7 @@ spring:
     name: run-ledger
   datasource: # database settings
     url: jdbc:postgresql://localhost:5432/runledger
-    username: runledger
+    username: runledger_app
     password: runledger
   jpa: # settings for spring data JPA (API)
     hibernate: # implementation of JPA
@@ -22,6 +22,8 @@ spring:
   flyway: # manages db migrations
     enabled: true
     locations: classpath:db/migration
+    user: runledger
+    password: runledger
 
 # Actuator – health checks, metrics, info
 management:

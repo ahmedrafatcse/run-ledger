@@ -15,6 +15,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -33,13 +36,16 @@ class RunVersioningIntegrationTest {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("runledger")
             .withUsername("runledger")
-            .withPassword("runledger");
+            .withPassword("runledger")
+            .withInitScript("initdb/01-create-app-role.sql");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.username", () -> "runledger_app");
+        registry.add("spring.datasource.password", () -> "runledger");
+        registry.add("spring.flyway.user", postgres::getUsername);
+        registry.add("spring.flyway.password", postgres::getPassword);
     }
 
     @Autowired
@@ -64,9 +70,20 @@ class RunVersioningIntegrationTest {
         }
         """;
 
+    /**
+     * Cleanup between tests. Runs as the container owner (runledger) because
+     * the application role (runledger_app) has no DELETE privilege — which is
+     * exactly the security property Slice 3 establishes.
+     */
     @BeforeEach
-    void setUp() {
-        runRepository.deleteAll();
+    void setUp() throws Exception {
+        try (Connection conn = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword());
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("TRUNCATE TABLE run RESTART IDENTITY");
+        }
     }
 
     @Test
@@ -84,7 +101,6 @@ class RunVersioningIntegrationTest {
                 .andExpect(status().isCreated());   // idempotent, but controller always responds 201
 
         // 3. Verify only one row, latest=true, version=1
-        // We'll check via direct DB query
         long count = runRepository.count();
         assert count == 1 : "Expected exactly 1 run, got " + count;
 

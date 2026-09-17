@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.runledger.dto.RunRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,9 @@ public class RunIngestionService {
     private final RunRepository runRepository;
     private final ObjectMapper objectMapper;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public RunIngestionService(RunRepository runRepository, ObjectMapper objectMapper) {
         this.runRepository = runRepository;
         this.objectMapper = objectMapper;
@@ -34,6 +39,10 @@ public class RunIngestionService {
      * If a run with the same identity already exists and the canonical payload
      * hash matches the latest version, no insert occurs and the existing run
      * is returned (idempotent). If the hash differs, a new version is inserted.
+     *
+     * <p>Only the {@code latest} column of previous versions is updated. This is
+     * enforced by a column-level grant ({@code UPDATE (latest)}) on the
+     * application's database role: content columns cannot be touched after insert.
      *
      * @param request the ingestion request containing payload and optional batch
      * @return the saved Run entity (new or existing)
@@ -61,9 +70,15 @@ public class RunIngestionService {
             if (newHash.equals(latest.getPayloadHash())) {
                 return latest;
             }
-            // Mark previous version as not latest
-            latest.setLatest(false);
-            runRepository.save(latest);
+
+            // Mark previous version as not latest.
+            // Native UPDATE touches only the `latest` column — the column grant
+            // permits this and rejects any attempt to modify content columns.
+            // Using entity save() here would emit a full-row UPDATE and fail.
+            entityManager.createNativeQuery(
+                            "UPDATE run SET latest = false WHERE id = :id")
+                    .setParameter("id", latest.getId())
+                    .executeUpdate();
         }
 
         // Create new version (always the latest)

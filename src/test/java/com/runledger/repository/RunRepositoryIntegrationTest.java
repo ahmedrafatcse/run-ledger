@@ -16,6 +16,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -29,13 +33,16 @@ class RunRepositoryIntegrationTest {
             DockerImageName.parse("postgres:16"))
             .withDatabaseName("runledger")
             .withUsername("runledger")
-            .withPassword("runledger");
+            .withPassword("runledger")
+            .withInitScript("initdb/01-create-app-role.sql");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.username", () -> "runledger_app");
+        registry.add("spring.datasource.password", () -> "runledger");
+        registry.add("spring.flyway.user", postgres::getUsername);
+        registry.add("spring.flyway.password", postgres::getPassword);
     }
 
     @Autowired
@@ -45,9 +52,20 @@ class RunRepositoryIntegrationTest {
     private Run runB;
     private Run runC;
 
+    /**
+     * Cleanup + fixtures. Truncate runs as the container owner (runledger)
+     * because the application role (runledger_app) has no DELETE privilege —
+     * that's the security property Slice 3 establishes.
+     */
     @BeforeEach
-    void setUp() {
-        runRepository.deleteAll();
+    void setUp() throws Exception {
+        try (Connection conn = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword());
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("TRUNCATE TABLE run RESTART IDENTITY");
+        }
 
         runA = new Run();
         runA.setPayload("{\"experiment\":\"A\",\"metrics\":{\"accuracy\":0.95,\"loss\":0.10}}");
