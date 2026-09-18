@@ -6,10 +6,12 @@ import com.runledger.dto.RunRequest;
 import com.runledger.entity.Run;
 import com.runledger.exception.GlobalExceptionHandler;
 import com.runledger.repository.RunRepository;
+import com.runledger.security.IdentityFilter;
 import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
@@ -30,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(RunController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import({GlobalExceptionHandler.class, SecurityConfig.class})
 class RunControllerTest {
 
@@ -38,6 +41,7 @@ class RunControllerTest {
     @MockitoBean private RunRepository runRepository;
     @MockitoBean private RunQueryService runQueryService;
     @MockitoBean private RunIngestionService ingestionService;
+    @MockitoBean private IdentityFilter identityFilter;
 
     private Run run(Long id, String payloadJson) {
         Run r = new Run();
@@ -339,7 +343,7 @@ class RunControllerTest {
                 .andExpect(jsonPath("$.content[0].matched").doesNotExist());
     }
 
-    // ---------- Mixed scalar + array compound test (NEW) ----------
+    // ---------- Mixed scalar + array compound test ----------
     @Test
     void compoundSearchMixedScalarAndArray_shouldReturnOnlyArrayPointers() throws Exception {
         Run run = run(1L, "{\"accuracy\":0.94,\"results\":[{\"sst2_cacc\":0.92,\"threshold\":0.8}]}");
@@ -348,12 +352,10 @@ class RunControllerTest {
         when(runQueryService.queryByMultipleFilters(any(), any(Pageable.class)))
                 .thenReturn(page);
 
-        // Resolve paths for both filters
         when(runQueryService.resolvePath(eq("accuracy"), eq("defense"))).thenReturn("accuracy");
         when(runQueryService.resolvePath(eq("results[].sst2_cacc"), eq("defense")))
                 .thenReturn("results[].sst2_cacc");
 
-        // Mock compound array matches (only the array conditions are considered)
         Map<Long, List<MatchDetail>> matchMap = Map.of(1L, List.of(
                 new MatchDetail("results[0].sst2_cacc", null, 0.92)
         ));

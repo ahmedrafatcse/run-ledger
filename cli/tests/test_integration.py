@@ -71,14 +71,45 @@ def docker_stack():
     else:
         pytest.fail("Backend did not become healthy")
 
-    yield api_base   # tests that need it can receive it, but most use globals
+    # Seed dev users so the identity filter accepts CLI requests.
+    SEED_SQL = """
+    INSERT INTO teams (id, name) VALUES
+      ('11111111-1111-1111-1111-111111111111', 'Team A'),
+      ('22222222-2222-2222-2222-222222222222', 'Team B')
+    ON CONFLICT (id) DO NOTHING;
+    INSERT INTO app_users (id, email, display_name, app_role, team_id) VALUES
+      ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@example.com', 'Alice', 'researcher', '11111111-1111-1111-1111-111111111111'),
+      ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bob@example.com',   'Bob',   'researcher', '22222222-2222-2222-2222-222222222222'),
+      ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'sup@example.com',   'Sup',   'supervisor', NULL)
+    ON CONFLICT (id) DO NOTHING;
+    INSERT INTO supervisor_team_assignments (supervisor_id, team_id) VALUES
+      ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111'),
+      ('cccccccc-cccc-cccc-cccc-cccccccccccc', '22222222-2222-2222-2222-222222222222')
+    ON CONFLICT DO NOTHING;
+    """
+
+    pg_container = subprocess.run(
+        ["docker", "compose", "-f", str(COMPOSE_FILE), "-p", project,
+         "ps", "-q", "postgres"],
+        capture_output=True, text=True, cwd=str(PROJECT_ROOT)
+    ).stdout.strip()
+
+    subprocess.run(
+        ["docker", "exec", "-i", pg_container,
+         "psql", "-U", "runledger", "-d", "runledger", "-c", SEED_SQL],
+        check=True, cwd=str(PROJECT_ROOT)
+    )
+
+    yield api_base
 
     # Tear everything down
     subprocess.run(
         ["docker", "compose", "-f", str(COMPOSE_FILE), "-p", project, "down", "-v"],
         cwd=str(PROJECT_ROOT), capture_output=True
     )
-
+    # Restore env so subsequent test files don't inherit the dead port.
+    os.environ.pop("RUNLEDGER_BASE_URL", None)
+    os.environ.pop("RUNLEDGER_PORT", None)
 
 def run_cli(*args):
     """Run the CLI in a subprocess, inheriting the environment (port, no-docker)."""
@@ -152,7 +183,8 @@ def test_full_golden_path(docker_stack, sample_folder):
     assert "running" in result.stdout.lower()
 
     # 6. deep API verification (uses dynamic API_BASE)
-    resp = requests.get(API_BASE, params={"batch": batch})
+    resp = requests.get(API_BASE, params={"batch": batch},
+                        headers={"X-User-Id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"})
     assert resp.status_code == 200
     runs = resp.json()["content"]
     assert len(runs) == 4

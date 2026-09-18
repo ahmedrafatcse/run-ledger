@@ -13,6 +13,31 @@ from rich.progress import Progress
 from rich.prompt import Prompt, Confirm
 from rich.table import Table
 
+# ---------------------------------------------------------------------------
+# Identity header — applied to every requests call in this file.
+#
+# The backend requires an X-User-Id header on every request (Slice 4). The
+# filter rejects requests without it. Until real authentication exists, the
+# CLI sends a development identity, overridable via RUNLEDGER_USER_ID.
+# ---------------------------------------------------------------------------
+import os as _os
+import requests as _requests
+
+_DEV_USER_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"  # Alice, from dev seed
+
+def _install_identity_header():
+    _original_request = _requests.Session.request
+    def _request_with_identity(self, method, url, **kwargs):
+        headers = dict(kwargs.pop("headers", {}) or {})
+        headers.setdefault(
+            "X-User-Id",
+            _os.environ.get("RUNLEDGER_USER_ID", _DEV_USER_ID),
+        )
+        return _original_request(self, method, url, headers=headers, **kwargs)
+    _requests.Session.request = _request_with_identity
+
+_install_identity_header()
+
 # ------------------------------------------------------------
 # Configuration – must match backend settings
 # ------------------------------------------------------------
