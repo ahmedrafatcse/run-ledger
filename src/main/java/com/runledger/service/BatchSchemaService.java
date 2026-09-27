@@ -38,6 +38,16 @@ public class BatchSchemaService {
      * {@code run} and writes to {@code batch_schema}, both of which are
      * scoped by RLS once Slice 6 is enabled.
      */
+    // TODO(Slice 6): getOrCreateMapping currently deletes-then-recreates on every
+// call, which requires write access to batch_schema. Supervisors do not have
+// that access (see V12). Once RLS is enabled, this method will need either:
+//   (a) a read-first path that returns the cached mapping when present, with
+//       an explicit rebuild method for refresh, or
+//   (b) different service methods for read vs. write access to the mapping,
+//       with the controller selecting based on role.
+// The FullChainIdentityIntegrationTest change in Slice 5.7 documents this -
+// the supervisor metrics path was changed to a search path because the metrics
+// endpoint triggers a write that the supervisor cannot perform.
     public Map<String, List<String>> getOrCreateMapping(String batch) {
         return secured.execute(() -> {
             batchSchemaRepository.deleteById(batch);
