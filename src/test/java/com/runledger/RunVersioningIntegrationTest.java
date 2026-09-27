@@ -92,6 +92,20 @@ class RunVersioningIntegrationTest {
                 postgres.getPassword());
              Statement stmt = conn.createStatement()) {
             stmt.execute("TRUNCATE TABLE run RESTART IDENTITY");
+
+            stmt.execute("""
+                INSERT INTO teams (id, name) VALUES
+                  ('11111111-1111-1111-1111-111111111111', 'Team A'),
+                  ('22222222-2222-2222-2222-222222222222', 'Team B')
+                ON CONFLICT (id) DO NOTHING
+                """);
+            stmt.execute("""
+                INSERT INTO app_users (id, email, display_name, app_role, team_id) VALUES
+                  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@example.com', 'Alice', 'researcher', '11111111-1111-1111-1111-111111111111'),
+                  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bob@example.com',   'Bob',   'researcher', '22222222-2222-2222-2222-222222222222'),
+                  ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'sup@example.com',   'Sup',   'supervisor', NULL)
+                ON CONFLICT (id) DO NOTHING
+                """);
         }
 
         AppSecurityContext.set(new AppSecurityContext.UserPrincipal(

@@ -9,6 +9,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "run")
@@ -61,4 +62,21 @@ public class Run {
      */
     @Column(name = "latest", nullable = false)
     private boolean latest = true;
+
+    // ── Team ownership & attribution columns (V10) ──
+
+    /**
+     * The team that owns this run. Set from the submitting user's identity
+     * during ingestion, never from the request payload. Nullable in the
+     * database until Slice 6.5 backfills existing rows.
+     */
+    @Column(name = "team_id")
+    private UUID teamId;
+
+    /**
+     * The user who submitted this run. Set from the resolved identity during
+     * ingestion, never from the request payload.
+     */
+    @Column(name = "uploaded_by")
+    private UUID uploadedBy;
 }

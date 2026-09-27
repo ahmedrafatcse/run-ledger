@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.runledger.dto.RunRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import com.runledger.security.AppSecurityContext;
 import com.runledger.security.SecuredTransactionTemplate;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -38,22 +39,42 @@ public class RunIngestionService {
      * Ingests a run request inside a transaction scoped to the current
      * request's identity.
      *
+     * <p><b>Ownership is derived from identity, never from the request.</b>
+     * The {@code team_id} and {@code uploaded_by} columns are populated from
+     * {@link AppSecurityContext}, not from anything in the submitted payload
+     * or request. A client cannot declare which team owns a run; only the
+     * server-resolved identity can. If a {@code teamId} field is ever added
+     * to {@link RunRequest}, it must be ignored here - honouring it would
+     * allow a researcher to submit a run that appears to belong to another
+     * team.
+     *
+     * <p>Only users with the {@code researcher} role may submit runs.
+     * Supervisors observe; they do not submit. Admins are excluded for the
+     * same reason until an explicit admin-submission path is defined.
+     *
      * <p>The transaction wrapper sets the Postgres role and the
      * {@code app.current_user_id} session variable so that Slice 6's RLS
-     * policies can filter rows by team. When RLS is disabled (today),
-     * the wrapper is a no-op for behavior but still enforces the
-     * identity-bound transaction boundary.
+     * policies can filter rows by team.
      *
      * @param request the ingestion request
      * @return the saved Run entity (new or existing)
+     * @throws IllegalStateException if the current identity is not a
+     *         researcher with an assigned team
      */
     public Run ingest(RunRequest request) {
+        AppSecurityContext.UserPrincipal p = AppSecurityContext.require();
+
+        if (!"researcher".equals(p.role()) || p.teamId() == null) {
+            throw new IllegalStateException(
+                    "Only researchers with an assigned team can submit runs "
+                            + "(current role: " + p.role() + ")");
+        }
+
         return secured.execute(() -> {
             String payloadStr = request.payload().toString();
             String sourceFile = extractSourceFile(payloadStr);
             int sourceIndex = extractSourceIndex(payloadStr);
 
-            // If no _source was provided, assign a random identity to avoid collisions
             if (sourceFile == null || sourceFile.isBlank()) {
                 sourceFile = "anon-" + UUID.randomUUID().toString();
                 sourceIndex = 0;
@@ -73,10 +94,6 @@ public class RunIngestionService {
                     return latest;
                 }
 
-                // Mark previous version as not latest.
-                // Native UPDATE touches only the `latest` column - the column
-                // grant permits this and rejects any attempt to modify content
-                // columns. Entity save() here would emit a full-row UPDATE.
                 entityManager.createNativeQuery(
                                 "UPDATE run SET latest = false WHERE id = :id")
                         .setParameter("id", latest.getId())
@@ -91,6 +108,10 @@ public class RunIngestionService {
             newVersion.setVersion(latestOpt.map(r -> r.getVersion() + 1).orElse(1));
             newVersion.setPayloadHash(newHash);
             newVersion.setLatest(true);
+
+            newVersion.setTeamId(p.teamId());
+            newVersion.setUploadedBy(p.userId());
+
             return runRepository.save(newVersion);
         });
     }
