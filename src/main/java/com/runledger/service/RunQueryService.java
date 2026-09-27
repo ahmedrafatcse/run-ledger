@@ -7,6 +7,7 @@ import com.runledger.dto.MatchDetail;
 import com.runledger.dto.MultiFilterRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import com.runledger.security.SecuredTransactionTemplate;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.springframework.data.domain.Page;
@@ -24,24 +25,27 @@ public class RunQueryService {
     private final CompoundQueryBuilder compoundQueryBuilder;
     private final EntityManager entityManager;
     private final ObjectMapper objectMapper;
+    private final SecuredTransactionTemplate secured;
 
     public RunQueryService(RunRepository runRepository,
                            BatchSchemaService batchSchemaService,
                            CompoundQueryBuilder compoundQueryBuilder,
                            EntityManager entityManager,
-                           ObjectMapper objectMapper) {
+                           ObjectMapper objectMapper,
+                           SecuredTransactionTemplate secured) {
         this.runRepository = runRepository;
         this.batchSchemaService = batchSchemaService;
         this.compoundQueryBuilder = compoundQueryBuilder;
         this.entityManager = entityManager;
         this.objectMapper = objectMapper;
+        this.secured = secured;
     }
 
     // ---------------------------------------------------------------
     // Paginated query – no batch filter
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value, Pageable pageable) {
-        return executeQuery(metric, op, value, null, pageable);
+        return secured.execute(() -> executeQuery(metric, op, value, null, pageable));
     }
 
     // ---------------------------------------------------------------
@@ -49,68 +53,83 @@ public class RunQueryService {
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value,
                                    String batch, Pageable pageable) {
-        String resolvedPath = resolvePath(metric, batch);
-        return executeQuery(resolvedPath, op, value, batch, pageable);
+        return secured.execute(() -> {
+            String resolvedPath = resolvePath(metric, batch);
+            return executeQuery(resolvedPath, op, value, batch, pageable);
+        });
     }
 
     // ---------------------------------------------------------------
     // Full‑text phrase search (no batch)
     // ---------------------------------------------------------------
     public Page<Run> searchByPhrase(String phrase, Pageable pageable) {
-        return runRepository.searchByPhrase(phrase, pageable);
+        return secured.execute(() -> runRepository.searchByPhrase(phrase, pageable));
     }
 
     // ---------------------------------------------------------------
     // Full‑text phrase search (with batch)
     // ---------------------------------------------------------------
     public Page<Run> searchByPhrase(String phrase, String batch, Pageable pageable) {
-        return runRepository.searchByPhraseBatch(phrase, batch, pageable);
+        return secured.execute(() -> runRepository.searchByPhraseBatch(phrase, batch, pageable));
     }
 
     // ---------------------------------------------------------------
     // Fuzzy trigram search (no batch)
     // ---------------------------------------------------------------
     public Page<Run> searchByFuzzy(String term, double threshold, Pageable pageable) {
-        return runRepository.searchByFuzzy(term, threshold, pageable);
+        return secured.execute(() -> runRepository.searchByFuzzy(term, threshold, pageable));
     }
 
     // ---------------------------------------------------------------
     // Fuzzy trigram search (with batch)
     // ---------------------------------------------------------------
     public Page<Run> searchByFuzzy(String term, double threshold, String batch, Pageable pageable) {
-        return runRepository.searchByFuzzyBatch(term, threshold, batch, pageable);
+        return secured.execute(() -> runRepository.searchByFuzzyBatch(term, threshold, batch, pageable));
     }
 
     // ---------------------------------------------------------------
     // Metric key discovery – without / with batch
     // ---------------------------------------------------------------
     public List<String> getAvailableMetrics() {
-        return runRepository.findDistinctMetricKeys();
+        return secured.execute(() -> runRepository.findDistinctMetricKeys());
     }
 
     public List<String> getAvailableMetrics(String batch) {
-        if (batch == null || batch.isBlank()) {
-            return runRepository.findDistinctMetricKeys();
-        }
-        Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
-        return mapping.keySet().stream().sorted().toList();
+        return secured.execute(() -> {
+            if (batch == null || batch.isBlank()) {
+                return runRepository.findDistinctMetricKeys();
+            }
+            Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
+            return mapping.keySet().stream().sorted().toList();
+        });
     }
 
     public List<Map<String, Object>> getAvailableMetricsVerbose(String batch) {
-        Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (var entry : mapping.entrySet()) {
-            for (String path : entry.getValue()) {
-                Map<String, Object> item = new LinkedHashMap<>();
-                item.put("key", entry.getKey());
-                item.put("path", path);
-                item.put("depth", path.split("\\.").length);
-                result.add(item);
+        return secured.execute(() -> {
+            Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (var entry : mapping.entrySet()) {
+                for (String path : entry.getValue()) {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("key", entry.getKey());
+                    item.put("path", path);
+                    item.put("depth", path.split("\\.").length);
+                    result.add(item);
+                }
             }
-        }
-        return result;
+            return result;
+        });
     }
 
+    /**
+     * Resolve a shorthand metric to its full dot-path using the batch schema.
+     *
+     * <p>Not wrapped in {@link SecuredTransactionTemplate}: this method's only
+     * database access is through {@code batchSchemaService.getOrCreateMapping},
+     * which is itself wrapped. When called from a wrapped context, the inner
+     * call joins the outer transaction; when called directly (e.g. from
+     * RunController for pre-resolving paths), the inner call starts its own.
+     */
     public String resolvePath(String metric, String batch) {
         return resolvePathInternal(metric, batch);
     }
@@ -119,31 +138,39 @@ public class RunQueryService {
     // Multi‑condition AND/OR query (now filters to latest versions)
     // ---------------------------------------------------------------
     public Page<Run> queryByMultipleFilters(MultiFilterRequest request, Pageable pageable) {
-        List<ResolvedFilter> resolved = new ArrayList<>();
-        for (Filter f : request.filters()) {
-            String path = resolvePath(f.metric(), request.batch());
-            resolved.add(new ResolvedFilter(path, f.op(), f.value()));
-        }
+        return secured.execute(() -> {
+            List<ResolvedFilter> resolved = new ArrayList<>();
+            for (Filter f : request.filters()) {
+                String path = resolvePath(f.metric(), request.batch());
+                resolved.add(new ResolvedFilter(path, f.op(), f.value()));
+            }
 
-        CompoundQueryBuilder.CompoundQuery q = compoundQueryBuilder.build(resolved, request.combine());
+            CompoundQueryBuilder.CompoundQuery q = compoundQueryBuilder.build(resolved, request.combine());
 
-        String dataSql = "SELECT r.* FROM run r WHERE r.latest = true AND " + q.whereClause() + " ORDER BY r.created_at DESC";
-        String countSql = "SELECT count(*) FROM run r WHERE r.latest = true AND " + q.countWhere();
+            String dataSql = "SELECT r.* FROM run r WHERE r.latest = true AND " + q.whereClause() + " ORDER BY r.created_at DESC";
+            String countSql = "SELECT count(*) FROM run r WHERE r.latest = true AND " + q.countWhere();
 
-        if (request.batch() != null && !request.batch().isBlank()) {
-            String batchParam = "batch_" + UUID.randomUUID().toString().replace("-", "");
-            dataSql = "SELECT r.* FROM run r WHERE r.latest = true AND r.batch = :" + batchParam + " AND " + q.whereClause() + " ORDER BY r.created_at DESC";
-            countSql = "SELECT count(*) FROM run r WHERE r.latest = true AND r.batch = :" + batchParam + " AND " + q.countWhere();
-            q.params().put(batchParam, request.batch());
-        }
+            if (request.batch() != null && !request.batch().isBlank()) {
+                String batchParam = "batch_" + UUID.randomUUID().toString().replace("-", "");
+                dataSql = "SELECT r.* FROM run r WHERE r.latest = true AND r.batch = :" + batchParam + " AND " + q.whereClause() + " ORDER BY r.created_at DESC";
+                countSql = "SELECT count(*) FROM run r WHERE r.latest = true AND r.batch = :" + batchParam + " AND " + q.countWhere();
+                q.params().put(batchParam, request.batch());
+            }
 
-        return runRepository.findByCompoundFilter(dataSql, q.params(), countSql, pageable);
+            return runRepository.findByCompoundFilter(dataSql, q.params(), countSql, pageable);
+        });
     }
 
     // ---------------------------------------------------------------
     // Pointer / match localisation methods
     // ---------------------------------------------------------------
 
+    /**
+     * Extracts a match detail for a scalar dot-path from an already-loaded Run.
+     *
+     * <p>Not wrapped: this method performs no database access. It operates
+     * purely on the JSON payload of the Run entity passed in.
+     */
     public List<MatchDetail> getScalarMatch(Run run, String resolvedPath, String op, String value) {
         try {
             JsonNode root = objectMapper.readTree(run.getPayload());
@@ -167,234 +194,234 @@ public class RunQueryService {
      */
     public Map<Long, List<MatchDetail>> getArrayMatches(List<Long> runIds, String fullPath,
                                                         String op, String value) {
-        if (runIds.isEmpty()) return Map.of();
+        return secured.execute(() -> {
+            if (runIds.isEmpty()) return Map.of();
 
-        String idsCsv = runIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+            String idsCsv = runIds.stream().map(String::valueOf).collect(Collectors.joining(","));
 
-        // Parse the full path into segments: e.g. "clients[].sweep[].fin_asr"
-        List<String> segments = new ArrayList<>();
-        int start = 0;
-        while (start < fullPath.length()) {
-            int bracket = fullPath.indexOf("[]", start);
-            int dot = fullPath.indexOf('.', start);
-            if (bracket == -1 && dot == -1) {
-                segments.add(fullPath.substring(start));
-                break;
-            }
-            if (bracket != -1 && (dot == -1 || bracket < dot)) {
-                if (bracket > start) segments.add(fullPath.substring(start, bracket));
-                segments.add("[]");
-                start = bracket + 2;
-                if (start < fullPath.length() && fullPath.charAt(start) == '.') start++;
-            } else {
-                if (dot > start) segments.add(fullPath.substring(start, dot));
-                start = dot + 1;
-            }
-        }
-
-        // Build SQL with nested lateral joins that chain correctly
-        StringBuilder from = new StringBuilder("FROM run r");
-        List<String> arrayPaths = new ArrayList<>();
-        List<String> indexAliases = new ArrayList<>();
-        int arrayCount = 0;
-        List<String> pathSegments = new ArrayList<>();   // non‑array segments from the last "[]"
-
-        for (String seg : segments) {
-            if (seg.equals("[]")) {
-                // The path up to this array is whatever non‑array segments we collected after the previous "[]"
-                String current = pathSegments.isEmpty() ? "" : String.join(".", pathSegments);
-                arrayPaths.add(current);
-                String alias = "arr" + arrayCount;
-                String idxAlias = "idx" + arrayCount;
-                // First unnest uses r.payload; subsequent ones use the previous array's element
-                String source = (arrayCount == 0) ? "r.payload" : ("arr" + (arrayCount - 1) + ".elem");
-                from.append(" CROSS JOIN LATERAL jsonb_array_elements(")
-                        .append(source).append(" #> string_to_array(:arrayPath")
-                        .append(arrayCount).append(", '.')) WITH ORDINALITY AS ").append(alias)
-                        .append("(elem, ").append(idxAlias).append(")");
-                indexAliases.add(idxAlias);
-                arrayCount++;
-                // Reset pathSegments for the next level
-                pathSegments.clear();
-            } else {
-                pathSegments.add(seg);
-            }
-        }
-
-        // The leaf is the concatenation of segments after the last "[]" (already in pathSegments)
-        String leafParts = String.join(",", pathSegments);
-
-        // Use the innermost array alias for the predicate
-        String innermostAlias = "arr" + (arrayCount - 1);
-        String predicate = buildArrayPredicate(op, value, innermostAlias);
-
-        StringBuilder sql = new StringBuilder("SELECT r.id, ");
-        for (int i = 0; i < arrayCount; i++) {
-            sql.append("(").append(indexAliases.get(i)).append(" - 1) AS idx").append(i).append(", ");
-        }
-        sql.append(innermostAlias).append(".elem AS snippet, ")
-                .append(innermostAlias).append(".elem #> string_to_array(:leafParts, ',') AS value ")
-                .append(from)
-                .append(" WHERE r.id = ANY(string_to_array(:ids, ',')::bigint[])")
-                .append(" AND r.latest = true")
-                .append(" AND jsonb_typeof(").append(innermostAlias)
-                .append(".elem #> string_to_array(:leafParts, ',')) = :jsonType")
-                .append(" AND (")
-                .append(predicate)
-                .append(")");
-
-        Query query = entityManager.createNativeQuery(sql.toString());
-        query.setParameter("ids", idsCsv);
-        for (int i = 0; i < arrayCount; i++) {
-            query.setParameter("arrayPath" + i, arrayPaths.get(i));
-        }
-        query.setParameter("leafParts", leafParts);
-        query.setParameter("jsonType", isNumeric(value) ? "number" : "string");
-        setPredicateParams(query, op, value);
-
-        @SuppressWarnings("unchecked")
-        List<Object[]> rows = query.getResultList();
-        Map<Long, List<MatchDetail>> result = new HashMap<>();
-        for (Object[] row : rows) {
-            Long id = ((Number) row[0]).longValue();
-            // Build pointer string from segments + indices
-            StringBuilder pointer = new StringBuilder();
-            int segIdx = 0;
-            for (String seg : segments) {
-                if (seg.equals("[]")) {
-                    int idx = ((Number) row[1 + segIdx]).intValue();
-                    pointer.append("[").append(idx).append("]");
-                    segIdx++;
+            // Parse the full path into segments: e.g. "clients[].sweep[].fin_asr"
+            List<String> segments = new ArrayList<>();
+            int start = 0;
+            while (start < fullPath.length()) {
+                int bracket = fullPath.indexOf("[]", start);
+                int dot = fullPath.indexOf('.', start);
+                if (bracket == -1 && dot == -1) {
+                    segments.add(fullPath.substring(start));
+                    break;
+                }
+                if (bracket != -1 && (dot == -1 || bracket < dot)) {
+                    if (bracket > start) segments.add(fullPath.substring(start, bracket));
+                    segments.add("[]");
+                    start = bracket + 2;
+                    if (start < fullPath.length() && fullPath.charAt(start) == '.') start++;
                 } else {
-                    if (pointer.length() > 0 && segIdx > 0) pointer.append(".");
-                    pointer.append(seg);
+                    if (dot > start) segments.add(fullPath.substring(start, dot));
+                    start = dot + 1;
                 }
             }
-            String snippetJson = (String) row[1 + arrayCount];
-            JsonNode snippet = safeReadTree(snippetJson);
-            Object val = convertValue(row[2 + arrayCount]);
-            result.computeIfAbsent(id, k -> new ArrayList<>())
-                    .add(new MatchDetail(pointer.toString(), snippet, val));
-        }
-        return result;
+
+            // Build SQL with nested lateral joins that chain correctly
+            StringBuilder from = new StringBuilder("FROM run r");
+            List<String> arrayPaths = new ArrayList<>();
+            List<String> indexAliases = new ArrayList<>();
+            int arrayCount = 0;
+            List<String> pathSegments = new ArrayList<>();
+
+            for (String seg : segments) {
+                if (seg.equals("[]")) {
+                    String current = pathSegments.isEmpty() ? "" : String.join(".", pathSegments);
+                    arrayPaths.add(current);
+                    String alias = "arr" + arrayCount;
+                    String idxAlias = "idx" + arrayCount;
+                    String source = (arrayCount == 0) ? "r.payload" : ("arr" + (arrayCount - 1) + ".elem");
+                    from.append(" CROSS JOIN LATERAL jsonb_array_elements(")
+                            .append(source).append(" #> string_to_array(:arrayPath")
+                            .append(arrayCount).append(", '.')) WITH ORDINALITY AS ").append(alias)
+                            .append("(elem, ").append(idxAlias).append(")");
+                    indexAliases.add(idxAlias);
+                    arrayCount++;
+                    pathSegments.clear();
+                } else {
+                    pathSegments.add(seg);
+                }
+            }
+
+            String leafParts = String.join(",", pathSegments);
+
+            String innermostAlias = "arr" + (arrayCount - 1);
+            String predicate = buildArrayPredicate(op, value, innermostAlias);
+
+            StringBuilder sql = new StringBuilder("SELECT r.id, ");
+            for (int i = 0; i < arrayCount; i++) {
+                sql.append("(").append(indexAliases.get(i)).append(" - 1) AS idx").append(i).append(", ");
+            }
+            sql.append(innermostAlias).append(".elem AS snippet, ")
+                    .append(innermostAlias).append(".elem #> string_to_array(:leafParts, ',') AS value ")
+                    .append(from)
+                    .append(" WHERE r.id = ANY(string_to_array(:ids, ',')::bigint[])")
+                    .append(" AND r.latest = true")
+                    .append(" AND jsonb_typeof(").append(innermostAlias)
+                    .append(".elem #> string_to_array(:leafParts, ',')) = :jsonType")
+                    .append(" AND (")
+                    .append(predicate)
+                    .append(")");
+
+            Query query = entityManager.createNativeQuery(sql.toString());
+            query.setParameter("ids", idsCsv);
+            for (int i = 0; i < arrayCount; i++) {
+                query.setParameter("arrayPath" + i, arrayPaths.get(i));
+            }
+            query.setParameter("leafParts", leafParts);
+            query.setParameter("jsonType", isNumeric(value) ? "number" : "string");
+            setPredicateParams(query, op, value);
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = query.getResultList();
+            Map<Long, List<MatchDetail>> result = new HashMap<>();
+            for (Object[] row : rows) {
+                Long id = ((Number) row[0]).longValue();
+                StringBuilder pointer = new StringBuilder();
+                int segIdx = 0;
+                for (String seg : segments) {
+                    if (seg.equals("[]")) {
+                        int idx = ((Number) row[1 + segIdx]).intValue();
+                        pointer.append("[").append(idx).append("]");
+                        segIdx++;
+                    } else {
+                        if (pointer.length() > 0 && segIdx > 0) pointer.append(".");
+                        pointer.append(seg);
+                    }
+                }
+                String snippetJson = (String) row[1 + arrayCount];
+                JsonNode snippet = safeReadTree(snippetJson);
+                Object val = convertValue(row[2 + arrayCount]);
+                result.computeIfAbsent(id, k -> new ArrayList<>())
+                        .add(new MatchDetail(pointer.toString(), snippet, val));
+            }
+            return result;
+        });
     }
 
     // ---------------------------------------------------------------
-    // Compound array pointer extraction (unchanged)
+    // Compound array pointer extraction
     // ---------------------------------------------------------------
     public Map<Long, List<MatchDetail>> getCompoundArrayMatches(
             List<Long> runIds, String arrayRoot, List<ResolvedFilter> arrayFilters, String combine) {
-        if (runIds.isEmpty() || arrayFilters.isEmpty()) return Map.of();
+        return secured.execute(() -> {
+            if (runIds.isEmpty() || arrayFilters.isEmpty()) return Map.of();
 
-        String idsCsv = runIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+            String idsCsv = runIds.stream().map(String::valueOf).collect(Collectors.joining(","));
 
-        List<ResolvedFilter> elementFilters = new ArrayList<>();
-        for (ResolvedFilter f : arrayFilters) {
-            int idx = f.getPath().indexOf("[]");
-            String leafPart = f.getPath().substring(idx + 2);
-            if (leafPart.startsWith(".")) leafPart = leafPart.substring(1);
-            elementFilters.add(new ResolvedFilter(leafPart, f.getOp(), f.getValue()));
-        }
+            List<ResolvedFilter> elementFilters = new ArrayList<>();
+            for (ResolvedFilter f : arrayFilters) {
+                int idx = f.getPath().indexOf("[]");
+                String leafPart = f.getPath().substring(idx + 2);
+                if (leafPart.startsWith(".")) leafPart = leafPart.substring(1);
+                elementFilters.add(new ResolvedFilter(leafPart, f.getOp(), f.getValue()));
+            }
 
-        CompoundQueryBuilder.CompoundQuery cq = compoundQueryBuilder.buildElementPredicate(elementFilters, combine);
+            CompoundQueryBuilder.CompoundQuery cq = compoundQueryBuilder.buildElementPredicate(elementFilters, combine);
 
-        String sql = """
-            SELECT r.id,
-                   (arr.idx - 1) AS array_index,
-                   arr.elem            AS snippet,
-                   arr.elem #> string_to_array(:leaf, ',') AS value
-            FROM run r
-            CROSS JOIN LATERAL jsonb_array_elements(r.payload #> string_to_array(:arrayPath, '.'))
-                                WITH ORDINALITY AS arr(elem, idx)
-            WHERE r.id = ANY(string_to_array(:ids, ',')::bigint[])
-              AND r.latest = true
-              AND """ + cq.whereClause();
+            String sql = """
+                SELECT r.id,
+                       (arr.idx - 1) AS array_index,
+                       arr.elem            AS snippet,
+                       arr.elem #> string_to_array(:leaf, ',') AS value
+                FROM run r
+                CROSS JOIN LATERAL jsonb_array_elements(r.payload #> string_to_array(:arrayPath, '.'))
+                                    WITH ORDINALITY AS arr(elem, idx)
+                WHERE r.id = ANY(string_to_array(:ids, ',')::bigint[])
+                  AND r.latest = true
+                  AND """ + cq.whereClause();
 
-        Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("ids", idsCsv);
-        query.setParameter("arrayPath", arrayRoot);
-        String representativeLeaf = elementFilters.get(0).getPath().replace(".", ",");
-        query.setParameter("leaf", representativeLeaf);
+            Query query = entityManager.createNativeQuery(sql);
+            query.setParameter("ids", idsCsv);
+            query.setParameter("arrayPath", arrayRoot);
+            String representativeLeaf = elementFilters.get(0).getPath().replace(".", ",");
+            query.setParameter("leaf", representativeLeaf);
 
-        for (var entry : cq.params().entrySet()) {
-            query.setParameter(entry.getKey(), entry.getValue());
-        }
+            for (var entry : cq.params().entrySet()) {
+                query.setParameter(entry.getKey(), entry.getValue());
+            }
 
-        @SuppressWarnings("unchecked")
-        List<Object[]> rows = query.getResultList();
-        Map<Long, List<MatchDetail>> result = new HashMap<>();
-        for (Object[] row : rows) {
-            Long id = ((Number) row[0]).longValue();
-            int arrayIdx = ((Number) row[1]).intValue();
-            String snippetJson = (String) row[2];
-            JsonNode snippet = safeReadTree(snippetJson);
-            Object val = convertValue(row[3]);
-            String leafSample = elementFilters.get(0).getPath().replace(",", ".");
-            String pointer = arrayRoot + "[" + arrayIdx + "]." + leafSample;
-            result.computeIfAbsent(id, k -> new ArrayList<>())
-                    .add(new MatchDetail(pointer, snippet, val));
-        }
-        return result;
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = query.getResultList();
+            Map<Long, List<MatchDetail>> result = new HashMap<>();
+            for (Object[] row : rows) {
+                Long id = ((Number) row[0]).longValue();
+                int arrayIdx = ((Number) row[1]).intValue();
+                String snippetJson = (String) row[2];
+                JsonNode snippet = safeReadTree(snippetJson);
+                Object val = convertValue(row[3]);
+                String leafSample = elementFilters.get(0).getPath().replace(",", ".");
+                String pointer = arrayRoot + "[" + arrayIdx + "]." + leafSample;
+                result.computeIfAbsent(id, k -> new ArrayList<>())
+                        .add(new MatchDetail(pointer, snippet, val));
+            }
+            return result;
+        });
     }
 
     // ---------------------------------------------------------------
     // Aggregate query
     // ---------------------------------------------------------------
     public List<Map<String, Object>> aggregate(String agg, String metric, String groupBy, String batch) {
-        Set<String> allowed = Set.of("AVG", "MAX", "MIN", "SUM", "COUNT");
-        if (!allowed.contains(agg.toUpperCase())) {
-            throw new IllegalArgumentException("Unsupported aggregate: " + agg + ". Allowed: " + allowed);
-        }
-
-        String metricExpr = agg.equalsIgnoreCase("COUNT") && (metric == null || metric.isBlank())
-                ? "*"
-                : "(r.payload #>> string_to_array(:metric, '.'))::numeric";
-
-        StringBuilder sql = new StringBuilder("SELECT ");
-        sql.append(agg.toUpperCase()).append("(").append(metricExpr).append(") AS result");
-
-        if (groupBy != null && !groupBy.isBlank()) {
-            sql.append(", (r.payload #>> string_to_array(:groupBy, '.')) AS group_val");
-        }
-
-        sql.append(" FROM run r WHERE r.latest = true");
-
-        if (batch != null && !batch.isBlank()) {
-            sql.append(" AND r.batch = :batch");
-        }
-
-        if (groupBy != null && !groupBy.isBlank()) {
-            sql.append(" GROUP BY group_val ORDER BY result DESC");
-        }
-
-        Query query = entityManager.createNativeQuery(sql.toString());
-        if (!agg.equalsIgnoreCase("COUNT") || (metric != null && !metric.isBlank())) {
-            query.setParameter("metric", metric);
-        }
-        if (groupBy != null && !groupBy.isBlank()) {
-            query.setParameter("groupBy", groupBy);
-        }
-        if (batch != null && !batch.isBlank()) {
-            query.setParameter("batch", batch);
-        }
-
-        @SuppressWarnings("unchecked")
-        List<Object> rows = query.getResultList();
-        List<Map<String, Object>> results = new ArrayList<>();
-        for (Object row : rows) {
-            Map<String, Object> entry = new LinkedHashMap<>();
-            if (groupBy != null && !groupBy.isBlank()) {
-                Object[] cols = (Object[]) row;
-                Number resultValue = (Number) cols[0];
-                entry.put("result", resultValue.doubleValue());
-                entry.put("group", cols[1] != null ? cols[1].toString() : null);
-            } else {
-                Number resultValue = (Number) row;
-                entry.put("result", resultValue.doubleValue());
+        return secured.execute(() -> {
+            Set<String> allowed = Set.of("AVG", "MAX", "MIN", "SUM", "COUNT");
+            if (!allowed.contains(agg.toUpperCase())) {
+                throw new IllegalArgumentException("Unsupported aggregate: " + agg + ". Allowed: " + allowed);
             }
-            results.add(entry);
-        }
-        return results;
+
+            String metricExpr = agg.equalsIgnoreCase("COUNT") && (metric == null || metric.isBlank())
+                    ? "*"
+                    : "(r.payload #>> string_to_array(:metric, '.'))::numeric";
+
+            StringBuilder sql = new StringBuilder("SELECT ");
+            sql.append(agg.toUpperCase()).append("(").append(metricExpr).append(") AS result");
+
+            if (groupBy != null && !groupBy.isBlank()) {
+                sql.append(", (r.payload #>> string_to_array(:groupBy, '.')) AS group_val");
+            }
+
+            sql.append(" FROM run r WHERE r.latest = true");
+
+            if (batch != null && !batch.isBlank()) {
+                sql.append(" AND r.batch = :batch");
+            }
+
+            if (groupBy != null && !groupBy.isBlank()) {
+                sql.append(" GROUP BY group_val ORDER BY result DESC");
+            }
+
+            Query query = entityManager.createNativeQuery(sql.toString());
+            if (!agg.equalsIgnoreCase("COUNT") || (metric != null && !metric.isBlank())) {
+                query.setParameter("metric", metric);
+            }
+            if (groupBy != null && !groupBy.isBlank()) {
+                query.setParameter("groupBy", groupBy);
+            }
+            if (batch != null && !batch.isBlank()) {
+                query.setParameter("batch", batch);
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Object> rows = query.getResultList();
+            List<Map<String, Object>> results = new ArrayList<>();
+            for (Object row : rows) {
+                Map<String, Object> entry = new LinkedHashMap<>();
+                if (groupBy != null && !groupBy.isBlank()) {
+                    Object[] cols = (Object[]) row;
+                    Number resultValue = (Number) cols[0];
+                    entry.put("result", resultValue.doubleValue());
+                    entry.put("group", cols[1] != null ? cols[1].toString() : null);
+                } else {
+                    Number resultValue = (Number) row;
+                    entry.put("result", resultValue.doubleValue());
+                }
+                results.add(entry);
+            }
+            return results;
+        });
     }
 
     // ---------------------------------------------------------------
@@ -409,7 +436,7 @@ public class RunQueryService {
             Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
             List<String> paths = mapping.get(metric);
             if (paths != null && !paths.isEmpty()) {
-                return paths.get(0);   // shallowest occurrence is always first
+                return paths.get(0);
             }
         }
         return metric;
@@ -507,9 +534,6 @@ public class RunQueryService {
         }
     }
 
-    // --- Pointer helpers ---
-
-    // Updated to accept an alias for nested arrays
     private String buildArrayPredicate(String op, String value, String alias) {
         boolean numeric = isNumeric(value);
         String elemRef = alias + ".elem";

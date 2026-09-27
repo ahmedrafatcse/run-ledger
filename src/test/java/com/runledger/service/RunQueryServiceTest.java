@@ -7,12 +7,12 @@ import com.runledger.dto.MatchDetail;
 import com.runledger.dto.MultiFilterRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import com.runledger.security.SecuredTransactionTemplate;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -42,16 +42,27 @@ class RunQueryServiceTest {
     @Mock
     private EntityManager entityManager;
 
+    @Mock
+    private SecuredTransactionTemplate secured;
+
     private ObjectMapper objectMapper = new ObjectMapper()
             .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
 
-    @InjectMocks
     private RunQueryService runQueryService;
 
     @BeforeEach
     void setUp() {
+        // Pass-through stub: run the caller's supplier inline. In unit tests
+        // there is no real transaction and no AppSecurityContext, so we skip
+        // the role/identity setup entirely. The behaviour under test is the
+        // query logic, not the transaction boundary.
+        lenient().when(secured.execute(any())).thenAnswer(inv -> {
+            java.util.function.Supplier<?> work = inv.getArgument(0);
+            return work.get();
+        });
+
         runQueryService = new RunQueryService(runRepository, batchSchemaService,
-                compoundQueryBuilder, entityManager, objectMapper);
+                compoundQueryBuilder, entityManager, objectMapper, secured);
     }
 
     // ---------------------------------------------------------------
@@ -176,7 +187,7 @@ class RunQueryServiceTest {
     @Test
     void shouldResolveShorthandKeyUsingBatchMapping() {
         when(batchSchemaService.getOrCreateMapping("batch1"))
-                .thenReturn(Map.of("accuracy", List.of("metrics.accuracy")));   // <-- updated
+                .thenReturn(Map.of("accuracy", List.of("metrics.accuracy")));
 
         var dummyRuns = List.of(new Run());
         Page<Run> dummyPage = new PageImpl<>(dummyRuns, Pageable.unpaged(), dummyRuns.size());
@@ -208,7 +219,7 @@ class RunQueryServiceTest {
     @Test
     void shouldReturnRawKeyWhenNoMappingExists() {
         when(batchSchemaService.getOrCreateMapping("batch1"))
-                .thenReturn(Collections.emptyMap());   // <-- updated
+                .thenReturn(Collections.emptyMap());
 
         var dummyRuns = List.of(new Run());
         Page<Run> dummyPage = new PageImpl<>(dummyRuns, Pageable.unpaged(), dummyRuns.size());
@@ -250,7 +261,7 @@ class RunQueryServiceTest {
         );
 
         when(batchSchemaService.getOrCreateMapping("test-batch"))
-                .thenReturn(Map.of("accuracy", List.of("accuracy"), "loss", List.of("metrics.loss")));   // <-- updated
+                .thenReturn(Map.of("accuracy", List.of("accuracy"), "loss", List.of("metrics.loss")));
 
         HashMap<String, Object> mutableParams = new HashMap<>();
         mutableParams.put("p0", "accuracy");
@@ -308,7 +319,6 @@ class RunQueryServiceTest {
 
     @Test
     void getArrayMatches_shouldReturnCorrectPointers() {
-        // Mock EntityManager native query
         Query mockQuery = mock(Query.class);
         when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery);
         when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
@@ -318,7 +328,6 @@ class RunQueryServiceTest {
         List<Object[]> rows = List.<Object[]>of(row);
         when(mockQuery.getResultList()).thenReturn(rows);
 
-        // Updated to 4-argument call – full path, op, value
         Map<Long, List<MatchDetail>> result = runQueryService.getArrayMatches(
                 List.of(1L), "results[].sst2_cacc", "gt", "0.9");
 
@@ -332,7 +341,6 @@ class RunQueryServiceTest {
 
     @Test
     void getArrayMatches_shouldHandleEmptyInput() {
-        // Updated to 4-argument call
         Map<Long, List<MatchDetail>> result = runQueryService.getArrayMatches(
                 List.of(), "results[].sst2_cacc", "gt", "0.9");
         assertThat(result).isEmpty();
