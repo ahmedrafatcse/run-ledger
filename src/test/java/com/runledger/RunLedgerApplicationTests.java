@@ -2,6 +2,8 @@ package com.runledger;
 
 import com.runledger.config.SecurityConfig;
 import com.runledger.repository.RunRepository;
+import com.runledger.security.AppSecurityContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -55,9 +58,15 @@ class RunLedgerApplicationTests {
     private RunRepository runRepository;
 
     /**
-     * Cleanup between tests. Runs as the container owner (runledger) because
-     * the application role (runledger_app) has no DELETE privilege — which is
-     * exactly the security property Slice 3 establishes.
+     * Cleanup + identity binding.
+     *
+     * <p>Truncate runs as the container owner (runledger) because the
+     * application role (runledger_app) has no DELETE privilege — which is
+     * the security property Slice 3 establishes.
+     *
+     * <p>Identity binding is required because addFilters = false bypasses
+     * the identity filter, and SecuredTransactionTemplate (Slice 5) requires
+     * a bound identity to set the Postgres role and session variables.
      */
     @BeforeEach
     void setUp() throws Exception {
@@ -68,6 +77,19 @@ class RunLedgerApplicationTests {
              Statement stmt = conn.createStatement()) {
             stmt.execute("TRUNCATE TABLE run RESTART IDENTITY");
         }
+
+        // Bind a default identity for the test. Alice is a researcher on Team A,
+        // matching the seed data in the dev database. Tests that need a different
+        // identity can override this within the test method.
+        AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
+                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                "researcher",
+                UUID.fromString("11111111-1111-1111-1111-111111111111")));
+    }
+
+    @AfterEach
+    void clearIdentity() {
+        AppSecurityContext.clear();
     }
 
     // ================================================================

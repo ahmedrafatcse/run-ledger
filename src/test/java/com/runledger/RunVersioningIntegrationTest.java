@@ -1,6 +1,8 @@
 package com.runledger;
 
 import com.runledger.repository.RunRepository;
+import com.runledger.security.AppSecurityContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -71,9 +74,15 @@ class RunVersioningIntegrationTest {
         """;
 
     /**
-     * Cleanup between tests. Runs as the container owner (runledger) because
-     * the application role (runledger_app) has no DELETE privilege — which is
-     * exactly the security property Slice 3 establishes.
+     * Cleanup + identity binding.
+     *
+     * <p>Truncate runs as the container owner (runledger) because the
+     * application role (runledger_app) has no DELETE privilege — which is
+     * the security property Slice 3 establishes.
+     *
+     * <p>Identity binding is required because addFilters = false bypasses
+     * the identity filter, and SecuredTransactionTemplate (Slice 5) requires
+     * a bound identity to set the Postgres role and session variables.
      */
     @BeforeEach
     void setUp() throws Exception {
@@ -84,6 +93,16 @@ class RunVersioningIntegrationTest {
              Statement stmt = conn.createStatement()) {
             stmt.execute("TRUNCATE TABLE run RESTART IDENTITY");
         }
+
+        AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
+                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                "researcher",
+                UUID.fromString("11111111-1111-1111-1111-111111111111")));
+    }
+
+    @AfterEach
+    void clearIdentity() {
+        AppSecurityContext.clear();
     }
 
     @Test
@@ -151,7 +170,13 @@ class RunVersioningIntegrationTest {
             {"experiment":"version_test_v3","accuracy":0.98,"_source":{"file":"run.json","index":0}}
             """;
 
+        // Each async task runs on a ForkJoinPool thread and doesn't inherit
+        // the test thread's ThreadLocal, so identity must be bound inside.
         CompletableFuture<Void> f1 = CompletableFuture.runAsync(() -> {
+            AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
+                    UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                    "researcher",
+                    UUID.fromString("11111111-1111-1111-1111-111111111111")));
             try {
                 mockMvc.perform(post("/api/runs")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -159,10 +184,16 @@ class RunVersioningIntegrationTest {
                         .andExpect(status().isCreated());
             } catch (Exception e) {
                 throw new RuntimeException(e);
+            } finally {
+                AppSecurityContext.clear();
             }
         });
 
         CompletableFuture<Void> f2 = CompletableFuture.runAsync(() -> {
+            AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
+                    UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                    "researcher",
+                    UUID.fromString("11111111-1111-1111-1111-111111111111")));
             try {
                 mockMvc.perform(post("/api/runs")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -170,6 +201,8 @@ class RunVersioningIntegrationTest {
                         .andExpect(status().isCreated());
             } catch (Exception e) {
                 throw new RuntimeException(e);
+            } finally {
+                AppSecurityContext.clear();
             }
         });
 
