@@ -6,6 +6,7 @@ import com.runledger.entity.BatchSchema;
 import com.runledger.entity.Run;
 import com.runledger.repository.BatchSchemaRepository;
 import com.runledger.repository.RunRepository;
+import com.runledger.security.SecuredTransactionTemplate;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -17,27 +18,41 @@ public class BatchSchemaService {
     private final RunRepository runRepository;
     private final BatchSchemaRepository batchSchemaRepository;
     private final ObjectMapper objectMapper;
+    private final SecuredTransactionTemplate secured;
 
     public BatchSchemaService(RunRepository runRepository,
                               BatchSchemaRepository batchSchemaRepository,
-                              ObjectMapper objectMapper) {
+                              ObjectMapper objectMapper,
+                              SecuredTransactionTemplate secured) {
         this.runRepository = runRepository;
         this.batchSchemaRepository = batchSchemaRepository;
         this.objectMapper = objectMapper;
+        this.secured = secured;
     }
 
     /**
      * Returns a key → list‑of‑paths mapping for the given batch.
      * The first entry in each list is the shallowest occurrence.
+     *
+     * <p>Wrapped in {@link SecuredTransactionTemplate}: this method reads from
+     * {@code run} and writes to {@code batch_schema}, both of which are
+     * scoped by RLS once Slice 6 is enabled.
      */
     public Map<String, List<String>> getOrCreateMapping(String batch) {
-        batchSchemaRepository.deleteById(batch);
-        batchSchemaRepository.flush();
-        return buildAndSaveMapping(batch);
+        return secured.execute(() -> {
+            batchSchemaRepository.deleteById(batch);
+            batchSchemaRepository.flush();
+            return buildAndSaveMapping(batch);
+        });
     }
 
     /**
      * Returns only the shorthand keys (what the user sees).
+     *
+     * <p>Not wrapped: this method performs no DB access of its own. It
+     * delegates to {@code getOrCreateMapping}, which is wrapped. When called
+     * from a wrapped context, the inner call joins the outer transaction;
+     * when called directly, the inner call starts its own.
      */
     public Set<String> getAvailableKeys(String batch) {
         return getOrCreateMapping(batch).keySet();
@@ -45,6 +60,9 @@ public class BatchSchemaService {
 
     /**
      * Force rebuild the mapping for a given batch and return it.
+     *
+     * <p>Not wrapped for the same reason as {@code getAvailableKeys} — it is
+     * a semantic alias for {@code getOrCreateMapping}, which is wrapped.
      */
     public Map<String, List<String>> rebuildMapping(String batch) {
         return getOrCreateMapping(batch);
@@ -55,7 +73,6 @@ public class BatchSchemaService {
     private Map<String, List<String>> buildAndSaveMapping(String batch) {
         List<Run> runs = runRepository.findByBatch(batch, Pageable.unpaged()).getContent();
 
-        // Temporary collector: shorthand key → (path → depth)
         Map<String, Map<String, Integer>> temp = new LinkedHashMap<>();
 
         for (Run run : runs) {
@@ -65,11 +82,10 @@ public class BatchSchemaService {
             } catch (Exception ignored) {}
         }
 
-        // Build final mapping: shorthand key → list of paths sorted by depth
         Map<String, List<String>> mapping = new LinkedHashMap<>();
         for (var entry : temp.entrySet()) {
             List<Map.Entry<String, Integer>> sorted = new ArrayList<>(entry.getValue().entrySet());
-            sorted.sort(Map.Entry.comparingByValue());   // shallowest first
+            sorted.sort(Map.Entry.comparingByValue());
             List<String> paths = new ArrayList<>();
             for (var e : sorted) {
                 paths.add(e.getKey());
@@ -77,7 +93,6 @@ public class BatchSchemaService {
             mapping.put(entry.getKey(), paths);
         }
 
-        // Persist
         BatchSchema schema = new BatchSchema();
         schema.setBatch(batch);
         schema.setKeyMapping(mapping);
@@ -86,13 +101,6 @@ public class BatchSchemaService {
         return Collections.unmodifiableMap(mapping);
     }
 
-    /**
-     * Recursively walks the JSON tree and records every leaf key.
-     * For scalar leaves, the key is recorded with its dot‑path.
-     * For arrays of objects, the key is recorded with a {@code []} suffix
-     * (e.g. {@code results[].threshold}).  Multiple occurrences of the same
-     * shorthand key are all kept.
-     */
     private void collectLeafPaths(String prefix, JsonNode node, int depth,
                                   Map<String, Map<String, Integer>> result) {
         if (node == null || node.isNull()) return;
@@ -100,7 +108,7 @@ public class BatchSchemaService {
         if (node.isObject()) {
             node.fields().forEachRemaining(entry -> {
                 String key = entry.getKey();
-                if ("_source".equals(key)) return;   // skip internal metadata
+                if ("_source".equals(key)) return;
                 JsonNode value = entry.getValue();
                 String path = prefix.isEmpty() ? key : prefix + "." + key;
 
@@ -109,7 +117,6 @@ public class BatchSchemaService {
                 } else if (value.isArray() && isArrayOfObjects(value)) {
                     collectArrayLeafPaths(path, value, depth + 1, result);
                 } else {
-                    // scalar leaf
                     result.computeIfAbsent(key, k -> new LinkedHashMap<>())
                             .putIfAbsent(path, depth);
                 }
@@ -120,10 +127,6 @@ public class BatchSchemaService {
         }
     }
 
-    /**
-     * Iterates over every element of an array of objects and collects
-     * leaf keys with bracket notation.
-     */
     private void collectArrayLeafPaths(String prefix, JsonNode array, int depth,
                                        Map<String, Map<String, Integer>> result) {
         for (JsonNode element : array) {
@@ -154,8 +157,6 @@ public class BatchSchemaService {
         }
         return false;
     }
-
-    // --- JSON serialization helpers (List<String> version) ---
 
     @SuppressWarnings("unchecked")
     private Map<String, List<String>> parseMapping(String json) {
