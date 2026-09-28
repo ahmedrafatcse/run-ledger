@@ -1,6 +1,8 @@
 package com.runledger.repository;
 
 import com.runledger.entity.Run;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,8 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Statement;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,40 +52,134 @@ class RunRepositoryIntegrationTest {
     @Autowired
     private RunRepository runRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    private static final String ALICE  = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+    private static final String TEAM_A = "11111111-1111-1111-1111-111111111111";
+
     private Run runA;
     private Run runB;
     private Run runC;
+    private Run deepRun;
+    private Run phraseRun;
+    private Run fuzzyRun;
 
     /**
-     * Cleanup + fixtures. Truncate runs as the container owner (runledger)
-     * because the application role (runledger_app) has no DELETE privilege —
-     * that's the security property Slice 3 establishes.
+     * Fixture setup for a repository test that must run under RLS.
+     *
+     * <p>(1) Fixtures are inserted via a direct owner JDBC connection, which
+     * bypasses RLS. The app role cannot insert runs without a bound identity,
+     * and this test class does not use SecuredTransactionTemplate.
+     *
+     * <p>(2) The test transaction is switched to runledger_researcher via
+     * SET LOCAL ROLE, plus set_config for app.current_user_id and
+     * app.current_team_id. This makes the SELECT policy on run match Team A
+     * rows, which is where every fixture is assigned.
+     *
+     * <p>All fixtures are inserted here, in @BeforeEach, rather than mid-test.
+     * Under READ COMMITTED (the current default) mid-test inserts work because
+     * each statement sees a fresh snapshot. Under REPEATABLE READ or
+     * SERIALIZABLE they would be invisible to the test's already-open
+     * transaction. Folding them here removes that hidden dependency at no
+     * cost.
+     *
+     * <p>The phrase and fuzzy fixtures deliberately contain disjoint text
+     * ("quick brown fox" vs. "weighted averaging") so their respective
+     * search tests cannot cross-match. Sharing text would make the phrase
+     * test pass via the fuzzy mechanism and vice versa, which would not
+     * prove what either test is meant to prove.
      */
     @BeforeEach
     void setUp() throws Exception {
+        // ---- (1) Fixture data via owner connection ----
         try (Connection conn = DriverManager.getConnection(
                 postgres.getJdbcUrl(),
                 postgres.getUsername(),
                 postgres.getPassword());
              Statement stmt = conn.createStatement()) {
+
             stmt.execute("TRUNCATE TABLE run RESTART IDENTITY");
+
+            stmt.execute("""
+                INSERT INTO teams (id, name) VALUES
+                  ('11111111-1111-1111-1111-111111111111', 'Team A'),
+                  ('22222222-2222-2222-2222-222222222222', 'Team B')
+                ON CONFLICT (id) DO NOTHING
+                """);
+
+            stmt.execute("""
+                INSERT INTO app_users (id, email, display_name, app_role, team_id) VALUES
+                  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@example.com', 'Alice', 'researcher', '11111111-1111-1111-1111-111111111111'),
+                  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bob@example.com',   'Bob',   'researcher', '22222222-2222-2222-2222-222222222222')
+                ON CONFLICT (id) DO NOTHING
+                """);
+
+            runA = partialRun(insertRunAsOwner(conn,
+                    "{\"experiment\":\"A\",\"metrics\":{\"accuracy\":0.95,\"loss\":0.10}}"));
+            runB = partialRun(insertRunAsOwner(conn,
+                    "{\"experiment\":\"B\",\"metrics\":{\"accuracy\":0.80,\"loss\":0.25}}"));
+            runC = partialRun(insertRunAsOwner(conn,
+                    "{\"experiment\":\"C\",\"metrics\":{\"accuracy\":0.91,\"loss\":0.15,\"status\":\"completed\"}}"));
+
+            deepRun = partialRun(insertRunAsOwner(conn,
+                    "{\"config\":{\"optimizer\":{\"settings\":{\"learning_rate\":0.0001}}}}"));
+            phraseRun = partialRun(insertRunAsOwner(conn,
+                    "{\"experiment\":\"phrase_test\",\"notes\":\"the quick brown fox jumps over the lazy dog\"}"));
+            fuzzyRun = partialRun(insertRunAsOwner(conn,
+                    "{\"experiment\":\"fuzzy_test\",\"notes\":\"applied weighted averaging\"}"));
         }
 
-        runA = new Run();
-        runA.setPayload("{\"experiment\":\"A\",\"metrics\":{\"accuracy\":0.95,\"loss\":0.10}}");
-        runA = runRepository.save(runA);
+        // ---- (2) Switch the test transaction to the researcher role ----
+        entityManager.createNativeQuery("SET LOCAL ROLE runledger_researcher").executeUpdate();
 
-        runB = new Run();
-        runB.setPayload("{\"experiment\":\"B\",\"metrics\":{\"accuracy\":0.80,\"loss\":0.25}}");
-        runB = runRepository.save(runB);
+        // Guard: fail loudly if the role did not take effect. Without this,
+        // a broken grant or missing membership surfaces as "0 rows returned"
+        // three layers away from the cause.
+        String currentUser = (String) entityManager
+                .createNativeQuery("SELECT current_user")
+                .getSingleResult();
+        assertThat(currentUser)
+                .as("test transaction must run as runledger_researcher")
+                .isEqualTo("runledger_researcher");
 
-        runC = new Run();
-        runC.setPayload("{\"experiment\":\"C\",\"metrics\":{\"accuracy\":0.91,\"loss\":0.15,\"status\":\"completed\"}}");
-        runC = runRepository.save(runC);
+        entityManager.createNativeQuery(
+                        "SELECT set_config('app.current_user_id', :uid, true)")
+                .setParameter("uid", ALICE)
+                .getSingleResult();
+        entityManager.createNativeQuery(
+                        "SELECT set_config('app.current_team_id', :tid, true)")
+                .setParameter("tid", TEAM_A)
+                .getSingleResult();
+    }
+
+    private Run partialRun(Long id) {
+        Run r = new Run();
+        r.setId(id);
+        return r;
+    }
+
+    private Long insertRunAsOwner(Connection conn, String payloadJson) throws Exception {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                INSERT INTO run (payload, source_file, source_index, version, latest,
+                                 payload_hash, team_id, uploaded_by)
+                VALUES (?::jsonb, ?, 0, 1, true, ?,
+                        '11111111-1111-1111-1111-111111111111',
+                        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+                RETURNING id
+                """)) {
+            ps.setString(1, payloadJson);
+            ps.setString(2, "test.json");
+            ps.setString(3, "hash-" + System.nanoTime());
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
     }
 
     // ---------------------------------------------------------------
-    // findByMetricGreaterThan
+    // Tests
     // ---------------------------------------------------------------
 
     @Test
@@ -99,10 +197,6 @@ class RunRepositoryIntegrationTest {
         assertThat(result.getContent()).isEmpty();
     }
 
-    // ---------------------------------------------------------------
-    // findByMetricLessThan
-    // ---------------------------------------------------------------
-
     @Test
     void shouldFindRunsWithMetricLessThan() {
         Page<Run> result = runRepository.findByMetricLessThan(
@@ -111,10 +205,6 @@ class RunRepositoryIntegrationTest {
                 .containsExactlyInAnyOrder(runA.getId(), runC.getId());
     }
 
-    // ---------------------------------------------------------------
-    // findByMetricEquals (numeric)
-    // ---------------------------------------------------------------
-
     @Test
     void shouldFindRunsWithMetricEqualToNumber() {
         Page<Run> result = runRepository.findByMetricEquals(
@@ -122,10 +212,6 @@ class RunRepositoryIntegrationTest {
         assertThat(result.getContent()).extracting(Run::getId)
                 .containsExactly(runC.getId());
     }
-
-    // ---------------------------------------------------------------
-    // findByMetricEqualsText
-    // ---------------------------------------------------------------
 
     @Test
     void shouldFindRunsWithTextMetricEquals() {
@@ -142,10 +228,6 @@ class RunRepositoryIntegrationTest {
         assertThat(result.getContent()).isEmpty();
     }
 
-    // ---------------------------------------------------------------
-    // Edge case: metric key not present
-    // ---------------------------------------------------------------
-
     @Test
     void metricNotPresent_returnsEmpty() {
         Page<Run> result = runRepository.findByMetricGreaterThan(
@@ -153,16 +235,8 @@ class RunRepositoryIntegrationTest {
         assertThat(result.getContent()).isEmpty();
     }
 
-    // ---------------------------------------------------------------
-    // Deeply nested path
-    // ---------------------------------------------------------------
-
     @Test
     void shouldQueryDeeplyNestedPath() {
-        Run deepRun = new Run();
-        deepRun.setPayload("{\"config\":{\"optimizer\":{\"settings\":{\"learning_rate\":0.0001}}}}");
-        runRepository.save(deepRun);
-
         Page<Run> result = runRepository.findByMetricGreaterThan(
                 "config.optimizer.settings.learning_rate", 0.00001, Pageable.unpaged());
         assertThat(result.getContent()).extracting(Run::getId)
@@ -173,42 +247,22 @@ class RunRepositoryIntegrationTest {
         assertThat(emptyResult.getContent()).isEmpty();
     }
 
-    // ---------------------------------------------------------------
-    // Full‑text phrase search
-    // ---------------------------------------------------------------
-
     @Test
     void shouldFindRunsByPhrase() {
-        Run phraseRun = new Run();
-        phraseRun.setPayload("{\"experiment\":\"test\",\"notes\":\"applied weighted averaging to merge\"}");
-        runRepository.save(phraseRun);
-
-        // exact phrase should match (stemming handles "weighted" → "weight")
-        Page<Run> result = runRepository.searchByPhrase("weighted averaging", Pageable.unpaged());
+        Page<Run> result = runRepository.searchByPhrase("quick brown fox", Pageable.unpaged());
         assertThat(result.getContent()).extracting(Run::getId)
                 .containsExactly(phraseRun.getId());
 
-        // a different phrase should return nothing
         Page<Run> emptyResult = runRepository.searchByPhrase("random phrase", Pageable.unpaged());
         assertThat(emptyResult.getContent()).isEmpty();
     }
 
-    // ---------------------------------------------------------------
-    // Fuzzy trigram search
-    // ---------------------------------------------------------------
-
     @Test
     void shouldFindRunsByFuzzyMatch() {
-        Run fuzzyRun = new Run();
-        fuzzyRun.setPayload("{\"experiment\":\"test\",\"notes\":\"applied weighted averaging\"}");
-        runRepository.save(fuzzyRun);
-
-        // close spelling should still match via trigram similarity
         Page<Run> result = runRepository.searchByFuzzy("weighted avaraging", 0.3, Pageable.unpaged());
         assertThat(result.getContent()).extracting(Run::getId)
                 .containsExactly(fuzzyRun.getId());
 
-        // a completely unrelated term should return nothing
         Page<Run> emptyResult = runRepository.searchByFuzzy("random", 0.3, Pageable.unpaged());
         assertThat(emptyResult.getContent()).isEmpty();
     }
