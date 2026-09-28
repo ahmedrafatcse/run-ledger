@@ -2,6 +2,7 @@ package com.runledger;
 
 import com.runledger.repository.RunRepository;
 import com.runledger.security.AppSecurityContext;
+import com.runledger.security.SecuredTransactionTemplate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -57,6 +59,12 @@ class RunVersioningIntegrationTest {
     @Autowired
     private RunRepository runRepository;
 
+    @Autowired
+    private SecuredTransactionTemplate secured;
+
+    private static final UUID ALICE  = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static final UUID TEAM_A = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
     private static final String SOURCE_JSON = """
         {
           "experiment": "version_test",
@@ -74,15 +82,16 @@ class RunVersioningIntegrationTest {
         """;
 
     /**
-     * Cleanup + identity binding.
+     * Setup for each test:
      *
-     * <p>Truncate runs as the container owner (runledger) because the
-     * application role (runledger_app) has no DELETE privilege — which is
-     * the security property Slice 3 establishes.
+     * <p>(1) Truncate + seed teams/users via direct owner connection.
+     * Ingestion now sets team_id/uploaded_by from identity, so the FK
+     * constraints on run require those referenced rows to exist.
      *
-     * <p>Identity binding is required because addFilters = false bypasses
-     * the identity filter, and SecuredTransactionTemplate (Slice 5) requires
-     * a bound identity to set the Postgres role and session variables.
+     * <p>(2) Bind Alice (researcher, Team A) to AppSecurityContext so the
+     * SecuredTransactionTemplate can resolve the role when the ingestion
+     * service runs. The filter is bypassed here (addFilters = false), so
+     * without this binding the service would throw on require().
      */
     @BeforeEach
     void setUp() throws Exception {
@@ -95,29 +104,28 @@ class RunVersioningIntegrationTest {
 
             stmt.execute("""
                 INSERT INTO teams (id, name) VALUES
-                  ('11111111-1111-1111-1111-111111111111', 'Team A'),
-                  ('22222222-2222-2222-2222-222222222222', 'Team B')
+                  ('11111111-1111-1111-1111-111111111111', 'Team A')
                 ON CONFLICT (id) DO NOTHING
                 """);
+
             stmt.execute("""
                 INSERT INTO app_users (id, email, display_name, app_role, team_id) VALUES
-                  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@example.com', 'Alice', 'researcher', '11111111-1111-1111-1111-111111111111'),
-                  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bob@example.com',   'Bob',   'researcher', '22222222-2222-2222-2222-222222222222'),
-                  ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'sup@example.com',   'Sup',   'supervisor', NULL)
+                  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@example.com', 'Alice', 'researcher', '11111111-1111-1111-1111-111111111111')
                 ON CONFLICT (id) DO NOTHING
                 """);
         }
 
-        AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
-                UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                "researcher",
-                UUID.fromString("11111111-1111-1111-1111-111111111111")));
+        AppSecurityContext.set(new AppSecurityContext.UserPrincipal(ALICE, "researcher", TEAM_A));
     }
 
     @AfterEach
     void clearIdentity() {
         AppSecurityContext.clear();
     }
+
+    // ---------------------------------------------------------------
+    // Tests
+    // ---------------------------------------------------------------
 
     @Test
     void reScanUnchanged_shouldNotCreateNewVersion() throws Exception {
@@ -133,14 +141,13 @@ class RunVersioningIntegrationTest {
                         .content("{\"payload\":" + SOURCE_JSON + ",\"batch\":\"version-batch\"}"))
                 .andExpect(status().isCreated());   // idempotent, but controller always responds 201
 
-        // 3. Verify only one row, latest=true, version=1
-        long count = runRepository.count();
-        assert count == 1 : "Expected exactly 1 run, got " + count;
-
-        runRepository.findAll().forEach(r -> {
-            assert r.isLatest() : "Single run should be latest";
-            assert r.getVersion() == 1 : "Version should be 1";
-        });
+        // 3. Verify only one row, latest=true, version=1.
+        // Direct repository access goes through SecuredTransactionTemplate
+        // so the query runs as runledger_researcher with identity bound.
+        var runs = secured.execute(() -> runRepository.findAll());
+        assertThat(runs.size()).as("Expected exactly 1 run, got " + runs.size()).isEqualTo(1);
+        assertThat(runs.get(0).isLatest()).isTrue();
+        assertThat(runs.get(0).getVersion()).isEqualTo(1);
     }
 
     @Test
@@ -155,17 +162,17 @@ class RunVersioningIntegrationTest {
         mockMvc.perform(post("/api/runs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"payload\":" + MODIFIED_JSON + ",\"batch\":\"version-batch\"}"))
-                .andExpect(status().isCreated()); // new version
+                .andExpect(status().isCreated());
 
         // 3. Verify two rows: v1 latest=false, v2 latest=true
-        var runs = runRepository.findAll();
-        assert runs.size() == 2 : "Expected 2 runs, got " + runs.size();
+        var runs = secured.execute(() -> runRepository.findAll());
+        assertThat(runs.size()).as("Expected 2 runs, got " + runs.size()).isEqualTo(2);
 
         var v1 = runs.stream().filter(r -> r.getVersion() == 1).findFirst().orElseThrow();
         var v2 = runs.stream().filter(r -> r.getVersion() == 2).findFirst().orElseThrow();
 
-        assert !v1.isLatest() : "v1 should not be latest";
-        assert v2.isLatest() : "v2 should be latest";
+        assertThat(v1.isLatest()).as("v1 should not be latest").isFalse();
+        assertThat(v2.isLatest()).as("v2 should be latest").isTrue();
     }
 
     @Test
@@ -176,7 +183,6 @@ class RunVersioningIntegrationTest {
                         .content("{\"payload\":" + SOURCE_JSON + ",\"batch\":\"concurrent\"}"))
                 .andExpect(status().isCreated());
 
-        // Launch two concurrent scans with slightly different payloads
         String v2 = """
             {"experiment":"version_test_v2","accuracy":0.97,"_source":{"file":"run.json","index":0}}
             """;
@@ -184,13 +190,8 @@ class RunVersioningIntegrationTest {
             {"experiment":"version_test_v3","accuracy":0.98,"_source":{"file":"run.json","index":0}}
             """;
 
-        // Each async task runs on a ForkJoinPool thread and doesn't inherit
-        // the test thread's ThreadLocal, so identity must be bound inside.
         CompletableFuture<Void> f1 = CompletableFuture.runAsync(() -> {
-            AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
-                    UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                    "researcher",
-                    UUID.fromString("11111111-1111-1111-1111-111111111111")));
+            AppSecurityContext.set(new AppSecurityContext.UserPrincipal(ALICE, "researcher", TEAM_A));
             try {
                 mockMvc.perform(post("/api/runs")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -204,10 +205,7 @@ class RunVersioningIntegrationTest {
         });
 
         CompletableFuture<Void> f2 = CompletableFuture.runAsync(() -> {
-            AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
-                    UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                    "researcher",
-                    UUID.fromString("11111111-1111-1111-1111-111111111111")));
+            AppSecurityContext.set(new AppSecurityContext.UserPrincipal(ALICE, "researcher", TEAM_A));
             try {
                 mockMvc.perform(post("/api/runs")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -220,20 +218,29 @@ class RunVersioningIntegrationTest {
             }
         });
 
-        // Wait for both
         try {
             CompletableFuture.allOf(f1, f2).get();
         } catch (ExecutionException e) {
-            // One may fail due to unique constraint – that's the expected race condition
+            // One may fail due to unique constraint — expected race condition
         }
 
-        // Verify: no duplicate latest rows
-        long latestCount = runRepository.findAll().stream().filter(r -> r.isLatest()).count();
-        assert latestCount == 1 : "Expected exactly 1 latest version, got " + latestCount;
+        // Rebind identity on the test thread for the assertions (the async
+        // tasks cleared theirs in their finally blocks, but this thread's
+        // context is still set from @BeforeEach; the explicit set below is
+        // defensive and makes the intent clear).
+        AppSecurityContext.set(new AppSecurityContext.UserPrincipal(ALICE, "researcher", TEAM_A));
 
-        // Also verify total versions ≤3 (original + at most 2 new ones, one may have collided)
-        long totalVersions = runRepository.count();
-        assert totalVersions >= 2 && totalVersions <= 3 : "Expected 2-3 total versions, got " + totalVersions;
+        var runs = secured.execute(() -> runRepository.findAll());
+
+        long latestCount = runs.stream().filter(r -> r.isLatest()).count();
+        assertThat(latestCount)
+                .as("Expected exactly 1 latest version, got " + latestCount)
+                .isEqualTo(1);
+
+        long totalVersions = runs.size();
+        assertThat(totalVersions)
+                .as("Expected 2-3 total versions, got " + totalVersions)
+                .isBetween(2L, 3L);
     }
 
     @Test

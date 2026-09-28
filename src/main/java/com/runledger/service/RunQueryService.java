@@ -42,14 +42,14 @@ public class RunQueryService {
     }
 
     // ---------------------------------------------------------------
-    // Paginated query – no batch filter
+    // Paginated query - no batch filter
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value, Pageable pageable) {
         return secured.execute(() -> executeQuery(metric, op, value, null, pageable));
     }
 
     // ---------------------------------------------------------------
-    // Paginated query – with batch filter
+    // Paginated query - with batch filter
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value,
                                    String batch, Pageable pageable) {
@@ -60,35 +60,29 @@ public class RunQueryService {
     }
 
     // ---------------------------------------------------------------
-    // Full‑text phrase search (no batch)
+    // Full-text phrase search
     // ---------------------------------------------------------------
     public Page<Run> searchByPhrase(String phrase, Pageable pageable) {
         return secured.execute(() -> runRepository.searchByPhrase(phrase, pageable));
     }
 
-    // ---------------------------------------------------------------
-    // Full‑text phrase search (with batch)
-    // ---------------------------------------------------------------
     public Page<Run> searchByPhrase(String phrase, String batch, Pageable pageable) {
         return secured.execute(() -> runRepository.searchByPhraseBatch(phrase, batch, pageable));
     }
 
     // ---------------------------------------------------------------
-    // Fuzzy trigram search (no batch)
+    // Fuzzy trigram search
     // ---------------------------------------------------------------
     public Page<Run> searchByFuzzy(String term, double threshold, Pageable pageable) {
         return secured.execute(() -> runRepository.searchByFuzzy(term, threshold, pageable));
     }
 
-    // ---------------------------------------------------------------
-    // Fuzzy trigram search (with batch)
-    // ---------------------------------------------------------------
     public Page<Run> searchByFuzzy(String term, double threshold, String batch, Pageable pageable) {
         return secured.execute(() -> runRepository.searchByFuzzyBatch(term, threshold, batch, pageable));
     }
 
     // ---------------------------------------------------------------
-    // Metric key discovery – without / with batch
+    // Metric key discovery
     // ---------------------------------------------------------------
     public List<String> getAvailableMetrics() {
         return secured.execute(() -> runRepository.findDistinctMetricKeys());
@@ -121,21 +115,34 @@ public class RunQueryService {
         });
     }
 
-    /**
-     * Resolve a shorthand metric to its full dot-path using the batch schema.
-     *
-     * <p>Not wrapped in {@link SecuredTransactionTemplate}: this method's only
-     * database access is through {@code batchSchemaService.getOrCreateMapping},
-     * which is itself wrapped. When called from a wrapped context, the inner
-     * call joins the outer transaction; when called directly (e.g. from
-     * RunController for pre-resolving paths), the inner call starts its own.
-     */
     public String resolvePath(String metric, String batch) {
         return resolvePathInternal(metric, batch);
     }
 
     // ---------------------------------------------------------------
-    // Multi‑condition AND/OR query (now filters to latest versions)
+    // Slice 5 follow-up: wrapped read methods
+    // ---------------------------------------------------------------
+    public Optional<Run> getRunById(Long id) {
+        return secured.execute(() -> runRepository.findById(id));
+    }
+
+    public Page<Run> listRuns(String batch, Pageable pageable) {
+        return secured.execute(() -> {
+            if (batch != null && !batch.isBlank()) {
+                return runRepository.findByBatch(batch, pageable);
+            }
+            return runRepository.findAll(pageable);
+        });
+    }
+
+    public List<Run> getVersions(String batch, String sourceFile, int sourceIndex) {
+        return secured.execute(() ->
+                runRepository.findByBatchAndSourceFileAndSourceIndexOrderByVersionAsc(
+                        batch, sourceFile, sourceIndex));
+    }
+
+    // ---------------------------------------------------------------
+    // Multi-condition AND/OR query
     // ---------------------------------------------------------------
     public Page<Run> queryByMultipleFilters(MultiFilterRequest request, Pageable pageable) {
         return secured.execute(() -> {
@@ -161,31 +168,10 @@ public class RunQueryService {
         });
     }
 
-    /**
-     * Return all versions of a run identity in ascending version order.
-     *
-     * <p>Wrapped in {@link SecuredTransactionTemplate} so the query runs with
-     * the request identity bound. Prior to Slice 6.5.4, this call path lived
-     * in RunController and queried the repository directly, bypassing the
-     * wrapper entirely — a Slice 5 gap that only became visible once RLS
-     * filtered unbound queries to zero rows.
-     */
-    public List<Run> getVersions(String batch, String sourceFile, int sourceIndex) {
-        return secured.execute(() ->
-                runRepository.findByBatchAndSourceFileAndSourceIndexOrderByVersionAsc(
-                        batch, sourceFile, sourceIndex));
-    }
-
     // ---------------------------------------------------------------
-    // Pointer / match localisation methods
+    // Pointer / match localisation
     // ---------------------------------------------------------------
 
-    /**
-     * Extracts a match detail for a scalar dot-path from an already-loaded Run.
-     *
-     * <p>Not wrapped: this method performs no database access. It operates
-     * purely on the JSON payload of the Run entity passed in.
-     */
     public List<MatchDetail> getScalarMatch(Run run, String resolvedPath, String op, String value) {
         try {
             JsonNode root = objectMapper.readTree(run.getPayload());
@@ -203,10 +189,6 @@ public class RunQueryService {
         }
     }
 
-    /**
-     * Extracts exact array‑element pointers for paths with any number of nested arrays.
-     * Example: "clients[].sweep[].fin_asr" returns pointers like "clients[1].sweep[0].fin_asr".
-     */
     public Map<Long, List<MatchDetail>> getArrayMatches(List<Long> runIds, String fullPath,
                                                         String op, String value) {
         return secured.execute(() -> {
@@ -214,7 +196,6 @@ public class RunQueryService {
 
             String idsCsv = runIds.stream().map(String::valueOf).collect(Collectors.joining(","));
 
-            // Parse the full path into segments: e.g. "clients[].sweep[].fin_asr"
             List<String> segments = new ArrayList<>();
             int start = 0;
             while (start < fullPath.length()) {
@@ -235,7 +216,6 @@ public class RunQueryService {
                 }
             }
 
-            // Build SQL with nested lateral joins that chain correctly
             StringBuilder from = new StringBuilder("FROM run r");
             List<String> arrayPaths = new ArrayList<>();
             List<String> indexAliases = new ArrayList<>();
@@ -317,9 +297,6 @@ public class RunQueryService {
         });
     }
 
-    // ---------------------------------------------------------------
-    // Compound array pointer extraction
-    // ---------------------------------------------------------------
     public Map<Long, List<MatchDetail>> getCompoundArrayMatches(
             List<Long> runIds, String arrayRoot, List<ResolvedFilter> arrayFilters, String combine) {
         return secured.execute(() -> {
@@ -427,11 +404,11 @@ public class RunQueryService {
                 if (groupBy != null && !groupBy.isBlank()) {
                     Object[] cols = (Object[]) row;
                     Number resultValue = (Number) cols[0];
-                    entry.put("result", resultValue.doubleValue());
+                    entry.put("result", resultValue == null ? null : resultValue.doubleValue());
                     entry.put("group", cols[1] != null ? cols[1].toString() : null);
                 } else {
                     Number resultValue = (Number) row;
-                    entry.put("result", resultValue.doubleValue());
+                    entry.put("result", resultValue == null ? null : resultValue.doubleValue());
                 }
                 results.add(entry);
             }
@@ -440,7 +417,7 @@ public class RunQueryService {
     }
 
     // ---------------------------------------------------------------
-    // Internal helpers (unchanged)
+    // Internal helpers
     // ---------------------------------------------------------------
 
     private String resolvePathInternal(String metric, String batch) {

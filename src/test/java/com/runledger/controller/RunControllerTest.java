@@ -5,7 +5,6 @@ import com.runledger.dto.MatchDetail;
 import com.runledger.dto.RunRequest;
 import com.runledger.entity.Run;
 import com.runledger.exception.GlobalExceptionHandler;
-import com.runledger.repository.RunRepository;
 import com.runledger.security.IdentityFilter;
 import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
@@ -38,7 +37,6 @@ class RunControllerTest {
 
     @Autowired private MockMvc mockMvc;
 
-    @MockitoBean private RunRepository runRepository;
     @MockitoBean private RunQueryService runQueryService;
     @MockitoBean private RunIngestionService ingestionService;
     @MockitoBean private IdentityFilter identityFilter;
@@ -80,7 +78,7 @@ class RunControllerTest {
     @Test
     void getRunById_shouldReturn200() throws Exception {
         Run found = run(1L, "{\"accuracy\":0.95}");
-        when(runRepository.findById(1L)).thenReturn(Optional.of(found));
+        when(runQueryService.getRunById(1L)).thenReturn(Optional.of(found));
 
         mockMvc.perform(get("/api/runs/1"))
                 .andExpect(status().isOk())
@@ -90,7 +88,7 @@ class RunControllerTest {
 
     @Test
     void getRunById_notFound_shouldReturn404() throws Exception {
-        when(runRepository.findById(999L)).thenReturn(Optional.empty());
+        when(runQueryService.getRunById(999L)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/runs/999"))
                 .andExpect(status().isNotFound());

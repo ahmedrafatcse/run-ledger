@@ -8,7 +8,6 @@ import com.runledger.dto.MultiFilterRequest;
 import com.runledger.dto.RunRequest;
 import com.runledger.dto.RunResponse;
 import com.runledger.entity.Run;
-import com.runledger.repository.RunRepository;
 import com.runledger.service.ResolvedFilter;
 import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
@@ -30,16 +29,13 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/runs")
 public class RunController {
 
-    private final RunRepository runRepository;
     private final ObjectMapper objectMapper;
     private final RunQueryService runQueryService;
     private final RunIngestionService ingestionService;
 
-    public RunController(RunRepository runRepository,
-                         ObjectMapper objectMapper,
+    public RunController(ObjectMapper objectMapper,
                          RunQueryService runQueryService,
                          RunIngestionService ingestionService) {
-        this.runRepository = runRepository;
         this.objectMapper = objectMapper;
         this.runQueryService = runQueryService;
         this.ingestionService = ingestionService;
@@ -58,7 +54,7 @@ public class RunController {
     // ---------- Retrieve a single run by ID ----------
     @GetMapping("/{id}")
     public ResponseEntity<RunResponse> getRun(@PathVariable Long id) {
-        return runRepository.findById(id)
+        return runQueryService.getRunById(id)
                 .map(run -> ResponseEntity.ok(toRunResponse(run)))
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -132,11 +128,11 @@ public class RunController {
         }
 
         if (hasBatch) {
-            Page<Run> runs = runRepository.findByBatch(batch, pageable);
+            Page<Run> runs = runQueryService.listRuns(batch, pageable);
             return ResponseEntity.ok(runs.map(this::toRunResponse));
         }
 
-        Page<Run> runs = runRepository.findAll(pageable);
+        Page<Run> runs = runQueryService.listRuns(null, pageable);
         return ResponseEntity.ok(runs.map(this::toRunResponse));
     }
 

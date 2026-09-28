@@ -1,5 +1,8 @@
 package com.runledger.security;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -14,16 +17,31 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Verifies the column-level grants from Slice 3.
+ * Verifies the column-level grants from Slice 3, now under RLS.
  *
- * <p>The application role ({@code runledger_app}) has only SELECT, INSERT, and
- * UPDATE (latest) on the {@code run} table. These tests confirm that content
- * columns cannot be modified and that rows cannot be deleted, while the
- * {@code latest} flag remains writable.
+ * <p>The test transaction runs as {@code runledger_researcher}, which has
+ * SELECT, INSERT, and UPDATE (latest) on run, plus the corresponding RLS
+ * policies from V13. Fixtures are inserted via a direct owner connection
+ * so they exist regardless of RLS; the assertions then run as the researcher
+ * role and exercise the grants.
+ *
+ * <p>The distinction being tested is grant-level, not policy-level:
+ * "permission denied" means the role lacks the column privilege.
+ * "new row violates row-level security policy" means the role has the
+ * privilege but the row does not match the policy. The tests below assert
+ * on the former, so the transaction must run as a role where the grants
+ * are the binding constraint.
  */
 @SpringBootTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -51,9 +69,70 @@ class RunImmutabilityTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    private static final String ALICE  = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+    private static final String TEAM_A = "11111111-1111-1111-1111-111111111111";
+
+    /**
+     * Seed teams/users (owner connection) and switch the test transaction
+     * to runledger_researcher so the grant assertions run as the app's
+     * researcher role.
+     */
+    @BeforeEach
+    void setUp() throws Exception {
+        // Seed reference data via owner connection. Idempotent so safe to
+        // run before every test.
+        try (Connection conn = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword());
+             Statement stmt = conn.createStatement()) {
+
+            stmt.execute("""
+                INSERT INTO teams (id, name) VALUES
+                  ('11111111-1111-1111-1111-111111111111', 'Team A')
+                ON CONFLICT (id) DO NOTHING
+                """);
+
+            stmt.execute("""
+                INSERT INTO app_users (id, email, display_name, app_role, team_id) VALUES
+                  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@example.com', 'Alice', 'researcher', '11111111-1111-1111-1111-111111111111')
+                ON CONFLICT (id) DO NOTHING
+                """);
+        }
+
+        // Switch the test transaction's role to researcher.
+        entityManager.createNativeQuery("SET LOCAL ROLE runledger_researcher").executeUpdate();
+
+        // Guard: fail loudly if the role didn't take effect. Without this,
+        // a broken grant or missing membership surfaces as a generic policy
+        // denial rather than a clear "role is wrong" message.
+        String currentUser = (String) entityManager
+                .createNativeQuery("SELECT current_user")
+                .getSingleResult();
+        assertThat(currentUser)
+                .as("test transaction must run as runledger_researcher")
+                .isEqualTo("runledger_researcher");
+
+        entityManager.createNativeQuery(
+                        "SELECT set_config('app.current_user_id', :uid, true)")
+                .setParameter("uid", ALICE)
+                .getSingleResult();
+        entityManager.createNativeQuery(
+                        "SELECT set_config('app.current_team_id', :tid, true)")
+                .setParameter("tid", TEAM_A)
+                .getSingleResult();
+    }
+
+    // ---------------------------------------------------------------
+    // Rejected: grant-level denials
+    // ---------------------------------------------------------------
+
     @Test
-    void updatePayload_isRejected() {
-        Long id = insertTestRun();
+    void updatePayload_isRejected() throws Exception {
+        Long id = insertFixtureAsOwner();
 
         assertThatThrownBy(() ->
                 jdbcTemplate.update(
@@ -64,8 +143,8 @@ class RunImmutabilityTest {
     }
 
     @Test
-    void updatePayloadHash_isRejected() {
-        Long id = insertTestRun();
+    void updatePayloadHash_isRejected() throws Exception {
+        Long id = insertFixtureAsOwner();
 
         assertThatThrownBy(() ->
                 jdbcTemplate.update(
@@ -76,8 +155,8 @@ class RunImmutabilityTest {
     }
 
     @Test
-    void deleteRun_isRejected() {
-        Long id = insertTestRun();
+    void deleteRun_isRejected() throws Exception {
+        Long id = insertFixtureAsOwner();
 
         assertThatThrownBy(() ->
                 jdbcTemplate.update("DELETE FROM run WHERE id = ?", id))
@@ -85,9 +164,13 @@ class RunImmutabilityTest {
                 .hasStackTraceContaining("permission denied");
     }
 
+    // ---------------------------------------------------------------
+    // Permitted: grant allows, policy matches
+    // ---------------------------------------------------------------
+
     @Test
-    void updateLatest_isPermitted() {
-        Long id = insertTestRun();
+    void updateLatest_isPermitted() throws Exception {
+        Long id = insertFixtureAsOwner();
 
         int rows = jdbcTemplate.update(
                 "UPDATE run SET latest = false WHERE id = ?", id);
@@ -100,7 +183,22 @@ class RunImmutabilityTest {
 
     @Test
     void insertNewRun_isPermitted() {
-        Long id = insertTestRun();
+        // Insert as the researcher role. The row must satisfy the RLS insert
+        // policy: team_id must match the identity's team, and uploaded_by
+        // must match the identity's user ID.
+        Long id = jdbcTemplate.queryForObject("""
+                INSERT INTO run (payload, source_file, source_index, version, latest,
+                                 payload_hash, team_id, uploaded_by)
+                VALUES (?::jsonb, ?, 0, 1, true, ?, ?::uuid, ?::uuid)
+                RETURNING id
+                """,
+                Long.class,
+                "{\"test\": true}",
+                "immutability-insert.json",
+                "hash-insert-" + System.nanoTime(),
+                TEAM_A,
+                ALICE);
+
         assertThat(id).isNotNull().isPositive();
 
         Integer count = jdbcTemplate.queryForObject(
@@ -108,18 +206,35 @@ class RunImmutabilityTest {
         assertThat(count).isEqualTo(1);
     }
 
-    private Long insertTestRun() {
-        return jdbcTemplate.queryForObject(
-                """
-                INSERT INTO run (payload, source_file, source_index, version, latest)
-                VALUES (?::jsonb, ?, ?, ?, ?)
+    // ---------------------------------------------------------------
+    // Fixture helper
+    // ---------------------------------------------------------------
+
+    /**
+     * Insert a fixture row via a direct owner connection, bypassing RLS.
+     * The test transaction (which runs as runledger_researcher) will see
+     * the committed row under READ COMMITTED.
+     */
+    private Long insertFixtureAsOwner() throws Exception {
+        try (Connection conn = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword());
+             PreparedStatement ps = conn.prepareStatement("""
+                INSERT INTO run (payload, source_file, source_index, version, latest,
+                                 payload_hash, team_id, uploaded_by)
+                VALUES (?::jsonb, ?, 0, 1, true, ?, ?::uuid, ?::uuid)
                 RETURNING id
-                """,
-                Long.class,
-                "{\"test\": true}",
-                "immutability-test.json",
-                0,
-                1,
-                true);
+                """)) {
+            ps.setString(1, "{\"test\": true}");
+            ps.setString(2, "immutability-fixture-" + System.nanoTime() + ".json");
+            ps.setString(3, "hash-fixture-" + System.nanoTime());
+            ps.setString(4, TEAM_A);
+            ps.setString(5, ALICE);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
     }
 }
