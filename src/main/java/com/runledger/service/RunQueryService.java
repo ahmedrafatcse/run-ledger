@@ -161,6 +161,21 @@ public class RunQueryService {
         });
     }
 
+    /**
+     * Return all versions of a run identity in ascending version order.
+     *
+     * <p>Wrapped in {@link SecuredTransactionTemplate} so the query runs with
+     * the request identity bound. Prior to Slice 6.5.4, this call path lived
+     * in RunController and queried the repository directly, bypassing the
+     * wrapper entirely — a Slice 5 gap that only became visible once RLS
+     * filtered unbound queries to zero rows.
+     */
+    public List<Run> getVersions(String batch, String sourceFile, int sourceIndex) {
+        return secured.execute(() ->
+                runRepository.findByBatchAndSourceFileAndSourceIndexOrderByVersionAsc(
+                        batch, sourceFile, sourceIndex));
+    }
+
     // ---------------------------------------------------------------
     // Pointer / match localisation methods
     // ---------------------------------------------------------------

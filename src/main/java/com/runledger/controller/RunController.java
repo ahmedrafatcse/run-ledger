@@ -68,8 +68,7 @@ public class RunController {
             @RequestParam String batch,
             @RequestParam String sourceFile,
             @RequestParam int sourceIndex) {
-        List<Run> runs = runRepository.findByBatchAndSourceFileAndSourceIndexOrderByVersionAsc(
-                batch, sourceFile, sourceIndex);
+        List<Run> runs = runQueryService.getVersions(batch, sourceFile, sourceIndex);
         return ResponseEntity.ok(runs.stream().map(this::toRunResponse).toList());
     }
 
