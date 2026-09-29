@@ -2,7 +2,6 @@ package com.runledger.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.runledger.dto.RunRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
@@ -12,8 +11,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 
-import java.security.MessageDigest;
-import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,16 +20,19 @@ public class RunIngestionService {
     private final RunRepository runRepository;
     private final ObjectMapper objectMapper;
     private final SecuredTransactionTemplate secured;
+    private final CanonicalJsonService canonicalJson;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public RunIngestionService(RunRepository runRepository,
                                ObjectMapper objectMapper,
-                               SecuredTransactionTemplate secured) {
+                               SecuredTransactionTemplate secured,
+                               CanonicalJsonService canonicalJson) {
         this.runRepository = runRepository;
         this.objectMapper = objectMapper;
         this.secured = secured;
+        this.canonicalJson = canonicalJson;
     }
 
     /**
@@ -43,18 +43,13 @@ public class RunIngestionService {
      * The {@code team_id} and {@code uploaded_by} columns are populated from
      * {@link AppSecurityContext}, not from anything in the submitted payload
      * or request. A client cannot declare which team owns a run; only the
-     * server-resolved identity can. If a {@code teamId} field is ever added
-     * to {@link RunRequest}, it must be ignored here - honouring it would
-     * allow a researcher to submit a run that appears to belong to another
-     * team.
+     * server-resolved identity can.
      *
      * <p>Only users with the {@code researcher} role may submit runs.
-     * Supervisors observe; they do not submit. Admins are excluded for the
-     * same reason until an explicit admin-submission path is defined.
      *
-     * <p>The transaction wrapper sets the Postgres role and the
-     * {@code app.current_user_id} session variable so that Slice 6's RLS
-     * policies can filter rows by team.
+     * <p>Payload hashing goes through {@link CanonicalJsonService} so that
+     * the hash computed here is byte-for-byte identical to the hash the
+     * integrity check recomputes from the stored payload later.
      *
      * @param request the ingestion request
      * @return the saved Run entity (new or existing)
@@ -82,7 +77,7 @@ public class RunIngestionService {
 
             String batch = (request.batch() != null && !request.batch().isBlank())
                     ? request.batch() : null;
-            String newHash = computeCanonicalHash(request.payload());
+            String newHash = canonicalJson.hash(request.payload());
 
             Optional<Run> latestOpt = runRepository
                     .findTopByBatchAndSourceFileAndSourceIndexOrderByVersionDesc(
@@ -135,21 +130,6 @@ public class RunIngestionService {
             return index.isInt() ? index.asInt() : 0;
         } catch (Exception e) {
             return 0;
-        }
-    }
-
-    private String computeCanonicalHash(Object payload) {
-        try {
-            ObjectMapper canonical = objectMapper.copy();
-            canonical.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-            canonical.configure(SerializationFeature.INDENT_OUTPUT, false);
-
-            byte[] canonicalBytes = canonical.writeValueAsBytes(payload);
-            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
-            byte[] digest = sha256.digest(canonicalBytes);
-            return HexFormat.of().formatHex(digest);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to compute payload hash", e);
         }
     }
 }
