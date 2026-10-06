@@ -35,27 +35,6 @@ public class RunIngestionService {
         this.canonicalJson = canonicalJson;
     }
 
-    /**
-     * Ingests a run request inside a transaction scoped to the current
-     * request's identity.
-     *
-     * <p><b>Ownership is derived from identity, never from the request.</b>
-     * The {@code team_id} and {@code uploaded_by} columns are populated from
-     * {@link AppSecurityContext}, not from anything in the submitted payload
-     * or request. A client cannot declare which team owns a run; only the
-     * server-resolved identity can.
-     *
-     * <p>Only users with the {@code researcher} role may submit runs.
-     *
-     * <p>Payload hashing goes through {@link CanonicalJsonService} so that
-     * the hash computed here is byte-for-byte identical to the hash the
-     * integrity check recomputes from the stored payload later.
-     *
-     * @param request the ingestion request
-     * @return the saved Run entity (new or existing)
-     * @throws IllegalStateException if the current identity is not a
-     *         researcher with an assigned team
-     */
     public Run ingest(RunRequest request) {
         AppSecurityContext.UserPrincipal p = AppSecurityContext.require();
 
@@ -102,6 +81,7 @@ public class RunIngestionService {
             newVersion.setSourceIndex(sourceIndex);
             newVersion.setVersion(latestOpt.map(r -> r.getVersion() + 1).orElse(1));
             newVersion.setPayloadHash(newHash);
+            newVersion.setCanonVersion(CanonicalJsonService.CANON_VERSION);
             newVersion.setLatest(true);
 
             newVersion.setTeamId(p.teamId());
@@ -110,8 +90,6 @@ public class RunIngestionService {
             return runRepository.save(newVersion);
         });
     }
-
-    // ── Private helpers ──
 
     private String extractSourceFile(String payloadJson) {
         try {

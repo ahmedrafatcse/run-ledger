@@ -20,11 +20,23 @@ import java.util.HexFormat;
  * the ingestion path (which has the payload as a parsed JsonNode) and the
  * display path (which reads the stored payload back as a String) must use
  * it. Two independent canonicalization implementations would drift, and
- * drift would produce false integrity failures on the UI - which is
- * exactly the failure mode this class exists to prevent.
+ * drift would produce false integrity failures on the UI.
+ *
+ * <p><b>Canonicalization versioning.</b> {@link #CANON_VERSION} identifies
+ * the current algorithm. Every row records the version that produced its
+ * hash in {@code canon_version}. When this constant changes, existing rows
+ * are not tampered - they're stale - and the integrity check must report
+ * the distinction rather than flagging them as mismatches.
  */
 @Service
 public class CanonicalJsonService {
+
+    /**
+     * Current canonicalization algorithm version. Bump this if the
+     * serialization rules change (e.g. different number formatting,
+     * different key ordering). Existing rows keep their original version.
+     */
+    public static final String CANON_VERSION = "v1";
 
     private final ObjectMapper objectMapper;
 
@@ -32,17 +44,8 @@ public class CanonicalJsonService {
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * Hash a payload that is already a parsed JsonNode. Used by ingestion,
-     * where the request body has been deserialized into a tree.
-     */
     public String hash(JsonNode payload) {
         try {
-            // Convert to a plain Java object graph (Map, List, primitives)
-            // so that ORDER_MAP_ENTRIES_BY_KEYS applies at every nesting
-            // level. Serializing an ObjectNode directly does not reliably
-            // sort keys, which would make the hash order-sensitive and
-            // produce different hashes for equivalent content.
             Object plain = objectMapper.treeToValue(payload, Object.class);
             byte[] bytes = canonicalMapper().writeValueAsBytes(plain);
             return sha256Hex(bytes);
@@ -51,16 +54,6 @@ public class CanonicalJsonService {
         }
     }
 
-    /**
-     * Hash a payload stored as a JSON string. Used by the integrity check,
-     * which reads the payload column back as text.
-     *
-     * <p>Parses the string first so the canonical bytes are identical to
-     * what {@link #hash(JsonNode)} produces for the same logical content.
-     * This matters because Postgres jsonb reformats payloads on write
-     * (strips whitespace, reorders keys, normalizes number formatting) -
-     * a raw string hash would never match the ingestion-time hash.
-     */
     public String hash(String payloadJson) {
         try {
             JsonNode node = objectMapper.readTree(payloadJson);
