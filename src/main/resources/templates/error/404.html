@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>RunLedger — Not found</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<main class="not-found-view">
+    <h1>Not found</h1>
+    <p>
+        This run either doesn't exist, or belongs to a team you don't have
+        access to. The two cases are deliberately indistinguishable.
+    </p>
+    <a th:href="@{/}" class="back-link">&larr; Back to runs</a>
+</main>
+</body>
+</html>

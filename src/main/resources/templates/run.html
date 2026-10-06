@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'RunLedger — ' + ${run.sourceFile}">RunLedger</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<header class="app-header">
+    <div class="brand">
+        <h1><a th:href="@{/}" class="brand-link">RunLedger</a></h1>
+    </div>
+</header>
+
+<main class="detail-view">
+    <a th:href="@{/}" class="back-link">&larr; Back to runs</a>
+
+    <div class="integrity-badge"
+         th:classappend="${status.state.name() == 'VERIFIED'} ? 'badge-verified' :
+                         (${status.state.name() == 'TAMPERED'} ? 'badge-tampered' : 'badge-other')">
+        <span th:switch="${status.state.name()}">
+            <span th:case="'VERIFIED'">&#10003; Verified</span>
+            <span th:case="'TAMPERED'">&#9888; Integrity failed</span>
+            <span th:case="'STALE'">&#8226; Stale algorithm version</span>
+            <span th:case="*">&#8226; Cannot verify</span>
+        </span>
+    </div>
+    <p class="integrity-message" th:text="${status.message()}">Message</p>
+
+    <dl class="metadata">
+        <dt>File</dt>
+        <dd th:text="${run.sourceFile}">file.json</dd>
+
+        <dt>Team</dt>
+        <dd th:text="${run.team != null ? run.team.name : '—'}">Team A</dd>
+
+        <dt>Version</dt>
+        <dd th:text="${run.version}">1</dd>
+
+        <dt>Submitted</dt>
+        <dd th:text="${#temporals.format(run.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-01-01 12:00:00</dd>
+
+        <dt>By</dt>
+        <dd th:text="${run.submittedBy != null ? run.submittedBy.displayName : '—'}">User</dd>
+
+        <dt>Algorithm</dt>
+        <dd th:text="${run.canonVersion}">v1</dd>
+    </dl>
+
+    <h2>Payload</h2>
+    <pre class="payload" th:text="${run.payload}">{}</pre>
+
+    <p class="immutability-note">
+        There is intentionally no edit operation for submitted run content.
+        New submissions are recorded as new versions.
+    </p>
+</main>
+</body>
+</html>

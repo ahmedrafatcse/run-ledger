@@ -6,7 +6,10 @@ import com.runledger.entity.Team;
 import com.runledger.repository.AppUserRepository;
 import com.runledger.repository.TeamRepository;
 import com.runledger.security.AppSecurityContext;
+import com.runledger.security.IntegrityStatus;
+import com.runledger.security.IntegrityStatusService;
 import com.runledger.service.RunQueryService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +17,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.Optional;
 
 /**
  * Server-rendered HTML pages. Reads the current identity from
@@ -38,13 +44,16 @@ public class PageController {
     private final RunQueryService runQueryService;
     private final AppUserRepository appUserRepository;
     private final TeamRepository teamRepository;
+    private final IntegrityStatusService integrityStatusService;
 
     public PageController(RunQueryService runQueryService,
                           AppUserRepository appUserRepository,
-                          TeamRepository teamRepository) {
+                          TeamRepository teamRepository,
+                          IntegrityStatusService integrityStatusService) {
         this.runQueryService = runQueryService;
         this.appUserRepository = appUserRepository;
         this.teamRepository = teamRepository;
+        this.integrityStatusService = integrityStatusService;
     }
 
     /**
@@ -96,6 +105,32 @@ public class PageController {
         model.addAttribute("currentTeamName", teamName);
 
         return "runs";
+    }
+
+    /**
+     * Run detail. 404 for both "doesn't exist" and "exists, wrong team" —
+     * the RLS SELECT policy filters the row out of the result, so the
+     * controller can't distinguish them, and it shouldn't. Confirming a
+     * row exists on a team the requester can't see would itself be a leak.
+     *
+     * <p>The integrity badge is computed only for rows the requester can
+     * see. A tamper on a row they can't see is invisible to them by design;
+     * a tamper on their own row shows as TAMPERED.
+     */
+    @GetMapping("/runs/{id}")
+    public String detail(@PathVariable Long id,
+                         HttpServletResponse response,
+                         Model model) {
+        Optional<Run> run = runQueryService.getRunById(id);
+        if (run.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return "error/404";
+        }
+
+        IntegrityStatus status = integrityStatusService.check(run.get());
+        model.addAttribute("run", run.get());
+        model.addAttribute("status", status);
+        return "run";
     }
 
     private static boolean notBlank(String s) {
