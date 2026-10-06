@@ -87,17 +87,14 @@ class TestIngestFolder:
         file_path = f"{folder}/run1.json"
         payload = {"accuracy": 0.95}
 
-        # Mock filesystem
         mocker.patch("pathlib.Path.exists", return_value=True)
         mocker.patch("pathlib.Path.glob", return_value=[MagicMock(name=file_path)])
         mocker.patch("builtins.open", mock_open(read_data=json.dumps(payload)))
 
-        # Mock HTTP POST
         mock_post = mocker.patch("requests.post", return_value=MagicMock(status_code=201))
 
         ingest_folder(folder, batch=batch_name)
 
-        # Check that the POST was made with correct JSON
         call_args = mock_post.call_args
         sent_json = call_args[1]["json"]
         assert sent_json["batch"] == batch_name
@@ -114,7 +111,7 @@ class TestIngestFolder:
 
         ingest_folder(folder)
 
-        assert mock_post.call_count == 2   # one per element
+        assert mock_post.call_count == 2
 
     def test_ingest_skips_invalid_json(self, mocker):
         mocker.patch("pathlib.Path.exists", return_value=True)
@@ -162,36 +159,33 @@ class TestDisplayResults:
     def test_displays_table_without_error(self, mocker):
         data = {"content": [{"id": 1, "createdAt": "2025-01-01", "payload": {"experiment": "test"}}],
                 "totalElements": 1, "totalPages": 1, "pageable": {"pageNumber": 0}}
-        # Mock Console to avoid real output
         mocker.patch("cli.ledger.console.print")
-        display_results(data)  # should not raise
+        display_results(data)
 
 # ----------------------------------------------------------------------
 # Interactive search (mock user input and API calls)
 # ----------------------------------------------------------------------
 class TestInteractiveSearch:
     def test_full_search_flow(self, mocker):
-        # Mock metrics
         mocker.patch("cli.ledger.fetch_metrics", return_value=["accuracy", "loss"])
-        # Mock search response
         mocker.patch("cli.ledger.perform_search", return_value={
             "content": [{"id": 1, "createdAt": "...", "payload": {}}],
             "totalPages": 1, "totalElements": 1, "pageable": {"pageNumber": 0}
         })
-        # Mock console display
         mocker.patch("cli.ledger.console.print")
-        # Mock prompts: select metric "1", operator ">", value "0.9", then quit
         prompt_patch = mocker.patch("cli.ledger.Prompt.ask",
                         side_effect=["1", ">", "0.9", "q", "n"])
         interactive_search(batch="test")
         assert prompt_patch.call_count >= 4
 
 def test_search_multi_filter_builds_correct_payload(mocker, monkeypatch):
+    # cli/tests/conftest.py sets RUNLEDGER_BASE_URL=http://localhost:8080
+    # before pytest imports this module, so API_BASE is deterministic here
+    # regardless of the developer's shell environment.
     mock_post = mocker.patch("requests.post")
     mock_post.return_value.json.return_value = {"content": [], "totalElements": 0}
     mock_post.return_value.status_code = 200
 
-    # Simulate CLI arguments as if typed on the command line
     test_args = [
         "ledger.py", "search",
         "--metric", "accuracy", "--op", "gt", "--value", "0.9",
@@ -228,7 +222,6 @@ def test_show_blocks_prints_matched_pointers(mocker):
     mock_print = mocker.patch("cli.ledger.console.print")
     from cli.ledger import show_blocks
     show_blocks(run, "results[].sst2_cacc", [1])
-    # Some print calls may have no arguments (empty line) – filter them out
     printed_texts = [
         call.args[0] for call in mock_print.call_args_list if call.args
     ]
@@ -237,7 +230,6 @@ def test_show_blocks_prints_matched_pointers(mocker):
     assert any("0.924312" in str(t) for t in printed_texts)
     assert any("results[1].sst2_cacc" in str(t) for t in printed_texts)
     assert any("0.927752" in str(t) for t in printed_texts)
-
 
 def test_export_includes_pointer_fields():
     """build_export_blocks and format_blocks_as_text include pointer data."""
@@ -288,9 +280,7 @@ def test_diff_output(mocker):
     from cli.ledger import cli_diff
     cli_diff(args)
 
-    # Assert that console.print was called at least once
     assert mock_console.call_count > 0
-    # We can also check that a Table was printed by inspecting the first argument of some call
     table_printed = False
     for call in mock_console.call_args_list:
         if call.args and "Table" in str(type(call.args[0])):
@@ -303,7 +293,6 @@ def test_search_save_and_load(mocker):
     mock_post = mocker.patch("requests.post")
     mock_get = mocker.patch("requests.get")
 
-    # --save path
     mock_post.return_value.status_code = 200
 
     import argparse
@@ -317,12 +306,10 @@ def test_search_save_and_load(mocker):
     from cli.ledger import cli_search
     cli_search(save_args)
 
-    # Verify POST was called with correct payload
     save_call = mock_post.call_args
     assert save_call[1]["json"]["name"] == "my-query"
     assert "accuracy" in save_call[1]["json"]["paramsJson"]
 
-    # --saved path
     saved_response = mocker.Mock()
     saved_response.status_code = 200
     saved_response.json.return_value = {
@@ -332,7 +319,6 @@ def test_search_save_and_load(mocker):
     }
     mock_get.return_value = saved_response
 
-    # Also need to mock the actual search response (the one that fetches runs)
     search_response = mocker.Mock()
     search_response.status_code = 200
     search_response.json.return_value = {"content": [], "totalElements": 0}
@@ -347,15 +333,10 @@ def test_search_save_and_load(mocker):
 
     cli_search(saved_args)
 
-    # Verify the search was performed with the saved parameters
-    # (the second GET call should have metric=accuracy, op=gt, value=0.9)
     search_call = mock_get.call_args_list[1] if len(mock_get.call_args_list) > 1 else None
     assert search_call is not None
     assert "metric=accuracy" in search_call[0][0] or any("accuracy" in str(p) for p in search_call[1].values())
 
-# ----------------------------------------------------------------------
-# Aggregate test (NEW)
-# ----------------------------------------------------------------------
 def test_aggregate_output(mocker):
     """Test that the aggregate command calls the API and prints results."""
     mock_get = mocker.patch("requests.get")
@@ -374,5 +355,4 @@ def test_aggregate_output(mocker):
     from cli.ledger import cli_aggregate
     cli_aggregate(args)
 
-    # Check that the table was printed (at least one call to console.print)
     assert mock_print.call_count > 0
