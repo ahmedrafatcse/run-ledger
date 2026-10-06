@@ -8,6 +8,7 @@ import com.runledger.exception.GlobalExceptionHandler;
 import com.runledger.security.IdentityFilter;
 import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
+import com.runledger.security.SessionIdentityFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -40,6 +41,7 @@ class RunControllerTest {
     @MockitoBean private RunQueryService runQueryService;
     @MockitoBean private RunIngestionService ingestionService;
     @MockitoBean private IdentityFilter identityFilter;
+    @MockitoBean private SessionIdentityFilter sessionIdentityFilter;
 
     private Run run(Long id, String payloadJson) {
         Run r = new Run();
