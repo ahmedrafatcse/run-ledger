@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>RunLedger</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<header class="app-header">
+    <div class="brand">
+        <h1>RunLedger</h1>
+    </div>
+    <div class="identity">
+        <span class="identity-name" th:text="${currentUser.displayName}">User</span>
+        <span class="identity-team" th:text="'· ' + ${currentTeamName}">· Team</span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </div>
+</header>
+
+<main>
+    <form class="search-form" th:action="@{/}" method="get">
+        <input type="text" name="metric" placeholder="metric, e.g. accuracy"
+               th:value="${searchMetric}"/>
+        <select name="op">
+            <option value="gt"  th:selected="${searchOp == 'gt'}">&gt;</option>
+            <option value="gte" th:selected="${searchOp == 'gte'}">&ge;</option>
+            <option value="lt"  th:selected="${searchOp == 'lt'}">&lt;</option>
+            <option value="lte" th:selected="${searchOp == 'lte'}">&le;</option>
+            <option value="eq"  th:selected="${searchOp == 'eq'}">=</option>
+        </select>
+        <input type="text" name="value" placeholder="0.9"
+               th:value="${searchValue}"/>
+        <button type="submit">Search</button>
+        <a th:if="${hasSearch}" th:href="@{/}" class="clear-link">Clear</a>
+    </form>
+
+    <div class="results-summary">
+        <span th:if="${hasSearch}">
+            <span th:text="${totalElements}">0</span> matching run(s)
+        </span>
+        <span th:unless="${hasSearch}">
+            <span th:text="${totalElements}">0</span> run(s) visible to you
+        </span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(runs)}" class="empty-state">
+        <p th:if="${hasSearch}">No runs matched that search.</p>
+        <p th:unless="${hasSearch}">No runs available.</p>
+    </div>
+
+    <table th:unless="${#lists.isEmpty(runs)}" class="runs-table">
+        <thead>
+        <tr>
+            <th>File</th>
+            <th>Team</th>
+            <th>Version</th>
+            <th>Submitted</th>
+            <th>By</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="r : ${runs}">
+            <td>
+                <a th:href="@{/runs/{id}(id=${r.id})}"
+                   th:text="${r.sourceFile}">file.json</a>
+            </td>
+            <td th:text="${r.team != null ? r.team.name : '—'}">Team</td>
+            <td th:text="${r.version}">1</td>
+            <td th:text="${#temporals.format(r.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 12:00</td>
+            <td th:text="${r.submittedBy != null ? r.submittedBy.displayName : '—'}">User</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

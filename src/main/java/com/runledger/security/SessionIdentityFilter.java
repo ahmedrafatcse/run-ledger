@@ -47,6 +47,29 @@ public class SessionIdentityFilter extends OncePerRequestFilter {
     }
 
     /**
+     * SessionIdentityFilter handles browser pages only. It skips:
+     * <ul>
+     *   <li>{@code /api/*} — {@link IdentityFilter} handles API calls.</li>
+     *   <li>{@code /login} and {@code /logout} — these are the entry and
+     *       exit points of the session lifecycle and must not require
+     *       a session to run.</li>
+     *   <li>static assets and actuator paths — no identity needed.</li>
+     * </ul>
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/api/")
+                || path.equals("/login")
+                || path.equals("/logout")
+                || path.startsWith("/css/")
+                || path.startsWith("/js/")
+                || path.startsWith("/actuator")
+                || path.startsWith("/error")
+                || path.equals("/favicon.ico");
+    }
+
+    /**
      * Skip error dispatches: by the time an error reaches the container,
      * the original request has already been processed. Re-running identity
      * resolution on the error dispatch would either duplicate work or hide

@@ -50,12 +50,14 @@ public class IdentityFilter extends OncePerRequestFilter {
      * identity. Everything else under the servlet context goes through the
      * filter.
      */
+    /**
+     * IdentityFilter handles the JSON API only. Everything else (browser
+     * pages, static assets, actuator) is either served by
+     * {@link SessionIdentityFilter} or has no identity requirement.
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path.startsWith("/actuator")
-                || path.startsWith("/error")
-                || path.equals("/favicon.ico");
+        return !request.getRequestURI().startsWith("/api/");
     }
 
     /**
