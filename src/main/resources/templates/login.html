@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>RunLedger — Demo Login</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<div class="login-container">
+    <h1>RunLedger</h1>
+    <p class="stub-notice">
+        Development identity stub — select a demo user.
+        This is not authentication; see LoginController for what changes in production.
+    </p>
+    <form th:action="@{/login}" method="post">
+        <select name="userId" required>
+            <option value="" disabled selected>Choose a user…</option>
+            <option th:each="u : ${users}"
+                    th:value="${u.id}"
+                    th:text="${u.displayName} + ' (' + ${u.appRole} + ')'"></option>
+        </select>
+        <button type="submit">Log in</button>
+    </form>
+</div>
+</body>
+</html>

@@ -11,10 +11,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.net.CookieManager;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
@@ -33,7 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * directly against that failure mode.
  *
  * <p>Uses {@code java.net.http.HttpClient} with redirects disabled so the
- * 302 is observable rather than followed.
+ * 302 is observable rather than followed. A {@link CookieManager} is
+ * attached so the session-cookie test can carry a real login session.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -61,8 +65,11 @@ class FilterScopingTest {
 
     private static final String ALICE = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
+    private final CookieManager cookieManager = new CookieManager();
+
     private final HttpClient client = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NEVER)
+            .cookieHandler(cookieManager)
             .build();
 
     /**
@@ -75,8 +82,7 @@ class FilterScopingTest {
      * startup, when the schema is present.
      *
      * <p>The inserts use {@code ON CONFLICT DO NOTHING}, so repeat executions
-     * are no-ops after the first. The idempotency means the extra invocations
-     * cost nothing.
+     * are no-ops after the first.
      */
     @BeforeEach
     void seedUser() throws Exception {
@@ -112,6 +118,32 @@ class FilterScopingTest {
         return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
+    private HttpResponse<String> postForm(String path, String body) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri(path))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * Extract the CSRF token from a Spring-Security-rendered Thymeleaf form.
+     * Thymeleaf emits it as a hidden field: {@code <input ... name="_csrf" value="...">}.
+     * Attribute order can vary, so this scans for the name first, then the
+     * nearest value after it.
+     */
+    private String fetchCsrfToken(String html) {
+        int nameIdx = html.indexOf("name=\"_csrf\"");
+        if (nameIdx == -1) return null;
+        int valueIdx = html.indexOf("value=\"", nameIdx);
+        if (valueIdx == -1) return null;
+        int valueStart = valueIdx + "value=\"".length();
+        int valueEnd = html.indexOf('"', valueStart);
+        if (valueEnd == -1) return null;
+        return html.substring(valueStart, valueEnd);
+    }
+
     // -----------------------------------------------------------------
     // Case 1 — API path with header. IdentityFilter handles it.
     // -----------------------------------------------------------------
@@ -127,11 +159,6 @@ class FilterScopingTest {
 
     // -----------------------------------------------------------------
     // Case 2 — API path with no identity. Must be 401, not 302.
-    //
-    // This is the case that catches the collision. If SessionIdentityFilter
-    // ran on /api/*, it would find no session and redirect to /login.
-    // Getting 401 proves IdentityFilter ran (or the request reached the
-    // controller which rejected it), and that SessionIdentityFilter did not.
     // -----------------------------------------------------------------
 
     @Test
@@ -159,10 +186,7 @@ class FilterScopingTest {
     }
 
     // -----------------------------------------------------------------
-    // Case 4 — page path with no session, POST /api/runs. Sanity check
-    // that IdentityFilter is what's producing the 401, not the controller.
-    // Covered by case 2. Included here as an explicit assertion that the
-    // response is not a redirect, since "not a redirect" is the whole point.
+    // Case 4 — explicit assertion that /api/* does not redirect.
     // -----------------------------------------------------------------
 
     @Test
@@ -180,9 +204,8 @@ class FilterScopingTest {
     }
 
     // -----------------------------------------------------------------
-    // Case 5 — page path with no session, but a header is present. The
-    // header must be ignored on page routes: SessionIdentityFilter is the
-    // only filter running, and it doesn't read headers.
+    // Case 5 — header on a page path is ignored; session is the only
+    // identity source there.
     // -----------------------------------------------------------------
 
     @Test
@@ -194,5 +217,46 @@ class FilterScopingTest {
                 .isEqualTo(302);
         assertThat(r.headers().firstValue("Location").orElse(""))
                 .endsWith("/login");
+    }
+
+    // -----------------------------------------------------------------
+    // Case 6 — a real session cookie on an API path is ignored.
+    //
+    // Log in through the actual form (CSRF token included) to obtain a
+    // real JSESSIONID, then hit /api/runs with only that cookie and no
+    // X-User-Id header. Expected: 401. If the session authenticated API
+    // calls, a browser-based CSRF attack could hit the API using the
+    // logged-in user's identity, which the header-only API was never
+    // designed to defend against.
+    // -----------------------------------------------------------------
+
+    @Test
+    void sessionCookieOnApiPath_isIgnored() throws Exception {
+        // 1. Fetch the login form to obtain a CSRF token.
+        HttpResponse<String> loginPage = get("/login", null);
+        assertThat(loginPage.statusCode())
+                .as("login form should render")
+                .isEqualTo(200);
+        String csrf = fetchCsrfToken(loginPage.body());
+        assertThat(csrf)
+                .as("login form should include a CSRF token")
+                .isNotNull();
+
+        // 2. POST the login form with the token.
+        String body = "userId=" + ALICE + "&_csrf=" + URLEncoder.encode(csrf, StandardCharsets.UTF_8);
+        HttpResponse<String> loginResponse = postForm("/login", body);
+        assertThat(loginResponse.statusCode())
+                .as("login POST should redirect on success")
+                .isIn(200, 302);
+        assertThat(cookieManager.getCookieStore().getCookies())
+                .as("a session cookie should have been issued")
+                .isNotEmpty();
+
+        // 3. Hit /api/runs with the cookie but no header.
+        HttpResponse<String> apiResponse = get("/api/runs", null);
+
+        assertThat(apiResponse.statusCode())
+                .as("session cookie must not authenticate /api/*; only X-User-Id does")
+                .isEqualTo(401);
     }
 }
