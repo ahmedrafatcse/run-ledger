@@ -56,6 +56,26 @@ h1 {
     color: #888;
 }
 
+.identity-role {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.identity-teams {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.team-chip {
+    background: #eef2f7;
+    color: #334;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    border: 1px solid #dde3ec;
+}
+
 .logout-form {
     display: inline;
     margin: 0 0 0 1rem;

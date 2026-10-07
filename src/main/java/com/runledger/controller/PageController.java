@@ -19,6 +19,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import java.util.List;
 
 import java.util.Optional;
 
@@ -77,11 +78,20 @@ public class PageController {
                 .orElseThrow(() -> new IllegalStateException(
                         "Session identity has no matching app_users row"));
 
-        String teamName = currentUser.getTeamId() == null
-                ? "—"
-                : teamRepository.findById(currentUser.getTeamId())
-                .map(Team::getName)
-                .orElse("—");
+        // Resolve the teams this user can see.
+        // A researcher has exactly one; a supervisor has zero-or-more
+        // (their assigned teams); an admin would have all — not modeled
+        // here because admin has no policy and sees nothing.
+        List<Team> assignedTeams;
+        if ("supervisor".equals(currentUser.getAppRole())) {
+            assignedTeams = teamRepository.findAssignedTeams(currentUser.getId());
+        } else if (currentUser.getTeamId() != null) {
+            assignedTeams = teamRepository.findById(currentUser.getTeamId())
+                    .map(List::of)
+                    .orElse(List.of());
+        } else {
+            assignedTeams = List.of();
+        }
 
         boolean hasSearch = notBlank(metric) && notBlank(op) && notBlank(value);
 
@@ -102,7 +112,7 @@ public class PageController {
         model.addAttribute("totalElements", runs.getTotalElements());
         model.addAttribute("hasSearch", hasSearch);
         model.addAttribute("currentUser", currentUser);
-        model.addAttribute("currentTeamName", teamName);
+        model.addAttribute("assignedTeams", assignedTeams);
 
         return "runs";
     }

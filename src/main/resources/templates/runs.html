@@ -12,7 +12,13 @@
     </div>
     <div class="identity">
         <span class="identity-name" th:text="${currentUser.displayName}">User</span>
-        <span class="identity-team" th:text="'· ' + ${currentTeamName}">· Team</span>
+        <span class="identity-role" th:text="'· ' + ${currentUser.appRole}">· researcher</span>
+        <span class="identity-teams" th:if="${!assignedTeams.isEmpty()}">
+            ·
+            <span th:each="team, iter : ${assignedTeams}"
+                  class="team-chip"
+                  th:text="${team.name}">Team A</span>
+        </span>
         <form th:action="@{/logout}" method="post" class="logout-form">
             <button type="submit" class="logout-button">Logout</button>
         </form>
