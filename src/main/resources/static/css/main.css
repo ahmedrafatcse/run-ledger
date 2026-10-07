@@ -314,3 +314,12 @@ button:hover {
     color: #666;
     margin-bottom: 1.5rem;
 }
+
+.metadata code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    color: #333;
+    background: #f5f5f5;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+}

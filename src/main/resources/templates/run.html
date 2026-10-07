@@ -43,6 +43,8 @@
         <dt>By</dt>
         <dd th:text="${run.submittedBy != null ? run.submittedBy.displayName : '—'}">User</dd>
 
+        <dt>Recorded hash</dt>
+        <dd><code th:text="${#strings.substring(run.payloadHash, 0, 16)} + '…'">3a46576783078c73…</code></dd>
         <dt>Algorithm</dt>
         <dd th:text="${run.canonVersion}">v1</dd>
     </dl>
