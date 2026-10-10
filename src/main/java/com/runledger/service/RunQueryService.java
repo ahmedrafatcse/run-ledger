@@ -7,12 +7,13 @@ import com.runledger.dto.MatchDetail;
 import com.runledger.dto.MultiFilterRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import com.runledger.security.AppSecurityContext;
 import com.runledger.security.SecuredTransactionTemplate;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -43,14 +44,14 @@ public class RunQueryService {
     }
 
     // ---------------------------------------------------------------
-    // Paginated query - no batch filter
+    // Paginated query – no batch filter
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value, Pageable pageable) {
         return secured.execute(() -> executeQuery(metric, op, value, null, pageable));
     }
 
     // ---------------------------------------------------------------
-    // Paginated query - with batch filter
+    // Paginated query – with batch filter
     // ---------------------------------------------------------------
     public Page<Run> queryByMetric(String metric, String op, String value,
                                    String batch, Pageable pageable) {
@@ -94,14 +95,16 @@ public class RunQueryService {
             if (batch == null || batch.isBlank()) {
                 return runRepository.findDistinctMetricKeys();
             }
-            Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
+            Map<String, List<String>> mapping =
+                    batchSchemaService.getOrCreateMapping(currentTeamIdForMapping(), batch);
             return mapping.keySet().stream().sorted().toList();
         });
     }
 
     public List<Map<String, Object>> getAvailableMetricsVerbose(String batch) {
         return secured.execute(() -> {
-            Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
+            Map<String, List<String>> mapping =
+                    batchSchemaService.getOrCreateMapping(currentTeamIdForMapping(), batch);
             List<Map<String, Object>> result = new ArrayList<>();
             for (var entry : mapping.entrySet()) {
                 for (String path : entry.getValue()) {
@@ -188,6 +191,37 @@ public class RunQueryService {
         } catch (Exception e) {
             return List.of();
         }
+    }
+
+    /**
+     * Extract match pointers for a page of runs against a resolved path.
+     *
+     * <p>Chooses between array-element extraction (path contains {@code []})
+     * and scalar extraction (path is a plain dot-path). Returns a map from
+     * run ID to the list of matches for that run. Runs with no match are
+     * absent from the map.
+     */
+    public Map<Long, List<MatchDetail>> findMatches(List<Run> runs,
+                                                    String resolvedPath,
+                                                    String op,
+                                                    String value) {
+        if (runs == null || runs.isEmpty() || resolvedPath == null) {
+            return Map.of();
+        }
+
+        if (resolvedPath.contains("[]")) {
+            List<Long> ids = runs.stream().map(Run::getId).toList();
+            return getArrayMatches(ids, resolvedPath, op, value);
+        }
+
+        Map<Long, List<MatchDetail>> result = new HashMap<>();
+        for (Run run : runs) {
+            List<MatchDetail> matches = getScalarMatch(run, resolvedPath, op, value);
+            if (!matches.isEmpty()) {
+                result.put(run.getId(), matches);
+            }
+        }
+        return result;
     }
 
     public Map<Long, List<MatchDetail>> getArrayMatches(List<Long> runIds, String fullPath,
@@ -421,18 +455,38 @@ public class RunQueryService {
     // Internal helpers
     // ---------------------------------------------------------------
 
+    /**
+     * Resolve the team for a batch-mapping lookup.
+     */
+    private UUID currentTeamIdForMapping() {
+        AppSecurityContext.UserPrincipal p = AppSecurityContext.require();
+        if (p.teamId() == null) {
+            throw new IllegalStateException(
+                    "This operation requires a team. Supervisors must select a team.");
+        }
+        return p.teamId();
+    }
+
     private String resolvePathInternal(String metric, String batch) {
         if (metric.contains(".") || metric.contains("[]")) {
             return metric;
         }
         if (batch != null && !batch.isBlank()) {
-            Map<String, List<String>> mapping = batchSchemaService.getOrCreateMapping(batch);
+            Map<String, List<String>> mapping =
+                    batchSchemaService.getOrCreateMapping(currentTeamIdForMapping(), batch);
             List<String> paths = mapping.get(metric);
             if (paths != null && !paths.isEmpty()) {
                 return paths.get(0);
             }
         }
         return metric;
+    }
+
+    private static Pageable stripSort(Pageable pageable) {
+        if (pageable.getSort().isUnsorted()) {
+            return pageable;
+        }
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
     }
 
     private Page<Run> executeQuery(String path, String op, String value,
@@ -519,24 +573,6 @@ public class RunQueryService {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Expected a numeric value, got: " + value);
         }
-    }
-
-    /**
-     * Strip the Sort from a Pageable before it reaches a native query.
-     *
-     * <p>Every query in this service is a native SQL string with its own
-     * {@code ORDER BY r.created_at DESC}. Spring Data JPA appends the
-     * Pageable's Sort to the generated SQL, but for native queries it uses
-     * entity property names (e.g. {@code r.createdAt}) rather than column
-     * names ({@code r.created_at}), so the appended clause fails. Stripping
-     * the sort keeps pagination (page number + size) intact while letting
-     * the query's own ordering do the work.
-     */
-    private static Pageable stripSort(Pageable pageable) {
-        if (pageable.getSort().isUnsorted()) {
-            return pageable;
-        }
-        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
     }
 
     private Double tryParseDouble(String value) {
@@ -636,41 +672,5 @@ public class RunQueryService {
     private Object convertValue(Object dbValue) {
         if (dbValue instanceof Number) return ((Number) dbValue).doubleValue();
         return dbValue.toString();
-    }
-
-    /**
-     * Extract match pointers for a page of runs against a resolved path.
-     *
-     * <p>Chooses between array-element extraction (path contains {@code []})
-     * and scalar extraction (path is a plain dot-path). Returns a map from
-     * run ID to the list of matches for that run. Runs with no match are
-     * absent from the map.
-     *
-     * <p>Called by the HTML controllers after a query returns, so the
-     * results table can render {@code results[2].accuracy = 0.95} under the
-     * filename. The API path in {@code RunController} does the equivalent
-     * inline, per-metric, and hasn't been refactored to use this yet.
-     */
-    public Map<Long, List<MatchDetail>> findMatches(List<Run> runs,
-                                                    String resolvedPath,
-                                                    String op,
-                                                    String value) {
-        if (runs == null || runs.isEmpty() || resolvedPath == null) {
-            return Map.of();
-        }
-
-        if (resolvedPath.contains("[]")) {
-            List<Long> ids = runs.stream().map(Run::getId).toList();
-            return getArrayMatches(ids, resolvedPath, op, value);
-        }
-
-        Map<Long, List<MatchDetail>> result = new HashMap<>();
-        for (Run run : runs) {
-            List<MatchDetail> matches = getScalarMatch(run, resolvedPath, op, value);
-            if (!matches.isEmpty()) {
-                result.put(run.getId(), matches);
-            }
-        }
-        return result;
     }
 }

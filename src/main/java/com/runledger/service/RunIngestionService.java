@@ -21,6 +21,7 @@ public class RunIngestionService {
     private final ObjectMapper objectMapper;
     private final SecuredTransactionTemplate secured;
     private final CanonicalJsonService canonicalJson;
+    private final BatchSchemaService batchSchemaService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -28,13 +29,36 @@ public class RunIngestionService {
     public RunIngestionService(RunRepository runRepository,
                                ObjectMapper objectMapper,
                                SecuredTransactionTemplate secured,
-                               CanonicalJsonService canonicalJson) {
+                               CanonicalJsonService canonicalJson,
+                               BatchSchemaService batchSchemaService) {
         this.runRepository = runRepository;
         this.objectMapper = objectMapper;
         this.secured = secured;
         this.canonicalJson = canonicalJson;
+        this.batchSchemaService = batchSchemaService;
     }
 
+    /**
+     * Ingests a run request inside a transaction scoped to the current
+     * request's identity.
+     *
+     * <p><b>Ownership is derived from identity, never from the request.</b>
+     * The {@code team_id} and {@code uploaded_by} columns are populated from
+     * {@link AppSecurityContext}, not from anything in the submitted payload
+     * or request. A client cannot declare which team owns a run.
+     *
+     * <p>Only users with the {@code researcher} role may submit runs.
+     *
+     * <p>After the run row is inserted, the batch's shorthand mapping is
+     * updated with the new run's leaf paths, under an advisory lock scoped
+     * to {@code (teamId, batch)}. This keeps the mapping fresh without a
+     * full rebuild on every ingest.
+     *
+     * @param request the ingestion request
+     * @return the saved Run entity (new or existing)
+     * @throws IllegalStateException if the current identity is not a
+     *         researcher with an assigned team
+     */
     public Run ingest(RunRequest request) {
         AppSecurityContext.UserPrincipal p = AppSecurityContext.require();
 
@@ -87,9 +111,20 @@ public class RunIngestionService {
             newVersion.setTeamId(p.teamId());
             newVersion.setUploadedBy(p.userId());
 
-            return runRepository.save(newVersion);
+            Run saved = runRepository.save(newVersion);
+
+            // Merge this run's leaf paths into the (team, batch) mapping.
+            // Only runs with a batch participate; batchless runs aren't
+            // addressable by shorthand and don't need a mapping entry.
+            if (batch != null) {
+                batchSchemaService.mergeIntoMapping(p.teamId(), batch, request.payload());
+            }
+
+            return saved;
         });
     }
+
+    // ── Private helpers ──
 
     private String extractSourceFile(String payloadJson) {
         try {

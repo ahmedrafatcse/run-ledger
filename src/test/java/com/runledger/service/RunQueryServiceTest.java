@@ -7,9 +7,11 @@ import com.runledger.dto.MatchDetail;
 import com.runledger.dto.MultiFilterRequest;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
+import com.runledger.security.AppSecurityContext;
 import com.runledger.security.SecuredTransactionTemplate;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,12 +52,22 @@ class RunQueryServiceTest {
 
     private RunQueryService runQueryService;
 
+    private static final UUID TEST_USER_ID =
+            UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static final UUID TEST_TEAM_ID =
+            UUID.fromString("11111111-1111-1111-1111-111111111111");
+
     @BeforeEach
     void setUp() {
+        // Identity MUST be bound before any wrapped call runs. As of
+        // Slice 4.5, resolvePath resolves batch mappings against the current
+        // team, so currentTeamIdForMapping() calls
+        // AppSecurityContext.require() inside the wrapped supplier.
+        AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
+                TEST_USER_ID, "researcher", TEST_TEAM_ID));
+
         // Pass-through stub: run the caller's supplier inline. In unit tests
-        // there is no real transaction and no AppSecurityContext, so we skip
-        // the role/identity setup entirely. The behaviour under test is the
-        // query logic, not the transaction boundary.
+        // there is no real transaction, so we bypass the wrapper entirely.
         lenient().when(secured.execute(any())).thenAnswer(inv -> {
             java.util.function.Supplier<?> work = inv.getArgument(0);
             return work.get();
@@ -63,6 +75,11 @@ class RunQueryServiceTest {
 
         runQueryService = new RunQueryService(runRepository, batchSchemaService,
                 compoundQueryBuilder, entityManager, objectMapper, secured);
+    }
+
+    @AfterEach
+    void tearDown() {
+        AppSecurityContext.clear();
     }
 
     // ---------------------------------------------------------------
@@ -181,12 +198,12 @@ class RunQueryServiceTest {
     }
 
     // ---------------------------------------------------------------
-    // Shorthand resolution tests (batch‑variant repository methods)
+    // Shorthand resolution tests (batch-variant repository methods)
     // ---------------------------------------------------------------
 
     @Test
     void shouldResolveShorthandKeyUsingBatchMapping() {
-        when(batchSchemaService.getOrCreateMapping("batch1"))
+        when(batchSchemaService.getOrCreateMapping(any(UUID.class), eq("batch1")))
                 .thenReturn(Map.of("accuracy", List.of("metrics.accuracy")));
 
         var dummyRuns = List.of(new Run());
@@ -218,7 +235,7 @@ class RunQueryServiceTest {
 
     @Test
     void shouldReturnRawKeyWhenNoMappingExists() {
-        when(batchSchemaService.getOrCreateMapping("batch1"))
+        when(batchSchemaService.getOrCreateMapping(any(UUID.class), eq("batch1")))
                 .thenReturn(Collections.emptyMap());
 
         var dummyRuns = List.of(new Run());
@@ -247,7 +264,7 @@ class RunQueryServiceTest {
     }
 
     // ---------------------------------------------------------------
-    // Multi‑filter AND/OR search
+    // Multi-filter AND/OR search
     // ---------------------------------------------------------------
 
     @Test
@@ -260,7 +277,7 @@ class RunQueryServiceTest {
                 null
         );
 
-        when(batchSchemaService.getOrCreateMapping("test-batch"))
+        when(batchSchemaService.getOrCreateMapping(any(UUID.class), eq("test-batch")))
                 .thenReturn(Map.of("accuracy", List.of("accuracy"), "loss", List.of("metrics.loss")));
 
         HashMap<String, Object> mutableParams = new HashMap<>();
