@@ -127,11 +127,28 @@ public class BatchSchemaService {
         // Convert to the final mapping shape: key -> list of paths, shallowest first.
         Map<String, List<String>> merged = toSortedMapping(temp);
 
-        BatchSchema toSave = existing.orElseGet(BatchSchema::new);
-        toSave.setTeamId(teamId);
-        toSave.setBatch(batch);
-        toSave.setKeyMapping(merged);
-        batchSchemaRepository.save(toSave);
+        if (existing.isPresent()) {
+            // Existing row: update only the key_mapping column via native SQL.
+            // Hibernate's default save() would emit a full-row UPDATE including
+            // team_id and batch, which the column grant rejects (only
+            // key_mapping is updatable). The native statement matches the grant.
+            try {
+                entityManager.createNativeQuery(
+                                "UPDATE batch_schema SET key_mapping = cast(:mapping AS jsonb) WHERE id = :id")
+                        .setParameter("mapping", objectMapper.writeValueAsString(merged))
+                        .setParameter("id", existing.get().getId())
+                        .executeUpdate();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to update batch mapping", e);
+            }
+        } else {
+            // New row: full INSERT is permitted by the table-level grant.
+            BatchSchema toSave = new BatchSchema();
+            toSave.setTeamId(teamId);
+            toSave.setBatch(batch);
+            toSave.setKeyMapping(merged);
+            batchSchemaRepository.save(toSave);
+        }
     }
 
     /** Convenience for callers that only need the keys. */
