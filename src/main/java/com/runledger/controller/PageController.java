@@ -1,5 +1,6 @@
 package com.runledger.controller;
 
+import com.runledger.dto.PagedView;
 import com.runledger.entity.AppUser;
 import com.runledger.entity.Run;
 import com.runledger.entity.Team;
@@ -19,28 +20,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
-import java.util.List;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-/**
- * Server-rendered HTML pages. Reads the current identity from
- * {@link AppSecurityContext}, which {@code SessionIdentityFilter} populates
- * for every page request.
- *
- * <p>All queries go through {@link RunQueryService}, which is wrapped in
- * {@code SecuredTransactionTemplate} and therefore runs under RLS. The
- * controller does not filter by team or user; the database does. Alice and
- * Bob hitting the same endpoint see different rows because the RLS SELECT
- * policy on {@code run} resolves their membership from {@code app_users}
- * against the session's {@code app.current_user_id}.
- */
 @Controller
 public class PageController {
 
-    /** Cap for the home page. No pagination controls; a batch of runs that
-     *  exceeds this is a signal to add paging, not a signal to render more. */
-    private static final int PAGE_SIZE = 100;
+    private static final int PAGE_SIZE = 50;
 
     private final RunQueryService runQueryService;
     private final AppUserRepository appUserRepository;
@@ -57,19 +46,12 @@ public class PageController {
         this.integrityStatusService = integrityStatusService;
     }
 
-    /**
-     * Home page: run list with an optional metric search.
-     *
-     * <p>Search parameters are optional. If all three are present, the page
-     * routes to {@link RunQueryService#queryByMetric}; otherwise it lists
-     * all visible runs. Both paths go through the wrapped service, so both
-     * are subject to RLS.
-     */
     @GetMapping("/")
     public String home(
             @RequestParam(required = false) String metric,
             @RequestParam(required = false) String op,
             @RequestParam(required = false) String value,
+            @RequestParam(required = false, defaultValue = "0") int page,
             Model model) {
 
         AppSecurityContext.UserPrincipal principal = AppSecurityContext.require();
@@ -78,10 +60,6 @@ public class PageController {
                 .orElseThrow(() -> new IllegalStateException(
                         "Session identity has no matching app_users row"));
 
-        // Resolve the teams this user can see.
-        // A researcher has exactly one; a supervisor has zero-or-more
-        // (their assigned teams); an admin would have all — not modeled
-        // here because admin has no policy and sees nothing.
         List<Team> assignedTeams;
         if ("supervisor".equals(currentUser.getAppRole())) {
             assignedTeams = teamRepository.findAssignedTeams(currentUser.getId());
@@ -95,21 +73,24 @@ public class PageController {
 
         boolean hasSearch = notBlank(metric) && notBlank(op) && notBlank(value);
 
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+
         Page<Run> runs;
+        Map<String, String> currentParams = new LinkedHashMap<>();
         if (hasSearch) {
-            Pageable unsorted = PageRequest.of(0, PAGE_SIZE);
-            runs = runQueryService.queryByMetric(metric, op, value, unsorted);
+            runs = runQueryService.queryByMetric(metric, op, value, pageable);
+            currentParams.put("metric", metric);
+            currentParams.put("op", op);
+            currentParams.put("value", value);
             model.addAttribute("searchMetric", metric);
             model.addAttribute("searchOp", op);
             model.addAttribute("searchValue", value);
         } else {
-            Pageable sorted = PageRequest.of(0, PAGE_SIZE,
-                    Sort.by(Sort.Direction.DESC, "createdAt"));
-            runs = runQueryService.listRuns(null, sorted);
+            runs = runQueryService.listRuns(null, pageable);
         }
 
-        model.addAttribute("runs", runs.getContent());
-        model.addAttribute("totalElements", runs.getTotalElements());
+        model.addAttribute("resultsPage", PagedView.of(runs, "/", currentParams));
         model.addAttribute("hasSearch", hasSearch);
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("assignedTeams", assignedTeams);
@@ -117,16 +98,6 @@ public class PageController {
         return "runs";
     }
 
-    /**
-     * Run detail. 404 for both "doesn't exist" and "exists, wrong team" —
-     * the RLS SELECT policy filters the row out of the result, so the
-     * controller can't distinguish them, and it shouldn't. Confirming a
-     * row exists on a team the requester can't see would itself be a leak.
-     *
-     * <p>The integrity badge is computed only for rows the requester can
-     * see. A tamper on a row they can't see is invisible to them by design;
-     * a tamper on their own row shows as TAMPERED.
-     */
     @GetMapping("/runs/{id}")
     public String detail(@PathVariable Long id,
                          HttpServletResponse response,
@@ -137,9 +108,27 @@ public class PageController {
             return "error/404";
         }
 
+        AppSecurityContext.UserPrincipal principal = AppSecurityContext.require();
+        AppUser currentUser = appUserRepository.findById(principal.userId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Session identity has no matching app_users row"));
+
+        List<Team> assignedTeams;
+        if ("supervisor".equals(currentUser.getAppRole())) {
+            assignedTeams = teamRepository.findAssignedTeams(currentUser.getId());
+        } else if (currentUser.getTeamId() != null) {
+            assignedTeams = teamRepository.findById(currentUser.getTeamId())
+                    .map(List::of)
+                    .orElse(List.of());
+        } else {
+            assignedTeams = List.of();
+        }
+
         IntegrityStatus status = integrityStatusService.check(run.get());
         model.addAttribute("run", run.get());
         model.addAttribute("status", status);
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("assignedTeams", assignedTeams);
         return "run";
     }
 

@@ -1,19 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="'RunLedger — ' + ${run.sourceFile}">RunLedger</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}">
-</head>
+<head th:replace="~{fragments/layout :: head(${run.sourceFile})}"></head>
 <body>
-<header class="app-header">
-    <div class="brand">
-        <h1><a th:href="@{/}" class="brand-link">RunLedger</a></h1>
-    </div>
-</header>
+<header th:replace="~{fragments/layout :: appHeader('runs')}"></header>
 
 <main class="detail-view">
-    <a th:href="@{/}" class="back-link">&larr; Back to runs</a>
+    <a th:href="@{/}" class="back-link">← Back to runs</a>
 
     <div class="integrity-badge"
          th:classappend="${status.state.name() == 'VERIFIED'} ? 'badge-verified' :
@@ -45,6 +37,7 @@
 
         <dt>Recorded hash</dt>
         <dd><code th:text="${#strings.substring(run.payloadHash, 0, 16)} + '…'">3a46576783078c73…</code></dd>
+
         <dt>Algorithm</dt>
         <dd th:text="${run.canonVersion}">v1</dd>
     </dl>
@@ -57,5 +50,7 @@
         New submissions are recorded as new versions.
     </p>
 </main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
 </body>
 </html>

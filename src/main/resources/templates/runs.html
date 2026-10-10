@@ -1,29 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>RunLedger</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}">
-</head>
+<head th:replace="~{fragments/layout :: head('Runs')}"></head>
 <body>
-<header class="app-header">
-    <div class="brand">
-        <h1>RunLedger</h1>
-    </div>
-    <div class="identity">
-        <span class="identity-name" th:text="${currentUser.displayName}">User</span>
-        <span class="identity-role" th:text="'· ' + ${currentUser.appRole}">· researcher</span>
-        <span class="identity-teams" th:if="${!assignedTeams.isEmpty()}">
-            ·
-            <span th:each="team, iter : ${assignedTeams}"
-                  class="team-chip"
-                  th:text="${team.name}">Team A</span>
-        </span>
-        <form th:action="@{/logout}" method="post" class="logout-form">
-            <button type="submit" class="logout-button">Logout</button>
-        </form>
-    </div>
-</header>
+<header th:replace="~{fragments/layout :: appHeader('runs')}"></header>
 
 <main>
     <form class="search-form" th:action="@{/}" method="get">
@@ -44,19 +23,18 @@
 
     <div class="results-summary">
         <span th:if="${hasSearch}">
-            <span th:text="${totalElements}">0</span> matching run(s)
+            <span th:text="${resultsPage.totalElements}">0</span> matching run(s)
         </span>
         <span th:unless="${hasSearch}">
-            <span th:text="${totalElements}">0</span> run(s) visible to you
+            <span th:text="${resultsPage.totalElements}">0</span> run(s) visible to you
         </span>
     </div>
 
-    <div th:if="${#lists.isEmpty(runs)}" class="empty-state">
-        <p th:if="${hasSearch}">No runs matched that search.</p>
-        <p th:unless="${hasSearch}">No runs available.</p>
+    <div th:if="${#lists.isEmpty(resultsPage.items)}"
+         th:replace="~{fragments/empty :: empty(${hasSearch} ? 'No runs matched that search.' : 'No runs available.')}">
     </div>
 
-    <table th:unless="${#lists.isEmpty(runs)}" class="runs-table">
+    <table th:unless="${#lists.isEmpty(resultsPage.items)}" class="runs-table">
         <thead>
         <tr>
             <th>File</th>
@@ -67,7 +45,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="r : ${runs}">
+        <tr th:each="r : ${resultsPage.items}">
             <td>
                 <a th:href="@{/runs/{id}(id=${r.id})}"
                    th:text="${r.sourceFile}">file.json</a>
@@ -79,6 +57,10 @@
         </tr>
         </tbody>
     </table>
+
+    <div th:replace="~{fragments/pagination :: pagination(${resultsPage})}"></div>
 </main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
 </body>
 </html>

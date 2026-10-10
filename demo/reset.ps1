@@ -3,14 +3,19 @@
     Reset the RunLedger demo environment to a known-good state.
 
 .DESCRIPTION
-    Truncates the run table, re-seeds teams and users, POSTs five sample
-    runs through the API as Alice and Bob, then verifies the resulting
-    state matches what the demo expects.
+    Truncates the run table, re-seeds teams and users, POSTs sample runs
+    through the API as Alice and Bob, then verifies the resulting state
+    matches what the demo expects.
 
     Runs are posted through the API rather than inserted with SQL so that
     payload_hash is computed by the real ingestion path. Demo data with
     real hashes means the integrity badge on the detail page is a real
     check, not a placeholder.
+
+    One of Alice's runs (alice-4.json) has a nested payload: a config
+    object with an optimizer.settings.learning_rate field, and an array
+    of per-epoch results. That run exercises nested-path and
+    array-element queries in the demo.
 
     The owner credentials used here (POSTGRES_USER=runledger) are demo
     setup, not part of the application's security boundary. The app
@@ -72,6 +77,8 @@ Write-Host "Seeding teams and users..." -ForegroundColor Cyan
 Get-Content "$root\demo\seed.sql" -Raw | docker exec -i $pg psql -U runledger -d runledger | Out-Null
 
 # ── 5. Post sample runs via the API ─────────────────────────────────
+
+# Flat payload: a run with top-level metric fields.
 function Post-Run {
     param(
         [string]$UserId,
@@ -100,10 +107,50 @@ function Post-Run {
     Write-Host ("  posted {0,-20} as {1}" -f $SourceFile, $Batch)
 }
 
+# Nested payload: a run shaped like a real training sweep with a config
+# object and an array of per-epoch results. Exercises nested-path and
+# array-element queries in the demo.
+function Post-NestedRun {
+    param(
+        [string]$UserId,
+        [string]$Batch,
+        [string]$SourceFile
+    )
+    $payload = @{
+        payload = @{
+            experiment = "demo-nested"
+            config = @{
+                optimizer = @{
+                    name     = "AdamW"
+                    settings = @{
+                        learning_rate = 0.0001
+                        weight_decay  = 0.01
+                    }
+                }
+            }
+            results = @(
+                @{ epoch = 1; accuracy = 0.91; loss = 0.18 }
+                @{ epoch = 2; accuracy = 0.94; loss = 0.12 }
+                @{ epoch = 3; accuracy = 0.95; loss = 0.10 }
+            )
+            _source = @{ file = $SourceFile; index = 0 }
+        }
+        batch = $Batch
+    } | ConvertTo-Json -Depth 10 -Compress
+
+    Invoke-RestMethod -Uri "$BaseUrl/api/runs" -Method Post `
+        -Headers @{ "X-User-Id" = $UserId } `
+        -ContentType "application/json" `
+        -Body $payload | Out-Null
+
+    Write-Host ("  posted {0,-20} as {1}" -f $SourceFile, $Batch)
+}
+
 Write-Host "Posting sample runs as Alice..." -ForegroundColor Cyan
-Post-Run -UserId $aliceId -Batch "demo-alice" -SourceFile "alice-1.json" -Accuracy 0.95 -Loss 0.12 -Notes "baseline run"
-Post-Run -UserId $aliceId -Batch "demo-alice" -SourceFile "alice-2.json" -Accuracy 0.91 -Loss 0.15 -Notes "tuned optimizer"
-Post-Run -UserId $aliceId -Batch "demo-alice" -SourceFile "alice-3.json" -Accuracy 0.88 -Loss 0.20 -Notes "ablated layer 6"
+Post-Run       -UserId $aliceId -Batch "demo-alice" -SourceFile "alice-1.json" -Accuracy 0.95 -Loss 0.12 -Notes "baseline run"
+Post-Run       -UserId $aliceId -Batch "demo-alice" -SourceFile "alice-2.json" -Accuracy 0.91 -Loss 0.15 -Notes "tuned optimizer"
+Post-Run       -UserId $aliceId -Batch "demo-alice" -SourceFile "alice-3.json" -Accuracy 0.88 -Loss 0.20 -Notes "ablated layer 6"
+Post-NestedRun -UserId $aliceId -Batch "demo-alice" -SourceFile "alice-4.json"
 
 Write-Host "Posting sample runs as Bob..." -ForegroundColor Cyan
 Post-Run -UserId $bobId -Batch "demo-bob" -SourceFile "bob-1.json" -Accuracy 0.93 -Loss 0.14 -Notes "bobs baseline"
@@ -126,8 +173,8 @@ $countsRaw | ForEach-Object {
     }
 }
 
-if ($teamACount -ne 3) {
-    Write-Error "Expected 3 runs for Team A, got $teamACount"
+if ($teamACount -ne 4) {
+    Write-Error "Expected 4 runs for Team A, got $teamACount"
     exit 1
 }
 if ($teamBCount -ne 2) {

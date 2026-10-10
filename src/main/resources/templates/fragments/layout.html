@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <title th:text="${title} + ' — RunLedger'">RunLedger</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+
+<header class="app-header" th:fragment="appHeader(active)">
+    <div class="app-header-left">
+        <h1 class="brand">
+            <a th:href="@{/}" class="brand-link">RunLedger</a>
+        </h1>
+        <nav class="app-nav">
+            <a th:href="@{/}"
+               th:classappend="${active == 'runs'} ? 'active' : ''"
+               data-nav="true">Runs</a>
+        </nav>
+    </div>
+    <div class="identity" th:if="${currentUser != null}">
+        <span class="identity-name" th:text="${currentUser.displayName}">User</span>
+        <span class="identity-role" th:text="'· ' + ${currentUser.appRole}">· researcher</span>
+        <span class="identity-teams"
+              th:if="${assignedTeams != null and !assignedTeams.isEmpty()}">
+            ·
+            <span th:each="team : ${assignedTeams}"
+                  class="team-chip"
+                  th:text="${team.name}">Team A</span>
+        </span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </div>
+</header>
+
+<footer class="app-footer" th:fragment="appFooter">
+    <span>RunLedger</span>
+    <span class="footer-sep">·</span>
+    <span>Development identity stub</span>
+</footer>
+
+</body>
+</html>

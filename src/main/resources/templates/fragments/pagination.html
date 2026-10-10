@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div class="pagination" th:fragment="pagination(paged)" th:if="${paged.totalPages > 1}">
+    <a th:if="${!paged.first}"
+       th:href="${paged.prevUrl}"
+       class="pagination-link pagination-prev">← Previous</a>
+    <span th:unless="${!paged.first}" class="pagination-spacer"></span>
+
+    <span class="pagination-info">
+        Page <span th:text="${paged.pageNumber + 1}"></span>
+        of <span th:text="${paged.totalPages}"></span>
+    </span>
+
+    <a th:if="${!paged.last}"
+       th:href="${paged.nextUrl}"
+       class="pagination-link pagination-next">Next →</a>
+</div>
+
+</body>
+</html>
