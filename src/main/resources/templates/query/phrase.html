@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Phrase search')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main>
+    <h2>Phrase search</h2>
+    <p class="page-hint">
+        Full-text search across the JSON payload. With stemming, so
+        "weighted" also matches "weight". The fuzzy option tolerates
+        typos ("avaraging" matches "averaging").
+    </p>
+
+    <form class="query-form" th:action="@{/query/phrase}" method="get">
+        <label class="field field-wide">
+            <span class="field-label">Search text</span>
+            <input type="text" name="q" placeholder="e.g. weighted averaging"
+                   th:value="${q}"/>
+        </label>
+
+        <label class="field field-inline">
+            <input type="checkbox" name="fuzzy" value="true"
+                   th:checked="${fuzzy}"/>
+            <span>Fuzzy match (typo-tolerant)</span>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Batch (optional)</span>
+            <input type="text" name="batch" placeholder="e.g. demo-alice"
+                   th:value="${batch}"/>
+        </label>
+
+        <div class="form-actions">
+            <button type="submit">Search</button>
+            <a th:href="@{/query/phrase}" class="clear-link">Clear</a>
+        </div>
+    </form>
+
+    <div class="results-summary" th:if="${hasQuery}">
+        <span th:text="${resultsPage.totalElements}">0</span> matching run(s)
+    </div>
+
+    <div th:if="${hasQuery}"
+         th:replace="~{fragments/results :: resultsList(${resultsPage}, ${emptyMessage})}">
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>

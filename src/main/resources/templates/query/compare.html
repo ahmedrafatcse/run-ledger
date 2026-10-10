@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Compare')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main>
+    <h2>Compare</h2>
+    <p class="page-hint">
+        Filter runs by one or more conditions. Add conditions and combine
+        them with AND or OR.
+    </p>
+
+    <form class="compare-form" th:action="@{/query/compare}" method="get">
+        <div id="conditions" class="conditions">
+            <div class="condition-row" th:each="f : ${filters}">
+                <input type="text" name="metric" placeholder="metric, e.g. accuracy"
+                       th:value="${f.metric()}" required/>
+                <select name="op" required>
+                    <option value="gt"  th:selected="${f.op() == 'gt'}">&gt;</option>
+                    <option value="gte" th:selected="${f.op() == 'gte'}">&ge;</option>
+                    <option value="lt"  th:selected="${f.op() == 'lt'}">&lt;</option>
+                    <option value="lte" th:selected="${f.op() == 'lte'}">&le;</option>
+                    <option value="eq"  th:selected="${f.op() == 'eq'}">=</option>
+                </select>
+                <input type="text" name="value" placeholder="value"
+                       th:value="${f.value()}" required/>
+                <button type="button" class="remove-condition" title="Remove condition">&times;</button>
+            </div>
+        </div>
+
+        <button type="button" id="add-condition" class="add-condition">+ Add condition</button>
+
+        <div class="compare-options">
+            <label class="field-inline">
+                <span>Combine with</span>
+                <select name="combine">
+                    <option value="and" th:selected="${combine == 'and'}">AND</option>
+                    <option value="or"  th:selected="${combine == 'or'}">OR</option>
+                </select>
+            </label>
+
+            <label class="field-inline">
+                <span>Batch (optional)</span>
+                <input type="text" name="batch" th:value="${batch}" placeholder="e.g. demo-alice"/>
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit">Search</button>
+            <a th:href="@{/query/compare}" class="clear-link">Clear</a>
+        </div>
+    </form>
+
+    <div class="results-summary" th:if="${hasQuery}">
+        <span th:text="${resultsPage.totalElements}">0</span> matching run(s)
+    </div>
+
+    <div th:if="${hasQuery}"
+         th:replace="~{fragments/results :: resultsList(${resultsPage}, ${emptyMessage})}">
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+
+<script th:src="@{/js/compare.js}"></script>
+</body>
+</html>

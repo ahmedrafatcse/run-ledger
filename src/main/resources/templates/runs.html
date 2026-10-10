@@ -30,6 +30,8 @@
         </span>
     </div>
 
+    <div th:replace="~{fragments/results :: resultsList(${resultsPage}, ${emptyMessage})}"></div>
+
     <div th:if="${#lists.isEmpty(resultsPage.items)}"
          th:replace="~{fragments/empty :: empty(${hasSearch} ? 'No runs matched that search.' : 'No runs available.')}">
     </div>

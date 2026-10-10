@@ -16,9 +16,15 @@
             <a th:href="@{/}"
                th:classappend="${active == 'runs'} ? 'active' : ''"
                data-nav="true">Runs</a>
+            <a th:href="@{/query/compare}"
+               th:classappend="${active == 'compare'} ? 'active' : ''"
+               data-nav="true">Compare</a>
+            <a th:href="@{/query/phrase}"
+               th:classappend="${active == 'phrase'} ? 'active' : ''"
+               data-nav="true">Phrase</a>
             <a th:href="@{/query/aggregate}"
-               th:classappend="${active == 'query'} ? 'active' : ''"
-               data-nav="true">Query</a>
+               th:classappend="${active == 'aggregate'} ? 'active' : ''"
+               data-nav="true">Aggregate</a>
         </nav>
     </div>
     <div class="identity" th:if="${currentUser != null}">

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="resultsList(page, emptyMessage)">
+    <div th:if="${#lists.isEmpty(page.items)}"
+         th:replace="~{fragments/empty :: empty(${emptyMessage})}">
+    </div>
+
+    <table th:unless="${#lists.isEmpty(page.items)}" class="runs-table">
+        <thead>
+        <tr>
+            <th>File</th>
+            <th>Team</th>
+            <th>Version</th>
+            <th>Submitted</th>
+            <th>By</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="r : ${page.items}">
+            <td>
+                <a th:href="@{/runs/{id}(id=${r.id})}"
+                   th:text="${r.sourceFile}">file.json</a>
+            </td>
+            <td th:text="${r.team != null ? r.team.name : '—'}">Team</td>
+            <td th:text="${r.version}">1</td>
+            <td th:text="${#temporals.format(r.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 12:00</td>
+            <td th:text="${r.submittedBy != null ? r.submittedBy.displayName : '—'}">User</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div th:replace="~{fragments/pagination :: pagination(${page})}"></div>
+</div>
+
+</body>
+</html>

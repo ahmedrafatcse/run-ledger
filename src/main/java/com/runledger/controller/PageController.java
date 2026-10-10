@@ -94,6 +94,8 @@ public class PageController {
         model.addAttribute("hasSearch", hasSearch);
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("assignedTeams", assignedTeams);
+        model.addAttribute("emptyMessage",
+                hasSearch ? "No runs matched that search." : "No runs available.");
 
         return "runs";
     }

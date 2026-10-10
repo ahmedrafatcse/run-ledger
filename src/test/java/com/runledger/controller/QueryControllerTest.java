@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import static org.mockito.Mockito.verify;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -152,4 +155,118 @@ class QueryControllerTest {
                 .andExpect(view().name("query/aggregate"))
                 .andExpect(model().attribute("hasQuery", true));
     }
+    // -----------------------------------------------------------------
+    // Phrase / fuzzy
+    // -----------------------------------------------------------------
+
+    @Test
+    void phrase_withNoQuery_rendersEmptyForm() throws Exception {
+        mockMvc.perform(get("/query/phrase"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("query/phrase"))
+                .andExpect(model().attribute("hasQuery", false));
+    }
+
+    @Test
+    void phrase_withQuery_usesPhraseSearch() throws Exception {
+        when(runQueryService.searchByPhrase(eq("weighted"), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/query/phrase").param("q", "weighted"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("query/phrase"))
+                .andExpect(model().attribute("hasQuery", true))
+                .andExpect(model().attribute("fuzzy", false));
+
+        verify(runQueryService).searchByPhrase(eq("weighted"), any(Pageable.class));
+    }
+
+    @Test
+    void phrase_withFuzzyFlag_usesFuzzySearch() throws Exception {
+        when(runQueryService.searchByFuzzy(eq("avaraging"), eq(0.3), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/query/phrase")
+                        .param("q", "avaraging")
+                        .param("fuzzy", "true"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("fuzzy", true));
+
+        verify(runQueryService).searchByFuzzy(eq("avaraging"), eq(0.3), any(Pageable.class));
+    }
+
+    @Test
+    void phrase_withBatch_usesBatchVariant() throws Exception {
+        when(runQueryService.searchByPhrase(eq("weighted"), eq("demo-alice"), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/query/phrase")
+                        .param("q", "weighted")
+                        .param("batch", "demo-alice"))
+                .andExpect(status().isOk());
+
+        verify(runQueryService).searchByPhrase(eq("weighted"), eq("demo-alice"), any(Pageable.class));
+    }
+
+    // -----------------------------------------------------------------
+    // Compare
+    // -----------------------------------------------------------------
+
+    @Test
+    void compare_withNoConditions_rendersEmptyForm() throws Exception {
+        mockMvc.perform(get("/query/compare"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("query/compare"))
+                .andExpect(model().attribute("hasQuery", false))
+                .andExpect(model().attributeExists("filters"));
+    }
+
+    @Test
+    void compare_withSingleCondition_runsQuery() throws Exception {
+        when(runQueryService.queryByMultipleFilters(any(), any()))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/query/compare")
+                        .param("metric", "accuracy")
+                        .param("op", "gt")
+                        .param("value", "0.9")
+                        .param("combine", "and"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("query/compare"))
+                .andExpect(model().attribute("hasQuery", true));
+
+        verify(runQueryService).queryByMultipleFilters(any(), any());
+    }
+
+    @Test
+    void compare_withMultipleConditions_runsCompoundQuery() throws Exception {
+        when(runQueryService.queryByMultipleFilters(any(), any()))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/query/compare")
+                        .param("metric", "accuracy", "loss")
+                        .param("op", "gt", "lt")
+                        .param("value", "0.9", "0.2")
+                        .param("combine", "and"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("hasQuery", true))
+                .andExpect(model().attribute("combine", "and"));
+
+        verify(runQueryService).queryByMultipleFilters(any(), any());
+    }
+
+    @Test
+    void compare_withIncompleteCondition_skipsIt() throws Exception {
+        when(runQueryService.queryByMultipleFilters(any(), any()))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/query/compare")
+                        .param("metric", "accuracy", "loss")
+                        .param("op", "gt", "lt")
+                        .param("value", "0.9", "")
+                        .param("combine", "and"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("hasQuery", true));
+    }
 }
+
