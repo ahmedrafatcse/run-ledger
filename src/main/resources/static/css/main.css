@@ -455,3 +455,106 @@ button:hover {
     color: #666;
     margin-bottom: 1.5rem;
 }
+/* ── Query pages ───────────────────────────────────────────── */
+
+.query-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 1rem;
+    align-items: end;
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1.5rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.field-label {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.field input,
+.field select {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.form-actions button {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.9rem;
+    background: #222;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.form-actions button:hover {
+    background: #444;
+}
+
+.page-hint {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.query-error {
+    padding: 0.75rem 1rem;
+    background: #fdecea;
+    color: #b71c1c;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+/* ── Aggregate table ──────────────────────────────────────── */
+
+.aggregate-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.aggregate-table th,
+.aggregate-table td {
+    text-align: left;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+}
+
+.aggregate-table th {
+    background: #fafafa;
+    font-weight: 600;
+    color: #555;
+}
+
+.aggregate-table tr:last-child td {
+    border-bottom: none;
+}
+
+.aggregate-count {
+    margin-top: 0.75rem;
+    color: #888;
+    font-size: 0.85rem;
+}

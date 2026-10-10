@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Aggregate')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main>
+    <h2>Aggregate</h2>
+    <p class="page-hint">
+        Compute a summary over matching runs. Optionally group by a field.
+    </p>
+
+    <form class="query-form" th:action="@{/query/aggregate}" method="get">
+        <label class="field">
+            <span class="field-label">Function</span>
+            <select name="agg" required>
+                <option value="AVG" th:selected="${agg == 'AVG'}">AVG</option>
+                <option value="MAX" th:selected="${agg == 'MAX'}">MAX</option>
+                <option value="MIN" th:selected="${agg == 'MIN'}">MIN</option>
+                <option value="SUM" th:selected="${agg == 'SUM'}">SUM</option>
+                <option value="COUNT" th:selected="${agg == 'COUNT'}">COUNT</option>
+            </select>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Metric</span>
+            <input type="text" name="metric" placeholder="e.g. accuracy"
+                   th:value="${metric}"/>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Group by (optional)</span>
+            <input type="text" name="groupBy" placeholder="e.g. experiment"
+                   th:value="${groupBy}"/>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Batch (optional)</span>
+            <input type="text" name="batch" placeholder="e.g. demo-alice"
+                   th:value="${batch}"/>
+        </label>
+
+        <div class="form-actions">
+            <button type="submit">Run</button>
+            <a th:href="@{/query/aggregate}" class="clear-link">Clear</a>
+        </div>
+    </form>
+
+    <div th:if="${queryError}" class="query-error">
+        <p th:text="${queryError}">Error message</p>
+    </div>
+
+    <div th:if="${hasQuery and results.isEmpty() and queryError == null}"
+         th:replace="~{fragments/empty :: empty('No runs matched this aggregate.')}">
+    </div>
+
+    <div th:if="${!results.isEmpty()}"
+         th:replace="~{fragments/aggregate :: aggregateTable(${results}, ${groupBy})}">
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>

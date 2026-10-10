@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="aggregateTable(results, groupBy)">
+    <table class="aggregate-table">
+        <thead>
+        <tr>
+            <th th:if="${groupBy != null and !groupBy.isBlank()}">Group</th>
+            <th>Result</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="row : ${results}">
+            <td th:if="${groupBy != null and !groupBy.isBlank()}"
+                th:text="${row['group'] != null ? row['group'] : '—'}">A</td>
+            <td th:text="${row['result'] != null ? row['result'] : '—'}">0.95</td>
+        </tr>
+        </tbody>
+    </table>
+    <p class="aggregate-count">
+        <span th:text="${results.size()}">0</span> group(s)
+    </p>
+</div>
+
+</body>
+</html>
