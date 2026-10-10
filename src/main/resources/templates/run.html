@@ -6,6 +6,7 @@
 
 <main class="detail-view">
     <a th:href="@{/}" class="back-link">← Back to runs</a>
+    <a th:href="@{/runs/{id}/history(id=${run.id})}" class="back-link back-link-secondary">View history →</a>
 
     <div class="integrity-badge"
          th:classappend="${status.state.name() == 'VERIFIED'} ? 'badge-verified' :

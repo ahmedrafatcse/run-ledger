@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Bad request')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader('')}"></header>
+<main class="error-view">
+    <h1>Bad request</h1>
+    <p th:text="${message != null ? message : 'The request could not be processed.'}">Bad request</p>
+    <a th:href="@{/}" class="back-link">← Back to runs</a>
+</main>
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>

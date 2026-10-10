@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<div th:fragment="resultsList(page, emptyMessage)">
+<div th:fragment="resultsList(page, emptyMessage, matchedByRunId)">
     <div th:if="${#lists.isEmpty(page.items)}"
          th:replace="~{fragments/empty :: empty(${emptyMessage})}">
     </div>
@@ -22,6 +22,12 @@
             <td>
                 <a th:href="@{/runs/{id}(id=${r.id})}"
                    th:text="${r.sourceFile}">file.json</a>
+                <div class="match-pointers"
+                     th:if="${matchedByRunId != null and matchedByRunId.containsKey(r.id)}">
+                    <div th:each="m : ${matchedByRunId.get(r.id)}" class="match-pointer">
+                        <code th:text="${m.pointer() + ' = ' + m.value()}">results[2].accuracy = 0.95</code>
+                    </div>
+                </div>
             </td>
             <td th:text="${r.team != null ? r.team.name : '—'}">Team</td>
             <td th:text="${r.version}">1</td>

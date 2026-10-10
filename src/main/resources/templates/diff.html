@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Compare versions')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main class="detail-view">
+    <a th:href="@{/runs/{id}/history(id=${run2.id})}" class="back-link">← Back to history</a>
+
+    <h2>Compare versions</h2>
+    <p class="page-hint">
+        <code th:text="${run1.sourceFile}">file.json</code>
+    </p>
+
+    <div class="diff-header">
+        <div class="diff-side">
+            <h3 th:text="'v' + ${run1.version}">v1</h3>
+            <dl class="metadata">
+                <dt>Submitted</dt>
+                <dd th:text="${#temporals.format(run1.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-01-01 12:00:00</dd>
+                <dt>By</dt>
+                <dd th:text="${run1.submittedBy != null ? run1.submittedBy.displayName : '—'}">User</dd>
+                <dt>Hash</dt>
+                <dd><code th:text="${#strings.substring(run1.payloadHash, 0, 12)} + '…'">abc123…</code></dd>
+            </dl>
+        </div>
+        <div class="diff-side">
+            <h3 th:text="'v' + ${run2.version}">v2</h3>
+            <dl class="metadata">
+                <dt>Submitted</dt>
+                <dd th:text="${#temporals.format(run2.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-01-01 12:00:00</dd>
+                <dt>By</dt>
+                <dd th:text="${run2.submittedBy != null ? run2.submittedBy.displayName : '—'}">User</dd>
+                <dt>Hash</dt>
+                <dd><code th:text="${#strings.substring(run2.payloadHash, 0, 12)} + '…'">abc123…</code></dd>
+            </dl>
+        </div>
+    </div>
+
+    <h3>Changed fields</h3>
+    <div th:if="${#lists.isEmpty(diffs)}"
+         th:replace="~{fragments/empty :: empty('No field differences between these versions.')}">
+    </div>
+
+    <table th:unless="${#lists.isEmpty(diffs)}" class="diff-table">
+        <thead>
+        <tr>
+            <th>Field</th>
+            <th th:text="'v' + ${run1.version}">v1</th>
+            <th th:text="'v' + ${run2.version}">v2</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="d : ${diffs}"
+            th:classappend="${d.isAdded()} ? 'diff-added' : (${d.isRemoved()} ? 'diff-removed' : 'diff-changed')">
+            <td><code th:text="${d.path()}">field.path</code></td>
+            <td>
+                <span th:if="${d.isAdded()}" class="diff-marker">—</span>
+                <span th:unless="${d.isAdded()}" th:text="${d.oldValue()}">old</span>
+            </td>
+            <td>
+                <span th:if="${d.isRemoved()}" class="diff-marker">—</span>
+                <span th:unless="${d.isRemoved()}" th:text="${d.newValue()}">new</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>

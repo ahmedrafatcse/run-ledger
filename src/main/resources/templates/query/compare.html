@@ -57,7 +57,7 @@
     </div>
 
     <div th:if="${hasQuery}"
-         th:replace="~{fragments/results :: resultsList(${resultsPage}, ${emptyMessage})}">
+         th:replace="~{fragments/results :: resultsList(${resultsPage}, ${emptyMessage}, ${matchedByRunId})}">
     </div>
 </main>
 

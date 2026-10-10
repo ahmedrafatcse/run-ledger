@@ -4,6 +4,7 @@ import com.runledger.dto.PagedView;
 import com.runledger.entity.AppUser;
 import com.runledger.entity.Run;
 import com.runledger.entity.Team;
+import com.runledger.dto.MatchDetail;
 import com.runledger.repository.AppUserRepository;
 import com.runledger.repository.TeamRepository;
 import com.runledger.security.AppSecurityContext;
@@ -78,8 +79,12 @@ public class PageController {
 
         Page<Run> runs;
         Map<String, String> currentParams = new LinkedHashMap<>();
+        Map<Long, List<MatchDetail>> matchedByRunId = Map.of();
+
         if (hasSearch) {
             runs = runQueryService.queryByMetric(metric, op, value, pageable);
+            String resolvedPath = runQueryService.resolvePath(metric, null);
+            matchedByRunId = runQueryService.findMatches(runs.getContent(), resolvedPath, op, value);
             currentParams.put("metric", metric);
             currentParams.put("op", op);
             currentParams.put("value", value);
@@ -94,6 +99,7 @@ public class PageController {
         model.addAttribute("hasSearch", hasSearch);
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("assignedTeams", assignedTeams);
+        model.addAttribute("matchedByRunId", matchedByRunId);
         model.addAttribute("emptyMessage",
                 hasSearch ? "No runs matched that search." : "No runs available.");
 

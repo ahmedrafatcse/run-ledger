@@ -12,6 +12,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -164,7 +165,7 @@ public class RunQueryService {
                 q.params().put(batchParam, request.batch());
             }
 
-            return runRepository.findByCompoundFilter(dataSql, q.params(), countSql, pageable);
+            return runRepository.findByCompoundFilter(dataSql, q.params(), countSql, stripSort(pageable));
         });
     }
 
@@ -436,35 +437,36 @@ public class RunQueryService {
 
     private Page<Run> executeQuery(String path, String op, String value,
                                    String batch, Pageable pageable) {
+        Pageable unsorted = stripSort(pageable);
         boolean hasBatch = (batch != null && !batch.isBlank());
 
         if (path.contains("[]")) {
-            return executeArrayQuery(path, op, value, batch, pageable);
+            return executeArrayQuery(path, op, value, batch, unsorted);
         }
 
         return switch (op) {
             case "gt"  -> hasBatch
-                    ? runRepository.findByMetricGreaterThanBatch(path, parseDouble(value), batch, pageable)
-                    : runRepository.findByMetricGreaterThan(path, parseDouble(value), pageable);
+                    ? runRepository.findByMetricGreaterThanBatch(path, parseDouble(value), batch, unsorted)
+                    : runRepository.findByMetricGreaterThan(path, parseDouble(value), unsorted);
             case "gte" -> hasBatch
-                    ? runRepository.findByMetricGreaterThanOrEqualBatch(path, parseDouble(value), batch, pageable)
-                    : runRepository.findByMetricGreaterThanOrEqual(path, parseDouble(value), pageable);
+                    ? runRepository.findByMetricGreaterThanOrEqualBatch(path, parseDouble(value), batch, unsorted)
+                    : runRepository.findByMetricGreaterThanOrEqual(path, parseDouble(value), unsorted);
             case "lt"  -> hasBatch
-                    ? runRepository.findByMetricLessThanBatch(path, parseDouble(value), batch, pageable)
-                    : runRepository.findByMetricLessThan(path, parseDouble(value), pageable);
+                    ? runRepository.findByMetricLessThanBatch(path, parseDouble(value), batch, unsorted)
+                    : runRepository.findByMetricLessThan(path, parseDouble(value), unsorted);
             case "lte" -> hasBatch
-                    ? runRepository.findByMetricLessThanOrEqualBatch(path, parseDouble(value), batch, pageable)
-                    : runRepository.findByMetricLessThanOrEqual(path, parseDouble(value), pageable);
+                    ? runRepository.findByMetricLessThanOrEqualBatch(path, parseDouble(value), batch, unsorted)
+                    : runRepository.findByMetricLessThanOrEqual(path, parseDouble(value), unsorted);
             case "eq"  -> {
                 Double numericValue = tryParseDouble(value);
                 if (numericValue != null) {
                     yield hasBatch
-                            ? runRepository.findByMetricEqualsBatch(path, numericValue, batch, pageable)
-                            : runRepository.findByMetricEquals(path, numericValue, pageable);
+                            ? runRepository.findByMetricEqualsBatch(path, numericValue, batch, unsorted)
+                            : runRepository.findByMetricEquals(path, numericValue, unsorted);
                 } else {
                     yield hasBatch
-                            ? runRepository.findByMetricEqualsTextBatch(path, value, batch, pageable)
-                            : runRepository.findByMetricEqualsText(path, value, pageable);
+                            ? runRepository.findByMetricEqualsTextBatch(path, value, batch, unsorted)
+                            : runRepository.findByMetricEqualsText(path, value, unsorted);
                 }
             }
             default -> throw new IllegalArgumentException(
@@ -474,6 +476,7 @@ public class RunQueryService {
 
     private Page<Run> executeArrayQuery(String path, String op, String value,
                                         String batch, Pageable pageable) {
+        Pageable unsorted = stripSort(pageable);
         boolean hasBatch = (batch != null && !batch.isBlank());
         String jsonbPath = path.replace("[]", "[*]");
         int lastDot = jsonbPath.lastIndexOf('.');
@@ -482,27 +485,27 @@ public class RunQueryService {
 
         return switch (op) {
             case "gt"  -> hasBatch
-                    ? runRepository.findByArrayGreaterThanBatch(pathForJsonb, leaf, parseDouble(value), batch, pageable)
-                    : runRepository.findByArrayGreaterThan(pathForJsonb, leaf, parseDouble(value), pageable);
+                    ? runRepository.findByArrayGreaterThanBatch(pathForJsonb, leaf, parseDouble(value), batch, unsorted)
+                    : runRepository.findByArrayGreaterThan(pathForJsonb, leaf, parseDouble(value), unsorted);
             case "gte" -> hasBatch
-                    ? runRepository.findByArrayGreaterThanOrEqualBatch(pathForJsonb, leaf, parseDouble(value), batch, pageable)
-                    : runRepository.findByArrayGreaterThanOrEqual(pathForJsonb, leaf, parseDouble(value), pageable);
+                    ? runRepository.findByArrayGreaterThanOrEqualBatch(pathForJsonb, leaf, parseDouble(value), batch, unsorted)
+                    : runRepository.findByArrayGreaterThanOrEqual(pathForJsonb, leaf, parseDouble(value), unsorted);
             case "lt"  -> hasBatch
-                    ? runRepository.findByArrayLessThanBatch(pathForJsonb, leaf, parseDouble(value), batch, pageable)
-                    : runRepository.findByArrayLessThan(pathForJsonb, leaf, parseDouble(value), pageable);
+                    ? runRepository.findByArrayLessThanBatch(pathForJsonb, leaf, parseDouble(value), batch, unsorted)
+                    : runRepository.findByArrayLessThan(pathForJsonb, leaf, parseDouble(value), unsorted);
             case "lte" -> hasBatch
-                    ? runRepository.findByArrayLessThanOrEqualBatch(pathForJsonb, leaf, parseDouble(value), batch, pageable)
-                    : runRepository.findByArrayLessThanOrEqual(pathForJsonb, leaf, parseDouble(value), pageable);
+                    ? runRepository.findByArrayLessThanOrEqualBatch(pathForJsonb, leaf, parseDouble(value), batch, unsorted)
+                    : runRepository.findByArrayLessThanOrEqual(pathForJsonb, leaf, parseDouble(value), unsorted);
             case "eq"  -> {
                 Double numericValue = tryParseDouble(value);
                 if (numericValue != null) {
                     yield hasBatch
-                            ? runRepository.findByArrayEqualsBatch(pathForJsonb, leaf, numericValue, batch, pageable)
-                            : runRepository.findByArrayEquals(pathForJsonb, leaf, numericValue, pageable);
+                            ? runRepository.findByArrayEqualsBatch(pathForJsonb, leaf, numericValue, batch, unsorted)
+                            : runRepository.findByArrayEquals(pathForJsonb, leaf, numericValue, unsorted);
                 } else {
                     yield hasBatch
-                            ? runRepository.findByArrayEqualsTextBatch(pathForJsonb, leaf, value, batch, pageable)
-                            : runRepository.findByArrayEqualsText(pathForJsonb, leaf, value, pageable);
+                            ? runRepository.findByArrayEqualsTextBatch(pathForJsonb, leaf, value, batch, unsorted)
+                            : runRepository.findByArrayEqualsText(pathForJsonb, leaf, value, unsorted);
                 }
             }
             default -> throw new IllegalArgumentException(
@@ -516,6 +519,24 @@ public class RunQueryService {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Expected a numeric value, got: " + value);
         }
+    }
+
+    /**
+     * Strip the Sort from a Pageable before it reaches a native query.
+     *
+     * <p>Every query in this service is a native SQL string with its own
+     * {@code ORDER BY r.created_at DESC}. Spring Data JPA appends the
+     * Pageable's Sort to the generated SQL, but for native queries it uses
+     * entity property names (e.g. {@code r.createdAt}) rather than column
+     * names ({@code r.created_at}), so the appended clause fails. Stripping
+     * the sort keeps pagination (page number + size) intact while letting
+     * the query's own ordering do the work.
+     */
+    private static Pageable stripSort(Pageable pageable) {
+        if (pageable.getSort().isUnsorted()) {
+            return pageable;
+        }
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
     }
 
     private Double tryParseDouble(String value) {
@@ -615,5 +636,41 @@ public class RunQueryService {
     private Object convertValue(Object dbValue) {
         if (dbValue instanceof Number) return ((Number) dbValue).doubleValue();
         return dbValue.toString();
+    }
+
+    /**
+     * Extract match pointers for a page of runs against a resolved path.
+     *
+     * <p>Chooses between array-element extraction (path contains {@code []})
+     * and scalar extraction (path is a plain dot-path). Returns a map from
+     * run ID to the list of matches for that run. Runs with no match are
+     * absent from the map.
+     *
+     * <p>Called by the HTML controllers after a query returns, so the
+     * results table can render {@code results[2].accuracy = 0.95} under the
+     * filename. The API path in {@code RunController} does the equivalent
+     * inline, per-metric, and hasn't been refactored to use this yet.
+     */
+    public Map<Long, List<MatchDetail>> findMatches(List<Run> runs,
+                                                    String resolvedPath,
+                                                    String op,
+                                                    String value) {
+        if (runs == null || runs.isEmpty() || resolvedPath == null) {
+            return Map.of();
+        }
+
+        if (resolvedPath.contains("[]")) {
+            List<Long> ids = runs.stream().map(Run::getId).toList();
+            return getArrayMatches(ids, resolvedPath, op, value);
+        }
+
+        Map<Long, List<MatchDetail>> result = new HashMap<>();
+        for (Run run : runs) {
+            List<MatchDetail> matches = getScalarMatch(run, resolvedPath, op, value);
+            if (!matches.isEmpty()) {
+                result.put(run.getId(), matches);
+            }
+        }
+        return result;
     }
 }

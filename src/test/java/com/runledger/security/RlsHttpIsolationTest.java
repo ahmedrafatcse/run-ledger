@@ -236,4 +236,15 @@ class RlsHttpIsolationTest {
                 .as("Alice's list must contain her own")
                 .contains("alice-run.json");
     }
+
+    @Test
+    void aliceRequestingBobsRunHistory_returns404() throws Exception {
+        loginAs(ALICE.toString());
+
+        HttpResponse<String> response = getWithSession("/runs/" + bobRunId + "/history");
+
+        assertThat(response.statusCode())
+                .as("history page must not expose Bob's versions to Alice")
+                .isEqualTo(404);
+    }
 }

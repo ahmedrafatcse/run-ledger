@@ -3,6 +3,7 @@ package com.runledger.controller;
 import com.runledger.dto.Filter;
 import com.runledger.dto.MultiFilterRequest;
 import com.runledger.dto.PagedView;
+import com.runledger.dto.MatchDetail;
 import com.runledger.entity.AppUser;
 import com.runledger.entity.Run;
 import com.runledger.entity.Team;
@@ -124,6 +125,7 @@ public class QueryController {
         model.addAttribute("fuzzy", fuzzy);
         model.addAttribute("batch", batch);
         model.addAttribute("hasQuery", hasQuery);
+        model.addAttribute("matchedByRunId", Map.of());
         model.addAttribute("resultsPage", PagedView.of(runs, "/query/phrase", currentParams));
         model.addAttribute("emptyMessage",
                 fuzzy ? "No runs matched that fuzzy term."
@@ -177,10 +179,24 @@ public class QueryController {
         boolean hasQuery = !filters.isEmpty();
 
         Page<Run> runs = Page.empty();
+        Map<Long, List<MatchDetail>> matchedByRunId = Map.of();
+
         if (hasQuery) {
             MultiFilterRequest request = new MultiFilterRequest(
                     filters, combine, batch, null, false);
             runs = runQueryService.queryByMultipleFilters(request, Pageable.unpaged());
+
+            // Match pointers only for the single-condition case. With two or
+            // more conditions the pointers depend on which condition's array
+            // path produced the match, which is a design decision (which
+            // element to point at when multiple conditions matched?). Not
+            // resolved yet; deferred.
+            if (filters.size() == 1) {
+                Filter f = filters.get(0);
+                String resolvedPath = runQueryService.resolvePath(f.metric(), batch);
+                matchedByRunId = runQueryService.findMatches(
+                        runs.getContent(), resolvedPath, f.op(), f.value());
+            }
         }
 
         // Always render at least one row: if no filters, an empty template row.
@@ -192,9 +208,9 @@ public class QueryController {
         model.addAttribute("combine", combine);
         model.addAttribute("batch", batch);
         model.addAttribute("hasQuery", hasQuery);
+        model.addAttribute("matchedByRunId", matchedByRunId);
         model.addAttribute("resultsPage", PagedView.of(runs, "/query/compare", Map.of()));
         model.addAttribute("emptyMessage", "No runs matched those conditions.");
-
         return "query/compare";
     }
 

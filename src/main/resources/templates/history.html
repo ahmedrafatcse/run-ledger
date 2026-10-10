@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('History')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main class="detail-view">
+    <a th:href="@{/runs/{id}(id=${run.id})}" class="back-link">← Back to run</a>
+
+    <h2>History</h2>
+    <p class="page-hint">
+        Every version of
+        <code th:text="${run.sourceFile}">file.json</code>
+        in batch
+        <code th:text="${run.batch != null ? run.batch : '—'}">batch</code>.
+        Each version is a separate row; content is never overwritten.
+    </p>
+
+    <table class="history-table">
+        <thead>
+        <tr>
+            <th>Version</th>
+            <th>Submitted</th>
+            <th>By</th>
+            <th>Integrity</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="v : ${versions}" th:classappend="${v.latest} ? 'row-current' : ''">
+            <td>
+                <span th:text="'v' + ${v.version}">v1</span>
+                <span th:if="${v.latest}" class="current-marker">current</span>
+            </td>
+            <td th:text="${#temporals.format(v.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-01-01 12:00:00</td>
+            <td th:text="${v.submittedBy != null ? v.submittedBy.displayName : '—'}">User</td>
+            <td>
+                <span th:with="s=${statuses.get(v.id)}"
+                      class="integrity-chip"
+                      th:classappend="${s.state.name() == 'VERIFIED'} ? 'chip-verified' :
+                                      (${s.state.name() == 'TAMPERED'} ? 'chip-tampered' : 'chip-other')">
+                    <span th:switch="${s.state.name()}">
+                        <span th:case="'VERIFIED'">&#10003;</span>
+                        <span th:case="'TAMPERED'">&#9888;</span>
+                        <span th:case="*">&#8226;</span>
+                    </span>
+                </span>
+            </td>
+            <td>
+                <a th:href="@{/runs/{id}(id=${v.id})}" class="history-view-link">View →</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div th:if="${versions.size() >= 2}" class="compare-section">
+        <h3>Compare versions</h3>
+        <form th:action="@{/runs/compare}" method="get" class="compare-form">
+            <label class="field">
+                <span class="field-label">From</span>
+                <select name="id1" required>
+                    <option th:each="v : ${versions}"
+                            th:value="${v.id}"
+                            th:text="'v' + ${v.version} + ' — ' + ${#temporals.format(v.createdAt, 'yyyy-MM-dd HH:mm')}">
+                    </option>
+                </select>
+            </label>
+            <label class="field">
+                <span class="field-label">To</span>
+                <select name="id2" required>
+                    <option th:each="v : ${versions}"
+                            th:value="${v.id}"
+                            th:selected="${v.latest}"
+                            th:text="'v' + ${v.version} + ' — ' + ${#temporals.format(v.createdAt, 'yyyy-MM-dd HH:mm')}">
+                    </option>
+                </select>
+            </label>
+            <div class="form-actions">
+                <button type="submit">Compare</button>
+            </div>
+        </form>
+    </div>
+    <p th:if="${versions.size() == 1}" class="page-hint">
+        This run has one version. Submitting a changed payload for the same
+        source file creates a second version — the original stays on record.
+    </p>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>
