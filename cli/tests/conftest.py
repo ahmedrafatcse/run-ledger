@@ -13,7 +13,7 @@ import os
 
 # Force the CLI module to compute against the default port when the test
 # suite imports it. This must run before any test module is collected.
-os.environ["RUNLEDGER_BASE_URL"] = "http://localhost:8080"
+os.environ["RUNLEDGER_BASE_URL"] = "http://localhost:8081"
 
 # RUNLEDGER_NO_DOCKER is honored by ensure_backend() but not by the CLI's
 # top-level main() — leaving it set would produce different behavior on

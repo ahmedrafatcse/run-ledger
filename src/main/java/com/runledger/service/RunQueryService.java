@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.runledger.dto.Filter;
 import com.runledger.dto.MatchDetail;
 import com.runledger.dto.MultiFilterRequest;
+import com.runledger.dto.BatchSummary;
 import com.runledger.entity.Run;
 import com.runledger.repository.RunRepository;
 import com.runledger.security.AppSecurityContext;
@@ -114,6 +115,73 @@ public class RunQueryService {
                     item.put("depth", path.split("\\.").length);
                     result.add(item);
                 }
+            }
+            return result;
+        });
+    }
+    /**
+     * Team-aware metric lookup. Used by the controller when a supervisor
+     * supplies {@code ?team=}. RLS is the authority on whether the caller
+     * can see that team's mappings — a foreign team UUID silently returns
+     * an empty mapping, not an error.
+     */
+    public List<String> getAvailableMetrics(UUID teamId, String batch) {
+        return secured.execute(() -> {
+            if (batch == null || batch.isBlank()) {
+                return runRepository.findDistinctMetricKeys();
+            }
+            Map<String, List<String>> mapping =
+                    batchSchemaService.getOrCreateMapping(teamId, batch);
+            return mapping.keySet().stream().sorted().toList();
+        });
+    }
+
+    public List<Map<String, Object>> getAvailableMetricsVerbose(UUID teamId, String batch) {
+        return secured.execute(() -> {
+            Map<String, List<String>> mapping =
+                    batchSchemaService.getOrCreateMapping(teamId, batch);
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (var entry : mapping.entrySet()) {
+                for (String path : entry.getValue()) {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("key", entry.getKey());
+                    item.put("path", path);
+                    item.put("depth", path.split("\\.").length);
+                    result.add(item);
+                }
+            }
+            return result;
+        });
+    }
+
+    /** Batches visible to the current identity, one row per (team, batch). */
+    public List<BatchSummary> listBatches() {
+        return secured.execute(() -> {
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = entityManager.createNativeQuery("""
+                    SELECT r.team_id,
+                           t.name AS team_name,
+                           r.batch,
+                           COUNT(*) AS run_count,
+                           MAX(r.created_at) AS latest_at
+                    FROM run r
+                    JOIN teams t ON t.id = r.team_id
+                    WHERE r.latest = true AND r.batch IS NOT NULL
+                    GROUP BY r.team_id, t.name, r.batch
+                    ORDER BY t.name, r.batch
+                    """).getResultList();
+
+            List<BatchSummary> result = new ArrayList<>();
+            for (Object[] row : rows) {
+                result.add(new BatchSummary(
+                        (UUID) row[0],
+                        (String) row[1],
+                        (String) row[2],
+                        ((Number) row[3]).longValue(),
+                        row[4] == null ? null
+                                : ((java.sql.Timestamp) row[4]).toInstant()
+                                .atOffset(java.time.ZoneOffset.UTC)
+                ));
             }
             return result;
         });
@@ -472,8 +540,19 @@ public class RunQueryService {
             return metric;
         }
         if (batch != null && !batch.isBlank()) {
+            AppSecurityContext.UserPrincipal p = AppSecurityContext.require();
+            if (p.teamId() == null) {
+                // Supervisor typed a shorthand with a batch scope. Their
+                // identity doesn't carry a single team, so the mapping to
+                // resolve against is ambiguous. Fail loudly rather than
+                // silently looking for a field literally named `metric`.
+                throw new IllegalArgumentException(
+                        "Shorthand metric '" + metric + "' cannot be resolved for an "
+                                + "identity that isn't assigned to a single team. "
+                                + "Use the full dot-path instead.");
+            }
             Map<String, List<String>> mapping =
-                    batchSchemaService.getOrCreateMapping(currentTeamIdForMapping(), batch);
+                    batchSchemaService.getOrCreateMapping(p.teamId(), batch);
             List<String> paths = mapping.get(metric);
             if (paths != null && !paths.isEmpty()) {
                 return paths.get(0);

@@ -7,7 +7,12 @@ import com.runledger.dto.MatchDetail;
 import com.runledger.dto.MultiFilterRequest;
 import com.runledger.dto.RunRequest;
 import com.runledger.dto.RunResponse;
+import com.runledger.dto.TeamOption;
 import com.runledger.entity.Run;
+import com.runledger.entity.Team;
+import com.runledger.repository.RunRepository;
+import com.runledger.repository.TeamRepository;
+import com.runledger.security.AppSecurityContext;
 import com.runledger.service.ResolvedFilter;
 import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
@@ -29,16 +34,22 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/runs")
 public class RunController {
 
+    private final RunRepository runRepository;
     private final ObjectMapper objectMapper;
     private final RunQueryService runQueryService;
     private final RunIngestionService ingestionService;
+    private final TeamRepository teamRepository;
 
-    public RunController(ObjectMapper objectMapper,
+    public RunController(RunRepository runRepository,
+                         ObjectMapper objectMapper,
                          RunQueryService runQueryService,
-                         RunIngestionService ingestionService) {
+                         RunIngestionService ingestionService,
+                         TeamRepository teamRepository) {
+        this.runRepository = runRepository;
         this.objectMapper = objectMapper;
         this.runQueryService = runQueryService;
         this.ingestionService = ingestionService;
+        this.teamRepository = teamRepository;
     }
 
     // ---------- Ingest a new run ----------
@@ -81,7 +92,7 @@ public class RunController {
             @RequestParam(required = false, defaultValue = "true") boolean pointers,
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        // Full‑text / fuzzy search
+        // Full-text / fuzzy search
         if (q != null && !q.isBlank()) {
             Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
             Page<Run> runs;
@@ -120,7 +131,6 @@ public class RunController {
                     ? runQueryService.queryByMetric(metric, op, value, batch, unsortedPageable)
                     : runQueryService.queryByMetric(metric, op, value, unsortedPageable);
 
-            // Build response list with optional block truncation and matched pointers
             List<RunResponse> responses = buildResponsesForSingleMetric(
                     runs.getContent(), resolvedPath, op, value, block, pointers);
             Page<RunResponse> responsePage = new PageImpl<>(responses, unsortedPageable, runs.getTotalElements());
@@ -136,7 +146,7 @@ public class RunController {
         return ResponseEntity.ok(runs.map(this::toRunResponse));
     }
 
-    // ---------- Multi‑condition AND/OR search ----------
+    // ---------- Multi-condition AND/OR search ----------
     @PostMapping("/search")
     public ResponseEntity<Page<RunResponse>> searchMulti(
             @Valid @RequestBody MultiFilterRequest request,
@@ -145,7 +155,6 @@ public class RunController {
         Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<Run> runs = runQueryService.queryByMultipleFilters(request, unsorted);
 
-        // Resolve paths and extract common array path for compound pointers / block-depth
         List<ResolvedFilter> resolvedFilters = request.filters().stream()
                 .map(f -> new ResolvedFilter(
                         request.batch() != null && !request.batch().isBlank()
@@ -158,7 +167,6 @@ public class RunController {
         boolean hasArrayConditions = resolvedFilters.stream().anyMatch(f -> f.getPath().contains("[]"));
 
         if (pointers && !hasArrayConditions) {
-            // All scalar conditions → build scalar compound pointers
             List<RunResponse> responses = runs.getContent().stream()
                     .map(run -> buildScalarCompoundResponse(run, resolvedFilters, request.block()))
                     .collect(Collectors.toList());
@@ -210,20 +218,46 @@ public class RunController {
     @GetMapping("/metrics")
     public ResponseEntity<?> getMetrics(
             @RequestParam(required = false) String batch,
+            @RequestParam(required = false) UUID team,
             @RequestParam(required = false, defaultValue = "false") boolean verbose) {
 
         if (batch == null || batch.isBlank()) {
             return ResponseEntity.ok(runQueryService.getAvailableMetrics());
         }
-        if (!verbose) {
-            return ResponseEntity.ok(runQueryService.getAvailableMetrics(batch));
+
+        UUID effectiveTeam = team;
+        if (effectiveTeam == null) {
+            AppSecurityContext.UserPrincipal p = AppSecurityContext.require();
+            if (p.teamId() == null) {
+                return teamSelectionRequired(p);
+            }
+            effectiveTeam = p.teamId();
         }
-        return ResponseEntity.ok(runQueryService.getAvailableMetricsVerbose(batch));
+
+        if (verbose) {
+            return ResponseEntity.ok(
+                    runQueryService.getAvailableMetricsVerbose(effectiveTeam, batch));
+        }
+        return ResponseEntity.ok(
+                runQueryService.getAvailableMetrics(effectiveTeam, batch));
+    }
+
+    private ResponseEntity<?> teamSelectionRequired(AppSecurityContext.UserPrincipal p) {
+        List<Team> teams = teamRepository.findAssignedTeams(p.userId());
+        List<TeamOption> options = teams.stream()
+                .map(t -> new TeamOption(t.getId(), t.getName()))
+                .toList();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Team required");
+        body.put("message", "Supervisors must specify ?team=<uuid> when querying metrics "
+                + "for a batch. The teams assigned to this supervisor are listed below.");
+        body.put("availableTeams", options);
+        return ResponseEntity.badRequest().body(body);
     }
 
     // ---------- Helper methods ----------
 
-    /** Single-metric response builder */
     private List<RunResponse> buildResponsesForSingleMetric(List<Run> runs, String resolvedPath,
                                                             String op, String value,
                                                             Integer block, boolean pointers) {
@@ -249,7 +283,6 @@ public class RunController {
 
             RunResponse resp;
             if (block != null && block >= 0) {
-                // Prefer concrete pointer from the first match when available
                 String concretePointer = (matched != null && !matched.isEmpty())
                         ? matched.get(0).pointer()
                         : null;
@@ -268,7 +301,6 @@ public class RunController {
         return responses;
     }
 
-    /** Compound array pointer extraction */
     private List<RunResponse> buildResponsesForCompoundArray(
             List<Run> runs, List<ResolvedFilter> filters, String commonArrayRoot,
             String combine, Integer block, boolean pointers, String blockPath) {
@@ -310,7 +342,6 @@ public class RunController {
 
         RunResponse resp;
         if (block != null && block >= 0 && !filters.isEmpty() && !matched.isEmpty()) {
-            // Use the first match's concrete pointer for block extraction
             resp = toRunResponse(run, matched.get(0).pointer(), block, true);
         } else if (block != null && block >= 0 && !filters.isEmpty()) {
             resp = toRunResponse(run, filters.get(0).getPath(), block);
@@ -322,7 +353,6 @@ public class RunController {
         return resp;
     }
 
-    /** Finds the common array root (part before []) if all array filters share it, else null */
     private String findCommonArrayRoot(List<ResolvedFilter> filters) {
         String common = null;
         for (ResolvedFilter f : filters) {
@@ -339,7 +369,6 @@ public class RunController {
         return common;
     }
 
-    /** Returns a common dot‑path for block‑depth if all filters agree on the path (for non‑array metrics) */
     private String findCommonBlockPath(List<ResolvedFilter> filters) {
         String common = null;
         for (ResolvedFilter f : filters) {
@@ -382,7 +411,6 @@ public class RunController {
         }
     }
 
-    /** Overloaded version that accepts a concrete pointer (with numeric indices) */
     private RunResponse toRunResponse(Run run, String concretePointer, int block, boolean useConcretePointer) {
         try {
             JsonNode fullPayload = objectMapper.readTree(run.getPayload());
@@ -393,7 +421,7 @@ public class RunController {
         }
     }
 
-    // ---------- Block‑depth extraction ----------
+    // ---------- Block-depth extraction ----------
 
     private JsonNode extractAncestor(JsonNode root, String dotPath, int block) {
         if (dotPath == null || dotPath.isBlank() || block < 0) {
@@ -402,7 +430,6 @@ public class RunController {
         if (dotPath.contains("[]")) {
             return extractAncestorForArray(root, dotPath, block);
         }
-        // scalar logic
         String[] parts = dotPath.split("\\.");
         int ancestorPartsCount = parts.length - (block + 1);
         if (ancestorPartsCount <= 0) {
@@ -447,24 +474,17 @@ public class RunController {
         return ancestor.isMissingNode() ? root : ancestor;
     }
 
-    /**
-     * Extracts the ancestor JSON node from a concrete match pointer (e.g., "clients[1].sweep[0].fin_asr")
-     * at the given block depth. block = 0 returns the immediate parent of the leaf,
-     * block = 1 returns its grandparent, etc.
-     */
     private JsonNode extractAncestorFromPointer(JsonNode root, String concretePointer, int block) {
         if (concretePointer == null || concretePointer.isBlank() || block < 0) {
             return root;
         }
 
-        // Replace "[" and "]" with dots to get a uniform dot-separated path,
-        // then split.  e.g. "clients[1].sweep[0].fin_asr" → "clients.1.sweep.0.fin_asr"
         String[] parts = concretePointer.replaceAll("\\[", ".").replaceAll("\\]", "").split("\\.");
 
-        int totalLevels = parts.length;              // number of segments to the leaf
-        int targetLevel = totalLevels - (block + 1); // how many segments to keep
+        int totalLevels = parts.length;
+        int targetLevel = totalLevels - (block + 1);
         if (targetLevel <= 0) {
-            return root;   // beyond root → full payload
+            return root;
         }
 
         StringBuilder pointer = new StringBuilder();

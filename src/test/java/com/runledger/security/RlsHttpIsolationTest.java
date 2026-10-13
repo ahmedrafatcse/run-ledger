@@ -247,4 +247,16 @@ class RlsHttpIsolationTest {
                 .as("history page must not expose Bob's versions to Alice")
                 .isEqualTo(404);
     }
+
+    @Test
+    void aliceRequestingBobsDiff_returns404() throws Exception {
+        loginAs(ALICE.toString());
+
+        HttpResponse<String> response = getWithSession(
+                "/runs/compare?id1=" + aliceRunId + "&id2=" + bobRunId);
+
+        assertThat(response.statusCode())
+                .as("diff must not allow cross-team comparison")
+                .isEqualTo(404);
+    }
 }

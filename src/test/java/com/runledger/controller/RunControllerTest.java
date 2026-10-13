@@ -5,10 +5,15 @@ import com.runledger.dto.MatchDetail;
 import com.runledger.dto.RunRequest;
 import com.runledger.entity.Run;
 import com.runledger.exception.GlobalExceptionHandler;
+import com.runledger.repository.RunRepository;
+import com.runledger.repository.TeamRepository;
+import com.runledger.security.AppSecurityContext;
 import com.runledger.security.IdentityFilter;
+import com.runledger.security.SessionIdentityFilter;
 import com.runledger.service.RunIngestionService;
 import com.runledger.service.RunQueryService;
-import com.runledger.security.SessionIdentityFilter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -25,6 +30,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -38,10 +44,33 @@ class RunControllerTest {
 
     @Autowired private MockMvc mockMvc;
 
+    @MockitoBean private RunRepository runRepository;
     @MockitoBean private RunQueryService runQueryService;
     @MockitoBean private RunIngestionService ingestionService;
     @MockitoBean private IdentityFilter identityFilter;
     @MockitoBean private SessionIdentityFilter sessionIdentityFilter;
+    @MockitoBean private TeamRepository teamRepository;
+
+    private static final UUID TEST_USER_ID =
+            UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static final UUID TEST_TEAM_ID =
+            UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+    /**
+     * Identity must be bound before any handler runs: RunController.getMetrics
+     * calls AppSecurityContext.require() when no team parameter is supplied,
+     * and other endpoints resolve batch mappings via the current team.
+     */
+    @BeforeEach
+    void bindIdentity() {
+        AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
+                TEST_USER_ID, "researcher", TEST_TEAM_ID));
+    }
+
+    @AfterEach
+    void clearIdentity() {
+        AppSecurityContext.clear();
+    }
 
     private Run run(Long id, String payloadJson) {
         Run r = new Run();
@@ -96,7 +125,7 @@ class RunControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ---------- Unified GET /api/runs (block search or batch listing) ----------
+    // ---------- Unified GET /api/runs ----------
     @Test
     void searchRuns_validParams_shouldReturnPageOfRuns() throws Exception {
         Run r1 = run(1L, "{\"accuracy\":0.95}");
@@ -157,7 +186,7 @@ class RunControllerTest {
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("metric")));
     }
 
-    // ---------- Full‑text phrase search ----------
+    // ---------- Full-text phrase search ----------
     @Test
     void searchRuns_fullTextPhrase_shouldReturnPageOfRuns() throws Exception {
         Run r1 = run(1L, "{\"accuracy\":0.95}");
@@ -193,7 +222,8 @@ class RunControllerTest {
     // ---------- Metric key discovery ----------
     @Test
     void getMetrics_withBatch_shouldReturnMetricKeys() throws Exception {
-        when(runQueryService.getAvailableMetrics("sweep-X")).thenReturn(List.of("acc", "loss"));
+        when(runQueryService.getAvailableMetrics(TEST_TEAM_ID, "sweep-X"))
+                .thenReturn(List.of("acc", "loss"));
 
         mockMvc.perform(get("/api/runs/metrics").param("batch", "sweep-X"))
                 .andExpect(status().isOk())
@@ -202,7 +232,7 @@ class RunControllerTest {
                 .andExpect(jsonPath("$[1]").value("loss"));
     }
 
-    // ---------- Multi‑condition AND/OR search ----------
+    // ---------- Multi-condition AND/OR search ----------
     @Test
     void shouldReturnMatchingRunsForMultiFilterAnd() throws Exception {
         Run run = new Run();
@@ -343,7 +373,6 @@ class RunControllerTest {
                 .andExpect(jsonPath("$.content[0].matched").doesNotExist());
     }
 
-    // ---------- Mixed scalar + array compound test ----------
     @Test
     void compoundSearchMixedScalarAndArray_shouldReturnOnlyArrayPointers() throws Exception {
         Run run = run(1L, "{\"accuracy\":0.94,\"results\":[{\"sst2_cacc\":0.92,\"threshold\":0.8}]}");
