@@ -458,63 +458,149 @@ public class RunQueryService {
     // ---------------------------------------------------------------
     // Aggregate query
     // ---------------------------------------------------------------
-    public List<Map<String, Object>> aggregate(String agg, String metric, String groupBy, String batch) {
+    public List<Map<String, Object>> aggregate(String agg, String metric, String groupBy,
+                                               String batch, UUID teamId) {
         return secured.execute(() -> {
             Set<String> allowed = Set.of("AVG", "MAX", "MIN", "SUM", "COUNT");
             if (!allowed.contains(agg.toUpperCase())) {
-                throw new IllegalArgumentException("Unsupported aggregate: " + agg + ". Allowed: " + allowed);
+                throw new IllegalArgumentException(
+                        "Unsupported aggregate: " + agg + ". Allowed: " + allowed);
             }
 
-            String metricExpr = agg.equalsIgnoreCase("COUNT") && (metric == null || metric.isBlank())
-                    ? "*"
-                    : "(r.payload #>> string_to_array(:metric, '.'))::numeric";
+            boolean countAll = agg.equalsIgnoreCase("COUNT")
+                    && (metric == null || metric.isBlank());
 
-            StringBuilder sql = new StringBuilder("SELECT ");
-            sql.append(agg.toUpperCase()).append("(").append(metricExpr).append(") AS result");
-
-            if (groupBy != null && !groupBy.isBlank()) {
-                sql.append(", (r.payload #>> string_to_array(:groupBy, '.')) AS group_val");
+            if (metric != null && metric.contains("[]")) {
+                return aggregateArrayPath(agg, metric, groupBy, batch, teamId, countAll);
             }
-
-            sql.append(" FROM run r WHERE r.latest = true");
-
-            if (batch != null && !batch.isBlank()) {
-                sql.append(" AND r.batch = :batch");
-            }
-
-            if (groupBy != null && !groupBy.isBlank()) {
-                sql.append(" GROUP BY group_val ORDER BY result DESC");
-            }
-
-            Query query = entityManager.createNativeQuery(sql.toString());
-            if (!agg.equalsIgnoreCase("COUNT") || (metric != null && !metric.isBlank())) {
-                query.setParameter("metric", metric);
-            }
-            if (groupBy != null && !groupBy.isBlank()) {
-                query.setParameter("groupBy", groupBy);
-            }
-            if (batch != null && !batch.isBlank()) {
-                query.setParameter("batch", batch);
-            }
-
-            @SuppressWarnings("unchecked")
-            List<Object> rows = query.getResultList();
-            List<Map<String, Object>> results = new ArrayList<>();
-            for (Object row : rows) {
-                Map<String, Object> entry = new LinkedHashMap<>();
-                if (groupBy != null && !groupBy.isBlank()) {
-                    Object[] cols = (Object[]) row;
-                    Number resultValue = (Number) cols[0];
-                    entry.put("result", resultValue == null ? null : resultValue.doubleValue());
-                    entry.put("group", cols[1] != null ? cols[1].toString() : null);
-                } else {
-                    Number resultValue = (Number) row;
-                    entry.put("result", resultValue == null ? null : resultValue.doubleValue());
-                }
-                results.add(entry);
-            }
-            return results;
+            return aggregateScalarPath(agg, metric, groupBy, batch, teamId, countAll);
         });
+    }
+
+    private List<Map<String, Object>> aggregateScalarPath(String agg, String metric,
+                                                          String groupBy, String batch,
+                                                          UUID teamId, boolean countAll) {
+        boolean hasGroupBy = groupBy != null && !groupBy.isBlank();
+
+        String metricExpr = countAll
+                ? "*"
+                : "(r.payload #>> string_to_array(:metric, '.'))::numeric";
+
+        StringBuilder sql = new StringBuilder("SELECT ");
+        sql.append(agg.toUpperCase()).append("(").append(metricExpr).append(") AS result");
+        if (hasGroupBy) {
+            sql.append(", (r.payload #>> string_to_array(:groupBy, '.')) AS group_val");
+        }
+        sql.append(" FROM run r WHERE r.latest = true");
+        if (batch != null && !batch.isBlank()) {
+            sql.append(" AND r.batch = :batch");
+        }
+        if (teamId != null) {
+            sql.append(" AND r.team_id = :team");
+        }
+        if (hasGroupBy) {
+            sql.append(" GROUP BY group_val ORDER BY result DESC");
+        }
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        if (!countAll) {
+            query.setParameter("metric", metric);
+        }
+        if (hasGroupBy) {
+            query.setParameter("groupBy", groupBy);
+        }
+        if (batch != null && !batch.isBlank()) {
+            query.setParameter("batch", batch);
+        }
+        if (teamId != null) {
+            query.setParameter("team", teamId);
+        }
+
+        return readAggregateRows(query, hasGroupBy);
+    }
+
+    private List<Map<String, Object>> aggregateArrayPath(String agg, String metric,
+                                                         String groupBy, String batch,
+                                                         UUID teamId, boolean countAll) {
+        int firstBracket = metric.indexOf("[]");
+        int secondBracket = metric.indexOf("[]", firstBracket + 2);
+        if (secondBracket != -1) {
+            throw new IllegalArgumentException(
+                    "Nested array paths are not supported in aggregate: " + metric
+                            + ". Only one level of [] is handled.");
+        }
+
+        String arrayPath = metric.substring(0, firstBracket).replaceAll("\\.$", "");
+        String leaf = metric.substring(firstBracket + 2).replaceAll("^\\.", "");
+
+        if (arrayPath.isEmpty() || leaf.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Array metric path must have the form 'field[].subpath': " + metric);
+        }
+
+        boolean hasGroupBy = groupBy != null && !groupBy.isBlank();
+
+        String metricExpr = countAll
+                ? "*"
+                : "(expanded.elem #>> string_to_array(:leaf, '.'))::numeric";
+
+        StringBuilder sql = new StringBuilder("SELECT ");
+        sql.append(agg.toUpperCase()).append("(").append(metricExpr).append(") AS result");
+        if (hasGroupBy) {
+            sql.append(", (r.payload #>> string_to_array(:groupBy, '.')) AS group_val");
+        }
+        sql.append(" FROM run r");
+        sql.append(" CROSS JOIN LATERAL jsonb_array_elements(")
+                .append("r.payload #> string_to_array(:arrayPath, '.'))")
+                .append(" AS expanded(elem)");
+        sql.append(" WHERE r.latest = true");
+        sql.append(" AND jsonb_typeof(r.payload #> string_to_array(:arrayPath, '.')) = 'array'");
+        if (batch != null && !batch.isBlank()) {
+            sql.append(" AND r.batch = :batch");
+        }
+        if (teamId != null) {
+            sql.append(" AND r.team_id = :team");
+        }
+        if (hasGroupBy) {
+            sql.append(" GROUP BY group_val ORDER BY result DESC");
+        }
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        query.setParameter("arrayPath", arrayPath);
+        if (!countAll) {
+            query.setParameter("leaf", leaf);
+        }
+        if (hasGroupBy) {
+            query.setParameter("groupBy", groupBy);
+        }
+        if (batch != null && !batch.isBlank()) {
+            query.setParameter("batch", batch);
+        }
+        if (teamId != null) {
+            query.setParameter("team", teamId);
+        }
+
+        return readAggregateRows(query, hasGroupBy);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> readAggregateRows(Query query, boolean hasGroupBy) {
+        List<Object> rows = query.getResultList();
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (Object row : rows) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            if (hasGroupBy) {
+                Object[] cols = (Object[]) row;
+                Number resultValue = (Number) cols[0];
+                entry.put("result", resultValue == null ? null : resultValue.doubleValue());
+                entry.put("group", cols[1] != null ? cols[1].toString() : null);
+            } else {
+                Number resultValue = (Number) row;
+                entry.put("result", resultValue == null ? null : resultValue.doubleValue());
+            }
+            results.add(entry);
+        }
+        return results;
     }
 
     // ---------------------------------------------------------------

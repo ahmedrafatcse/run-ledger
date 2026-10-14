@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/query")
@@ -57,6 +58,7 @@ public class QueryController {
             @RequestParam(required = false) String metric,
             @RequestParam(required = false) String groupBy,
             @RequestParam(required = false) String batch,
+            @RequestParam(required = false) UUID team,
             Model model) {
 
         populateCommonModel(model, "aggregate");
@@ -67,7 +69,7 @@ public class QueryController {
         List<Map<String, Object>> results = List.of();
         if (hasQuery) {
             try {
-                results = runQueryService.aggregate(agg, metric, groupBy, batch);
+                results = runQueryService.aggregate(agg, metric, groupBy, batch, team);
             } catch (IllegalArgumentException e) {
                 model.addAttribute("queryError", e.getMessage());
             }
@@ -77,6 +79,7 @@ public class QueryController {
         model.addAttribute("metric", metric);
         model.addAttribute("groupBy", groupBy);
         model.addAttribute("batch", batch);
+        model.addAttribute("team", team);
         model.addAttribute("results", results);
         model.addAttribute("hasQuery", hasQuery);
 

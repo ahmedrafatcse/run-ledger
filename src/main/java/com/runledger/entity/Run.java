@@ -84,4 +84,28 @@ public class Run {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private AppUser submittedBy;
+
+    /**
+     * Short prefix of the payload hash for display. Returns the full hash
+     * if it is 16 characters or fewer, and {@code "—"} if null.
+     *
+     * <p>Guards the detail template against a short or missing hash. The
+     * template used to call {@code #strings.substring(run.payloadHash, 0, 16)}
+     * directly, which threw {@code StringIndexOutOfBoundsException} on any
+     * hash shorter than 16 characters. Ingestion writes a 64-char SHA-256
+     * so this never fired in production, but a seed, import, or migration
+     * with a short hash made {@code /runs/{id}} return 500.
+     *
+     * <p>Not a persisted column — no {@code @Column} annotation. Lombok's
+     * {@code @Data} does not generate a getter for a name that has no
+     * matching field, so this method name does not collide.
+     */
+    public String getPayloadHashPrefix() {
+        if (payloadHash == null) {
+            return "—";
+        }
+        return payloadHash.length() > 16
+                ? payloadHash.substring(0, 16) + "…"
+                : payloadHash;
+    }
 }

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -104,7 +105,7 @@ class QueryControllerTest {
 
     @Test
     void aggregate_withValidParameters_rendersResults() throws Exception {
-        when(runQueryService.aggregate(eq("AVG"), eq("accuracy"), eq("experiment"), any()))
+        when(runQueryService.aggregate(eq("AVG"), eq("accuracy"), eq("experiment"), any(), any()))
                 .thenReturn(List.of(
                         Map.of("group", "demo", "result", 0.9266),
                         Map.of("group", "other", "result", 0.8800)));
@@ -128,7 +129,7 @@ class QueryControllerTest {
 
     @Test
     void aggregate_withInvalidFunction_rendersErrorNotThrows() throws Exception {
-        when(runQueryService.aggregate(eq("BOGUS"), eq("accuracy"), any(), any()))
+        when(runQueryService.aggregate(eq("BOGUS"), eq("accuracy"), any(), any(), any()))
                 .thenThrow(new IllegalArgumentException(
                         "Unsupported aggregate: BOGUS. Allowed: [AVG, MAX, MIN, SUM, COUNT]"));
 
@@ -146,7 +147,7 @@ class QueryControllerTest {
 
     @Test
     void aggregate_countWithoutMetric_isAccepted() throws Exception {
-        when(runQueryService.aggregate(eq("COUNT"), any(), any(), any()))
+        when(runQueryService.aggregate(eq("COUNT"), any(), any(), any(), any()))
                 .thenReturn(List.of(Map.of("result", 4.0)));
 
         mockMvc.perform(get("/query/aggregate")
@@ -155,6 +156,67 @@ class QueryControllerTest {
                 .andExpect(view().name("query/aggregate"))
                 .andExpect(model().attribute("hasQuery", true));
     }
+
+    // -----------------------------------------------------------------
+    // Team scoping (item 1)
+    // -----------------------------------------------------------------
+
+    @Test
+    void aggregate_withTeamParam_passesTeamToService() throws Exception {
+        UUID teamId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        when(runQueryService.aggregate(eq("AVG"), eq("accuracy"), any(), any(), eq(teamId)))
+                .thenReturn(List.of(Map.of("result", 0.9)));
+
+        mockMvc.perform(get("/query/aggregate")
+                        .param("agg", "AVG")
+                        .param("metric", "accuracy")
+                        .param("team", teamId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("team", teamId))
+                .andExpect(model().attribute("hasQuery", true));
+
+        verify(runQueryService).aggregate(eq("AVG"), eq("accuracy"), any(), any(), eq(teamId));
+    }
+
+    @Test
+    void aggregate_withoutTeamParam_passesNull() throws Exception {
+        when(runQueryService.aggregate(eq("AVG"), eq("accuracy"), any(), any(), isNull()))
+                .thenReturn(List.of(Map.of("result", 0.9)));
+
+        mockMvc.perform(get("/query/aggregate")
+                        .param("agg", "AVG")
+                        .param("metric", "accuracy"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("hasQuery", true));
+
+        verify(runQueryService).aggregate(eq("AVG"), eq("accuracy"), any(), any(), isNull());
+    }
+
+    @Test
+    void aggregate_teamParamSurfacedToModel() throws Exception {
+        UUID teamId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        when(runQueryService.aggregate(any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/query/aggregate")
+                        .param("agg", "AVG")
+                        .param("metric", "accuracy")
+                        .param("team", teamId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("team", teamId));
+    }
+
+    @Test
+    void aggregate_invalidTeamUuid_returns400() throws Exception {
+        // Spring's WebDataBinder rejects a non-UUID string before the
+        // controller is invoked. That's a 400 (bad request), not a 500.
+        mockMvc.perform(get("/query/aggregate")
+                        .param("agg", "AVG")
+                        .param("metric", "accuracy")
+                        .param("team", "not-a-uuid"))
+                .andExpect(status().isBadRequest());
+    }
+
     // -----------------------------------------------------------------
     // Phrase / fuzzy
     // -----------------------------------------------------------------
@@ -269,4 +331,3 @@ class QueryControllerTest {
                 .andExpect(model().attribute("hasQuery", true));
     }
 }
-

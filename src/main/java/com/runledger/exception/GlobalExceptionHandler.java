@@ -95,4 +95,13 @@ public class GlobalExceptionHandler {
         body.put("message", message);
         return ResponseEntity.status(status).body(body);
     }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> handleTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e) {
+        return ResponseEntity.badRequest().body(Map.of(
+                "error", "Invalid value for parameter '" + e.getName() + "'",
+                "value", String.valueOf(e.getValue())
+        ));
+    }
 }

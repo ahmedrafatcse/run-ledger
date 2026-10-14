@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/runs")
@@ -205,9 +206,11 @@ public class RunController {
             @RequestParam String agg,
             @RequestParam String metric,
             @RequestParam(required = false) String groupBy,
-            @RequestParam(required = false) String batch) {
+            @RequestParam(required = false) String batch,
+            @RequestParam(required = false) UUID team) {
         try {
-            List<Map<String, Object>> results = runQueryService.aggregate(agg, metric, groupBy, batch);
+            List<Map<String, Object>> results =
+                    runQueryService.aggregate(agg, metric, groupBy, batch, team);
             return ResponseEntity.ok(results);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

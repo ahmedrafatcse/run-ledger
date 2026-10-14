@@ -40,6 +40,18 @@
                    th:value="${batch}"/>
         </label>
 
+        <label class="field"
+               th:if="${assignedTeams != null and assignedTeams.size() > 1}">
+            <span class="field-label">Team</span>
+            <select name="team">
+                <option value="">All teams</option>
+                <option th:each="t : ${assignedTeams}"
+                        th:value="${t.id}"
+                        th:selected="${team != null and team == t.id}"
+                        th:text="${t.name}">Team A</option>
+            </select>
+        </label>
+
         <div class="form-actions">
             <button type="submit">Run</button>
             <a th:href="@{/query/aggregate}" class="clear-link">Clear</a>

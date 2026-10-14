@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -379,7 +380,7 @@ class RunQueryServiceTest {
         );
         when(queryMock.getResultList()).thenReturn(rows);
 
-        List<Map<String, Object>> results = runQueryService.aggregate("AVG", "accuracy", "experiment", null);
+        List<Map<String, Object>> results = runQueryService.aggregate("AVG", "accuracy", "experiment", null, null);
 
         assertThat(results).hasSize(2);
         assertThat(results.get(0).get("result")).isEqualTo(0.95);
@@ -397,10 +398,65 @@ class RunQueryServiceTest {
         List<Object> rows = List.of(0.92);
         when(queryMock.getResultList()).thenReturn(rows);
 
-        List<Map<String, Object>> results = runQueryService.aggregate("MAX", "accuracy", null, null);
+        List<Map<String, Object>> results = runQueryService.aggregate("MAX", "accuracy", null, null, null);
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).get("result")).isEqualTo(0.92);
         assertThat(results.get(0)).doesNotContainKey("group");
+    }
+
+    @Test
+    void aggregate_arrayPath_usesLateralJoin() {
+        Query queryMock = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(queryMock);
+        when(queryMock.setParameter(anyString(), any())).thenReturn(queryMock);
+        when(queryMock.getResultList()).thenReturn(List.of(0.925));
+
+        List<Map<String, Object>> results = runQueryService.aggregate(
+                "AVG", "results[].accuracy", null, null, null);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).get("result")).isEqualTo(0.925);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(entityManager).createNativeQuery(sqlCaptor.capture());
+        assertThat(sqlCaptor.getValue())
+                .contains("CROSS JOIN LATERAL jsonb_array_elements")
+                .contains("jsonb_typeof");
+    }
+
+    @Test
+    void aggregate_arrayPath_withGroupBy_returnsGroupedRows() {
+        Query queryMock = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(queryMock);
+        when(queryMock.setParameter(anyString(), any())).thenReturn(queryMock);
+
+        List<Object[]> rows = List.of(
+                new Object[]{0.95, "demo"},
+                new Object[]{0.88, "other"});
+        when(queryMock.getResultList()).thenReturn(rows);
+
+        List<Map<String, Object>> results = runQueryService.aggregate(
+                "AVG", "results[].accuracy", "experiment", null, null);
+
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).get("group")).isEqualTo("demo");
+        assertThat(results.get(1).get("group")).isEqualTo("other");
+    }
+
+    @Test
+    void aggregate_nestedArrayPath_isRejected() {
+        assertThatThrownBy(() -> runQueryService.aggregate(
+                "AVG", "results[].nested[].x", null, null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Nested array paths are not supported");
+    }
+
+    @Test
+    void aggregate_arrayPath_missingLeaf_isRejected() {
+        assertThatThrownBy(() -> runQueryService.aggregate(
+                "AVG", "results[]", null, null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must have the form");
     }
 }
