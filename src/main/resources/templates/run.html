@@ -44,7 +44,22 @@
     </dl>
 
     <h2>Payload</h2>
-    <pre class="payload" th:text="${run.payload}">{}</pre>
+
+    <form method="get" class="depth-form">
+        <label class="field">
+            <span class="field-label">Nesting depth</span>
+            <select name="depth" onchange="this.form.submit()">
+                <option value="1"   th:selected="${depth == '1'}">1 — top level keys only</option>
+                <option value="2"   th:selected="${depth == '2'}">2</option>
+                <option value="3"   th:selected="${depth == '3'}">3 (default)</option>
+                <option value="5"   th:selected="${depth == '5'}">5</option>
+                <option value="all" th:selected="${depth == 'all'}">All</option>
+            </select>
+        </label>
+        <noscript><button type="submit">Apply</button></noscript>
+    </form>
+
+    <pre class="payload" th:text="${payloadJson}">{}</pre>
 
     <p class="immutability-note">
         There is intentionally no edit operation for submitted run content.

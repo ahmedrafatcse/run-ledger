@@ -1,5 +1,10 @@
 package com.runledger.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.runledger.dto.PagedView;
 import com.runledger.entity.AppUser;
 import com.runledger.entity.Run;
@@ -39,15 +44,18 @@ public class PageController {
     private final AppUserRepository appUserRepository;
     private final TeamRepository teamRepository;
     private final IntegrityStatusService integrityStatusService;
+    private final ObjectMapper objectMapper;
 
     public PageController(RunQueryService runQueryService,
                           AppUserRepository appUserRepository,
                           TeamRepository teamRepository,
-                          IntegrityStatusService integrityStatusService) {
+                          IntegrityStatusService integrityStatusService,
+                          ObjectMapper objectMapper) {
         this.runQueryService = runQueryService;
         this.appUserRepository = appUserRepository;
         this.teamRepository = teamRepository;
         this.integrityStatusService = integrityStatusService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping("/")
@@ -111,6 +119,7 @@ public class PageController {
 
     @GetMapping("/runs/{id}")
     public String detail(@PathVariable Long id,
+                         @RequestParam(defaultValue = "3") String depth,
                          HttpServletResponse response,
                          Model model) {
         Optional<Run> run = runQueryService.getRunById(id);
@@ -140,6 +149,8 @@ public class PageController {
         model.addAttribute("status", status);
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("assignedTeams", assignedTeams);
+        model.addAttribute("depth", depth);
+        model.addAttribute("payloadJson", truncatePayload(run.get().getPayload(), depth));
         return "run";
     }
 
@@ -222,5 +233,62 @@ public class PageController {
 
     private static boolean notBlank(String s) {
         return s != null && !s.isBlank();
+    }
+
+    /**
+     * Render the payload JSON truncated to {@code depth} levels.
+     *
+     * <p>{@code depth} is the number of nesting levels to keep. Scalars are
+     * always kept; containers past the limit render as an empty object or
+     * array (the keys are shown, the contents are not). {@code "all"} or a
+     * non-numeric value disables truncation. Parse failures fall back to the
+     * raw string — this is a viewing aid, never a reason to 500.
+     */
+    private String truncatePayload(String payloadJson, String depthParam) {
+        if (payloadJson == null || payloadJson.isBlank()) {
+            return "{}";
+        }
+        try {
+            JsonNode root = objectMapper.readTree(payloadJson);
+            JsonNode rendered;
+            if ("all".equalsIgnoreCase(depthParam)) {
+                rendered = root;
+            } else {
+                int depth = Integer.parseInt(depthParam);
+                rendered = (depth <= 0) ? root : truncate(root, depth);
+            }
+            return objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(rendered);
+        } catch (Exception e) {
+            // Malformed depth or malformed payload: show the raw text rather
+            // than fail the page. The payload has already been hash-verified
+            // elsewhere; this is display only.
+            return payloadJson;
+        }
+    }
+
+    private JsonNode truncate(JsonNode node, int depth) {
+        if (node == null || node.isValueNode()) {
+            return node;
+        }
+        if (depth <= 0) {
+            if (node.isObject()) return JsonNodeFactory.instance.objectNode();
+            if (node.isArray())  return JsonNodeFactory.instance.arrayNode();
+            return node;
+        }
+        if (node.isObject()) {
+            ObjectNode result = JsonNodeFactory.instance.objectNode();
+            node.fields().forEachRemaining(e ->
+                    result.set(e.getKey(), truncate(e.getValue(), depth - 1)));
+            return result;
+        }
+        if (node.isArray()) {
+            ArrayNode result = JsonNodeFactory.instance.arrayNode();
+            for (JsonNode child : node) {
+                result.add(truncate(child, depth - 1));
+            }
+            return result;
+        }
+        return node;
     }
 }
