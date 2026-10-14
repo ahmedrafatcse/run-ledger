@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${batch})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main>
+    <p class="breadcrumb">
+        <a th:href="@{/batches}">Batches</a>
+        <span class="crumb-sep">/</span>
+        <span th:text="${team.name}">Team A</span>
+        <span class="crumb-sep">/</span>
+        <span th:text="${batch}">demo-alice</span>
+    </p>
+
+    <h2>
+        <span th:text="${batch}">demo-alice</span>
+        <span class="metrics-subtitle" th:text="' · ' + ${team.name}">· Team A</span>
+    </h2>
+    <p class="page-hint">
+        Metric keys discovered in this batch. Click <em>Aggregate</em> to
+        compute a summary over that path, or copy the path into any query form.
+    </p>
+
+    <div th:if="${metrics.isEmpty()}"
+         th:replace="~{fragments/empty :: empty('No metrics discovered for this batch yet.')}">
+    </div>
+
+    <table th:if="${!metrics.isEmpty()}" class="metrics-table">
+        <thead>
+        <tr>
+            <th>Key</th>
+            <th>Path</th>
+            <th>Depth</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${metrics}">
+            <td th:text="${m['key']}">accuracy</td>
+            <td><code th:text="${m['path']}">results[].accuracy</code></td>
+            <td th:text="${m['depth']}">2</td>
+            <td>
+                <a class="metric-action"
+                   th:href="@{/query/aggregate(agg='AVG',metric=${m['path']},batch=${batch},team=${team.id})}">
+                    Aggregate
+                </a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>

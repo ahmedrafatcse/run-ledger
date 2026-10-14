@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Controller
 public class PageController {
@@ -173,6 +174,50 @@ public class PageController {
         model.addAttribute("batchesByTeam", byTeam);
         model.addAttribute("totalBatches", batches.size());
         return "batches/list";
+    }
+
+    @GetMapping("/batches/{teamId}/{batch}")
+    public String batchMetrics(@PathVariable UUID teamId,
+                               @PathVariable String batch,
+                               HttpServletResponse response,
+                               Model model) {
+        AppSecurityContext.UserPrincipal principal = AppSecurityContext.require();
+        AppUser currentUser = appUserRepository.findById(principal.userId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Session identity has no matching app_users row"));
+
+        List<Team> assignedTeams;
+        if ("supervisor".equals(currentUser.getAppRole())) {
+            assignedTeams = teamRepository.findAssignedTeams(currentUser.getId());
+        } else if (currentUser.getTeamId() != null) {
+            assignedTeams = teamRepository.findById(currentUser.getTeamId())
+                    .map(List::of)
+                    .orElse(List.of());
+        } else {
+            assignedTeams = List.of();
+        }
+
+        Optional<Team> matched = assignedTeams.stream()
+                .filter(t -> t.getId().equals(teamId))
+                .findFirst();
+
+        if (matched.isEmpty()) {
+            // Foreign team: same 404 as an unknown id. The caller can't
+            // distinguish "exists but not yours" from "doesn't exist."
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return "error/404";
+        }
+
+        List<Map<String, Object>> metrics =
+                runQueryService.getAvailableMetricsVerbose(teamId, batch);
+
+        model.addAttribute("active", "batches");
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("assignedTeams", assignedTeams);
+        model.addAttribute("team", matched.get());
+        model.addAttribute("batch", batch);
+        model.addAttribute("metrics", metrics);
+        return "batches/metrics";
     }
 
     private static boolean notBlank(String s) {
