@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Submit run')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main>
+    <h2>Submit a run</h2>
+    <p class="page-hint">
+        Paste the JSON payload of a single experiment result. The server
+        computes the canonical hash, records who submitted it and when,
+        and (if you supply a batch) merges the payload's metric keys into
+        the batch's shorthand mapping. Submitted content is immutable —
+        resubmitting with the same <code>_source.file</code> creates a new
+        version.
+    </p>
+
+    <div th:if="${submitError}" class="query-error">
+        <p th:text="${submitError}">Error message</p>
+    </div>
+
+    <form class="submit-form" method="post" th:action="@{/submit}">
+        <label class="field field-wide">
+            <span class="field-label">JSON payload</span>
+            <textarea name="payload" rows="20" required
+                      placeholder='{"_source":{"file":"run-1.json"},"accuracy":0.95}'
+                      th:text="${submitPayload}"></textarea>
+        </label>
+
+        <label class="field">
+            <span class="field-label">Batch (optional)</span>
+            <input list="batch-options" name="batch" th:value="${submitBatch}"
+                   placeholder="e.g. demo-alice"/>
+            <datalist id="batch-options">
+                <option th:each="b : ${batches}" th:value="${b.batchName}"></option>
+            </datalist>
+        </label>
+
+        <p class="field-hint">
+            A batch groups related runs and enables shorthand metric
+            resolution (e.g. <code>accuracy</code> instead of the full
+            dot-path). Existing batches appear as suggestions; you can
+            type a new name to create one.
+        </p>
+
+        <div class="form-actions">
+            <button type="submit">Submit run</button>
+            <a th:href="@{/}" class="clear-link">Cancel</a>
+        </div>
+    </form>
+
+    <p class="immutability-note">
+        Runs are append-only. To correct a mistake, submit a new version
+        with the same <code>_source.file</code> and <code>sourceIndex</code>;
+        the old version stays in history.
+    </p>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>
