@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Batches')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main>
+    <h2>Batches</h2>
+    <p class="page-hint">
+        Every batch you can see, grouped by team. Click a batch to browse
+        its metric keys.
+    </p>
+
+    <div th:if="${batchesByTeam.isEmpty()}"
+         th:replace="~{fragments/empty :: empty('No batches yet. Ingest a run to create one.')}">
+    </div>
+
+    <div th:each="entry : ${batchesByTeam}" class="team-group">
+        <h3 class="team-name" th:text="${entry.key}">Team A</h3>
+        <table class="batch-table">
+            <thead>
+            <tr>
+                <th>Batch</th>
+                <th>Runs</th>
+                <th>Latest</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="b : ${entry.value}">
+                <td>
+                    <a th:href="@{/batches/{team}/{batch}(team=${b.teamId},batch=${b.batchName})}"
+                       th:text="${b.batchName}">demo-alice</a>
+                </td>
+                <td th:text="${b.runCount}">4</td>
+                <td th:text="${b.latestAt != null
+                              ? #temporals.format(b.latestAt, 'yyyy-MM-dd HH:mm')
+                              : '—'}">2025-01-01 12:00</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>

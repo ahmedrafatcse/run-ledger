@@ -178,9 +178,7 @@ public class RunQueryService {
                         (String) row[1],
                         (String) row[2],
                         ((Number) row[3]).longValue(),
-                        row[4] == null ? null
-                                : ((java.sql.Timestamp) row[4]).toInstant()
-                                .atOffset(java.time.ZoneOffset.UTC)
+                        row[4] == null ? null : toOffsetDateTime(row[4])
                 ));
             }
             return result;
@@ -751,5 +749,30 @@ public class RunQueryService {
     private Object convertValue(Object dbValue) {
         if (dbValue instanceof Number) return ((Number) dbValue).doubleValue();
         return dbValue.toString();
+    }
+
+    /**
+     * Convert whatever the JDBC driver returns for a {@code timestamptz}
+     * into an {@link OffsetDateTime}.
+     *
+     * <p>Drivers vary: PostgreSQL returns {@code Instant} for aggregate
+     * functions like MAX() over timestamptz, {@code OffsetDateTime} when
+     * the type is declared, and {@code Timestamp} in older configurations.
+     * All three are accepted; anything else throws so it's caught at the
+     * call site, not silently mis-typed.
+     */
+    private static java.time.OffsetDateTime toOffsetDateTime(Object value) {
+        if (value instanceof java.time.OffsetDateTime odt) {
+            return odt;
+        }
+        if (value instanceof java.time.Instant instant) {
+            return instant.atOffset(java.time.ZoneOffset.UTC);
+        }
+        if (value instanceof java.sql.Timestamp ts) {
+            return ts.toInstant().atOffset(java.time.ZoneOffset.UTC);
+        }
+        throw new IllegalStateException(
+                "Unexpected timestamp type from driver: "
+                        + value.getClass().getName());
     }
 }

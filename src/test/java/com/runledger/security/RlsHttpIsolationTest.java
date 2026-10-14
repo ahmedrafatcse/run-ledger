@@ -155,21 +155,24 @@ class RlsHttpIsolationTest {
     }
 
     /** Logs in as the given user via the real form and stores the session cookie. */
-    private void loginAs(String userId) throws Exception {
-        HttpResponse<String> loginPage = client.send(
+    private void loginAs(UUID userId) throws Exception {
+        HttpResponse<String> page = client.send(
                 HttpRequest.newBuilder().uri(uri("/login")).GET().build(),
                 HttpResponse.BodyHandlers.ofString());
-        String csrf = fetchCsrfToken(loginPage.body());
+        String csrf = fetchCsrfToken(page.body());
         assertThat(csrf).as("login form must render a CSRF token").isNotNull();
 
         String body = "userId=" + userId + "&_csrf="
                 + URLEncoder.encode(csrf, StandardCharsets.UTF_8);
-        client.send(
+        HttpResponse<String> loginResponse = client.send(
                 HttpRequest.newBuilder().uri(uri("/login"))
                         .header("Content-Type", "application/x-www-form-urlencoded")
                         .POST(HttpRequest.BodyPublishers.ofString(body))
                         .build(),
                 HttpResponse.BodyHandlers.ofString());
+        assertThat(loginResponse.statusCode())
+                .as("login POST must succeed (302 to / on success, 403 if CSRF or user invalid)")
+                .isEqualTo(302);
     }
 
     private HttpResponse<String> getWithSession(String path) throws Exception {
@@ -184,7 +187,7 @@ class RlsHttpIsolationTest {
 
     @Test
     void aliceRequestingBobsRunById_returns404() throws Exception {
-        loginAs(ALICE.toString());
+        loginAs(ALICE);
 
         HttpResponse<String> response = getWithSession("/runs/" + bobRunId);
 
@@ -207,7 +210,7 @@ class RlsHttpIsolationTest {
 
     @Test
     void aliceRequestingOwnRunById_returns200() throws Exception {
-        loginAs(ALICE.toString());
+        loginAs(ALICE);
 
         HttpResponse<String> response = getWithSession("/runs/" + aliceRunId);
 
@@ -224,7 +227,7 @@ class RlsHttpIsolationTest {
 
     @Test
     void aliceRunList_doesNotContainBobsRun() throws Exception {
-        loginAs(ALICE.toString());
+        loginAs(ALICE);
 
         HttpResponse<String> response = getWithSession("/");
 
@@ -239,7 +242,7 @@ class RlsHttpIsolationTest {
 
     @Test
     void aliceRequestingBobsRunHistory_returns404() throws Exception {
-        loginAs(ALICE.toString());
+        loginAs(ALICE);
 
         HttpResponse<String> response = getWithSession("/runs/" + bobRunId + "/history");
 
@@ -250,7 +253,7 @@ class RlsHttpIsolationTest {
 
     @Test
     void aliceRequestingBobsDiff_returns404() throws Exception {
-        loginAs(ALICE.toString());
+        loginAs(ALICE);
 
         HttpResponse<String> response = getWithSession(
                 "/runs/compare?id1=" + aliceRunId + "&id2=" + bobRunId);

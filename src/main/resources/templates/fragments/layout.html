@@ -25,6 +25,9 @@
             <a th:href="@{/query/aggregate}"
                th:classappend="${active == 'aggregate'} ? 'active' : ''"
                data-nav="true">Aggregate</a>
+            <a th:href="@{/batches}"
+               th:classappend="${active == 'batches'} ? 'active' : ''"
+               data-nav="true">Batches</a>
         </nav>
     </div>
     <div class="identity" th:if="${currentUser != null}">

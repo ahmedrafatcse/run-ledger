@@ -5,6 +5,8 @@ import com.runledger.entity.AppUser;
 import com.runledger.entity.Run;
 import com.runledger.entity.Team;
 import com.runledger.dto.MatchDetail;
+import com.runledger.dto.BatchSummary;
+import java.util.stream.Collectors;
 import com.runledger.repository.AppUserRepository;
 import com.runledger.repository.TeamRepository;
 import com.runledger.security.AppSecurityContext;
@@ -138,6 +140,39 @@ public class PageController {
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("assignedTeams", assignedTeams);
         return "run";
+    }
+
+    @GetMapping("/batches")
+    public String batches(Model model) {
+        AppSecurityContext.UserPrincipal principal = AppSecurityContext.require();
+        AppUser currentUser = appUserRepository.findById(principal.userId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Session identity has no matching app_users row"));
+
+        List<Team> assignedTeams;
+        if ("supervisor".equals(currentUser.getAppRole())) {
+            assignedTeams = teamRepository.findAssignedTeams(currentUser.getId());
+        } else if (currentUser.getTeamId() != null) {
+            assignedTeams = teamRepository.findById(currentUser.getTeamId())
+                    .map(List::of)
+                    .orElse(List.of());
+        } else {
+            assignedTeams = List.of();
+        }
+
+        List<BatchSummary> batches = runQueryService.listBatches();
+        Map<String, List<BatchSummary>> byTeam = batches.stream()
+                .collect(Collectors.groupingBy(
+                        BatchSummary::teamName,
+                        LinkedHashMap::new,
+                        Collectors.toList()));
+
+        model.addAttribute("active", "batches");
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("assignedTeams", assignedTeams);
+        model.addAttribute("batchesByTeam", byTeam);
+        model.addAttribute("totalBatches", batches.size());
+        return "batches/list";
     }
 
     private static boolean notBlank(String s) {
