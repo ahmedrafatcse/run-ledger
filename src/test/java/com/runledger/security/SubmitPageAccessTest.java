@@ -22,6 +22,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.UUID;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -254,5 +257,118 @@ class SubmitPageAccessTest {
         HttpResponse<String> post = postForm("/submit", body);
         assertThat(post.statusCode()).isEqualTo(200);
         assertThat(post.body()).contains("exceeds");
+    }
+
+    @Test
+    void validFileCreatesRun() throws Exception {
+        loginAs(ALICE);
+        String csrf = csrfFrom(get("/submit").body());
+
+        String json = "{\"_source\":{\"file\":\"uploaded-1.json\"},\"accuracy\":0.88}";
+        MultipartBody mp = multipart("uploaded-1.json", json,
+                "_csrf", csrf,
+                "batch", "uploaded-batch");
+
+        HttpResponse<String> post = postMultipart("/submit/file", mp);
+        assertThat(post.statusCode())
+                .as("successful upload is a PRG redirect")
+                .isEqualTo(302);
+
+        String location = post.headers().firstValue("Location").orElse("");
+        assertThat(location).contains("/runs/");
+
+        HttpResponse<String> detail = get(URI.create(location).getPath());
+        assertThat(detail.statusCode()).isEqualTo(200);
+        assertThat(detail.body()).contains("uploaded-1.json");
+    }
+
+    @Test
+    void fileWithoutSourceFileIsRejected() throws Exception {
+        loginAs(ALICE);
+        String csrf = csrfFrom(get("/submit").body());
+
+        String json = "{\"accuracy\":0.88}";
+        MultipartBody mp = multipart("no-source.json", json, "_csrf", csrf);
+
+        HttpResponse<String> post = postMultipart("/submit/file", mp);
+        assertThat(post.statusCode())
+                .as("form re-renders with error, not redirect")
+                .isEqualTo(200);
+        assertThat(post.body()).contains("_source");
+    }
+
+    @Test
+    void fileWithInvalidJsonIsRejected() throws Exception {
+        loginAs(ALICE);
+        String csrf = csrfFrom(get("/submit").body());
+
+        MultipartBody mp = multipart("bad.json", "{not json", "_csrf", csrf);
+
+        HttpResponse<String> post = postMultipart("/submit/file", mp);
+        assertThat(post.statusCode()).isEqualTo(200);
+        assertThat(post.body()).contains("not valid JSON");
+    }
+
+    @Test
+    void supervisorCannotUpload() throws Exception {
+        loginAs(SUP);
+        // Get CSRF from /submit first — but supervisor is redirected; use /saved instead.
+        String csrf = csrfFrom(get("/saved").body());
+
+        String json = "{\"_source\":{\"file\":\"x.json\"},\"accuracy\":0.5}";
+        MultipartBody mp = multipart("x.json", json, "_csrf", csrf);
+
+        HttpResponse<String> post = postMultipart("/submit/file", mp);
+        assertThat(post.statusCode())
+                .as("supervisors are redirected, not accepted")
+                .isEqualTo(302);
+        String location = post.headers().firstValue("Location").orElse("");
+        assertThat(location).endsWith("/");
+    }
+
+    /**
+     * Build a multipart/form-data body with one file part and N text fields.
+     * Content is UTF-8. Boundary is fixed per-call — uniqueness within a
+     * single request is all that matters.
+     */
+    private record MultipartBody(String contentType, byte[] body) {}
+
+    private MultipartBody multipart(String fileName, String fileContent,
+                                    String... textFieldPairs) throws Exception {
+        String boundary = "----RunLedger" + UUID.randomUUID().toString().replace("-", "");
+        String crlf = "\r\n";
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        out.write(("--" + boundary + crlf).getBytes(StandardCharsets.UTF_8));
+        out.write(("Content-Disposition: form-data; name=\"file\"; filename=\""
+                + fileName + "\"" + crlf).getBytes(StandardCharsets.UTF_8));
+        out.write(("Content-Type: application/json" + crlf + crlf)
+                .getBytes(StandardCharsets.UTF_8));
+        out.write(fileContent.getBytes(StandardCharsets.UTF_8));
+        out.write(crlf.getBytes(StandardCharsets.UTF_8));
+
+        for (int i = 0; i < textFieldPairs.length; i += 2) {
+            String name = textFieldPairs[i];
+            String value = textFieldPairs[i + 1];
+            out.write(("--" + boundary + crlf).getBytes(StandardCharsets.UTF_8));
+            out.write(("Content-Disposition: form-data; name=\"" + name + "\""
+                    + crlf + crlf).getBytes(StandardCharsets.UTF_8));
+            out.write(value.getBytes(StandardCharsets.UTF_8));
+            out.write(crlf.getBytes(StandardCharsets.UTF_8));
+        }
+
+        out.write(("--" + boundary + "--" + crlf).getBytes(StandardCharsets.UTF_8));
+
+        return new MultipartBody("multipart/form-data; boundary=" + boundary,
+                out.toByteArray());
+    }
+
+    private HttpResponse<String> postMultipart(String path, MultipartBody mp) throws Exception {
+        return client.send(
+                HttpRequest.newBuilder().uri(uri(path))
+                        .header("Content-Type", mp.contentType())
+                        .POST(HttpRequest.BodyPublishers.ofByteArray(mp.body()))
+                        .build(),
+                HttpResponse.BodyHandlers.ofString());
     }
 }

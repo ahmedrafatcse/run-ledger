@@ -26,6 +26,15 @@ spring:
     locations: classpath:db/migration
     user: runledger
     password: runledger
+  servlet:
+    multipart:
+      # Caps for /submit file uploads. The controller also enforces a
+      # soft limit, but Tomcat rejects larger requests before they reach
+      # the controller (MaxUploadSizeExceededException). Both are
+      # intentional: the servlet cap is the hard boundary, the controller
+      # cap is the friendly-message boundary.
+      max-file-size: 1MB
+      max-request-size: 2MB
 
 # Actuator – health checks, metrics, info
 management:

@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.charset.StandardCharsets;
 
 import java.util.List;
 
@@ -121,6 +124,64 @@ public class SubmitPageController {
             model.addAttribute("batches", runQueryService.listBatches());
             model.addAttribute("submitError", e.getMessage());
             model.addAttribute("submitPayload", payload);
+            model.addAttribute("submitBatch", batch);
+            return "submit";
+        }
+    }
+
+    /**
+     * File-upload variant. Reads the uploaded file as UTF-8, runs the same
+     * validations as the paste form, and hands the parsed node to
+     * {@link RunIngestionService}.
+     *
+     * <p>Size caps live at the servlet container level
+     * ({@code spring.servlet.multipart.max-file-size}). An oversized file is
+     * rejected by Tomcat before this method runs; see the
+     * {@code MaxUploadSizeExceededException} handler in
+     * {@link com.runledger.exception.GlobalExceptionHandler}.
+     */
+    @PostMapping("/file")
+    public String submitFile(@RequestParam("file") MultipartFile file,
+                             @RequestParam(required = false) String batch,
+                             Model model,
+                             RedirectAttributes ra) {
+        if (!isResearcher()) {
+            ra.addFlashAttribute("submitError",
+                    "Only researchers can submit runs.");
+            return "redirect:/";
+        }
+        try {
+            if (file == null || file.isEmpty()) {
+                throw new IllegalArgumentException("No file selected.");
+            }
+
+            String contents = new String(file.getBytes(), StandardCharsets.UTF_8);
+
+            JsonNode node;
+            try {
+                node = objectMapper.readTree(contents);
+            } catch (Exception e) {
+                throw new IllegalArgumentException(
+                        "File is not valid JSON: " + e.getMessage());
+            }
+
+            if (node.path("_source").path("file").asText("").isBlank()) {
+                throw new IllegalArgumentException(
+                        "File must contain \"_source\": {\"file\": \"...\"} "
+                                + "so the run can be identified later. "
+                                + "Every run the CLI scan produces has this field.");
+            }
+
+            String cleanBatch = (batch != null && !batch.isBlank()) ? batch.trim() : null;
+            Run saved = ingestionService.ingest(new RunRequest(node, cleanBatch));
+
+            ra.addFlashAttribute("submitSuccess",
+                    "Ingested run " + saved.getId() + " (v" + saved.getVersion() + ")");
+            return "redirect:/runs/" + saved.getId();
+        } catch (Exception e) {
+            populateCommonModel(model, "submit");
+            model.addAttribute("batches", runQueryService.listBatches());
+            model.addAttribute("submitError", e.getMessage());
             model.addAttribute("submitBatch", batch);
             return "submit";
         }

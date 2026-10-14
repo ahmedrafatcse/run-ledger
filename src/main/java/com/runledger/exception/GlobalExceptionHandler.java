@@ -104,4 +104,14 @@ public class GlobalExceptionHandler {
                 "value", String.valueOf(e.getValue())
         ));
     }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public String handleUploadTooLarge(
+            org.springframework.web.multipart.MaxUploadSizeExceededException e,
+            org.springframework.ui.Model model,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        ra.addFlashAttribute("submitError",
+                "File is too large. Maximum size is 1 MB.");
+        return "redirect:/submit";
+    }
 }

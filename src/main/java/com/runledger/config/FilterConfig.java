@@ -5,6 +5,8 @@ import com.runledger.security.SessionIdentityFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.web.multipart.support.MultipartFilter;
 
 /**
  * Registers both identity filters against {@code /*}, with each filter
@@ -39,6 +41,15 @@ public class FilterConfig {
         FilterRegistrationBean<SessionIdentityFilter> reg = new FilterRegistrationBean<>(filter);
         reg.addUrlPatterns("/*");
         reg.setOrder(20);
+        return reg;
+    }
+
+    @Bean
+    public FilterRegistrationBean<MultipartFilter> multipartFilterRegistration() {
+        FilterRegistrationBean<MultipartFilter> reg =
+                new FilterRegistrationBean<>(new MultipartFilter());
+        reg.addUrlPatterns("/*");
+        reg.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER - 1);  // -101, before security
         return reg;
     }
 }

@@ -7,52 +7,78 @@
 <main>
     <h2>Submit a run</h2>
     <p class="page-hint">
-        Paste the JSON payload of a single experiment result. The server
-        computes the canonical hash, records who submitted it and when,
-        and (if you supply a batch) merges the payload's metric keys into
-        the batch's shorthand mapping. Submitted content is immutable —
-        resubmitting with the same <code>_source.file</code> creates a new
-        version.
+        Paste JSON or upload a file. The server computes the canonical hash,
+        records who submitted it and when, and (if you supply a batch)
+        merges the payload's metric keys into the batch's shorthand mapping.
+        Submitted content is immutable — resubmitting with the same
+        <code>_source.file</code> creates a new version.
     </p>
 
     <div th:if="${submitError}" class="query-error">
         <p th:text="${submitError}">Error message</p>
     </div>
 
-    <form class="submit-form" method="post" th:action="@{/submit}">
-        <label class="field field-wide">
-            <span class="field-label">JSON payload</span>
-            <textarea name="payload" rows="20" required
-                      placeholder='{"_source":{"file":"run-1.json"},"accuracy":0.95}'
-                      th:text="${submitPayload}"></textarea>
-        </label>
+    <div class="submit-modes">
+        <section class="submit-mode">
+            <h3>Paste JSON</h3>
+            <form class="submit-form" method="post" th:action="@{/submit}">
+                <label class="field field-wide">
+                    <span class="field-label">Payload</span>
+                    <textarea name="payload" rows="14" required
+                              placeholder='{"_source":{"file":"run-1.json"},"accuracy":0.95}'
+                              th:text="${submitPayload}"></textarea>
+                </label>
 
-        <label class="field">
-            <span class="field-label">Batch (optional)</span>
-            <input list="batch-options" name="batch" th:value="${submitBatch}"
-                   placeholder="e.g. demo-alice"/>
-            <datalist id="batch-options">
-                <option th:each="b : ${batches}" th:value="${b.batchName}"></option>
-            </datalist>
-        </label>
+                <label class="field">
+                    <span class="field-label">Batch (optional)</span>
+                    <input list="batch-options" name="batch" th:value="${submitBatch}"
+                           placeholder="e.g. demo-alice"/>
+                </label>
 
-        <p class="field-hint">
-            A batch groups related runs and enables shorthand metric
-            resolution (e.g. <code>accuracy</code> instead of the full
-            dot-path). Existing batches appear as suggestions; you can
-            type a new name to create one.
-        </p>
+                <div class="form-actions">
+                    <button type="submit">Submit</button>
+                </div>
+            </form>
+        </section>
 
-        <div class="form-actions">
-            <button type="submit">Submit run</button>
-            <a th:href="@{/}" class="clear-link">Cancel</a>
-        </div>
-    </form>
+        <section class="submit-mode">
+            <h3>Upload file</h3>
+            <form class="submit-form" method="post" th:action="@{/submit/file}"
+                  enctype="multipart/form-data">
+                <label class="field field-wide">
+                    <span class="field-label">JSON file</span>
+                    <input type="file" name="file" accept=".json,application/json" required/>
+                </label>
+
+                <label class="field">
+                    <span class="field-label">Batch (optional)</span>
+                    <input list="batch-options" name="batch" th:value="${submitBatch}"
+                           placeholder="e.g. demo-alice"/>
+                </label>
+
+                <div class="form-actions">
+                    <button type="submit">Upload</button>
+                </div>
+            </form>
+
+            <p class="field-hint">Maximum file size: 1 MB.</p>
+        </section>
+    </div>
+
+    <datalist id="batch-options">
+        <option th:each="b : ${batches}" th:value="${b.batchName}"></option>
+    </datalist>
+
+    <p class="field-hint">
+        A batch groups related runs and enables shorthand metric resolution
+        (e.g. <code>accuracy</code> instead of the full dot-path). Existing
+        batches appear as suggestions; you can type a new name to create one.
+    </p>
 
     <p class="immutability-note">
         Runs are append-only. To correct a mistake, submit a new version
-        with the same <code>_source.file</code> and <code>sourceIndex</code>;
-        the old version stays in history.
+        with the same <code>_source.file</code>; the old version stays in
+        history.
     </p>
 </main>
 
