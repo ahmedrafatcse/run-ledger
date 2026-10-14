@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="saveSearchForm(mode)" class="save-search-bar">
+    <form method="post" th:action="@{/saved}" class="save-search-form">
+        <input type="hidden" name="mode" th:value="${mode}"/>
+
+        <!-- phrase -->
+        <input type="hidden" name="q"
+               th:if="${mode == 'phrase' and q != null}" th:value="${q}"/>
+        <input type="hidden" name="fuzzy"
+               th:if="${mode == 'phrase' and fuzzy}" value="true"/>
+
+        <!-- aggregate -->
+        <input type="hidden" name="agg"
+               th:if="${mode == 'aggregate' and agg != null}" th:value="${agg}"/>
+        <input type="hidden" name="metric"
+               th:if="${mode == 'aggregate' and metric != null}" th:value="${metric}"/>
+        <input type="hidden" name="groupBy"
+               th:if="${mode == 'aggregate' and groupBy != null}" th:value="${groupBy}"/>
+        <input type="hidden" name="team"
+               th:if="${mode == 'aggregate' and team != null}" th:value="${team}"/>
+
+        <!-- shared -->
+        <input type="hidden" name="batch"
+               th:if="${batch != null}" th:value="${batch}"/>
+
+        <!-- compare -->
+        <th:block th:if="${mode == 'compare'}">
+            <input type="hidden" name="combine"
+                   th:if="${combine != null}" th:value="${combine}"/>
+            <th:block th:each="f : ${filters}">
+                <input type="hidden" name="metric" th:value="${f.metric()}"/>
+                <input type="hidden" name="op" th:value="${f.op()}"/>
+                <input type="hidden" name="value" th:value="${f.value()}"/>
+            </th:block>
+        </th:block>
+
+        <input type="text" name="name"
+               placeholder="Name this search" required/>
+        <button type="submit">Save search</button>
+    </form>
+</div>
+
+</body>
+</html>

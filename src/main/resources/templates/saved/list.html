@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Saved searches')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: appHeader(${active})}"></header>
+
+<main>
+    <h2>Saved searches</h2>
+    <p class="page-hint">
+        Named queries you've saved. Re-run opens the query page with the
+        same parameters prefilled. Saved searches are personal — no one
+        else can see or delete yours.
+    </p>
+
+    <div th:if="${savedMessage}" class="flash-success" th:text="${savedMessage}">Saved.</div>
+    <div th:if="${savedError}" class="flash-error" th:text="${savedError}">Error.</div>
+
+    <div th:if="${searches.isEmpty()}">
+        <p class="empty-state">
+            You have not saved any searches yet.
+            Run a query and click "Save search" on the results.
+        </p>
+    </div>
+
+    <table th:unless="${searches.isEmpty()}" class="saved-table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Mode</th>
+            <th>Batch</th>
+            <th>Saved</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="s : ${searches}">
+            <td th:text="${s.name}">my-query</td>
+            <td>
+                <span th:if="${rerunUrls.containsKey(s.id)}"
+                      th:text="${modeLabels.get(s.id)}">phrase</span>
+                <span th:unless="${rerunUrls.containsKey(s.id)}" class="stale-badge">
+                    stale — re-save
+                </span>
+            </td>
+            <td th:text="${s.batch != null ? s.batch : '—'}">demo-alice</td>
+            <td th:text="${s.createdAt != null
+                          ? #temporals.format(s.createdAt, 'yyyy-MM-dd HH:mm')
+                          : '—'}">2026-01-01 12:00</td>
+            <td class="saved-actions">
+                <a th:if="${rerunUrls.containsKey(s.id)}"
+                   th:href="${rerunUrls.get(s.id)}"
+                   class="saved-action">Re-run</a>
+                <form method="post"
+                      th:action="@{/saved/delete}"
+                      class="saved-delete-form">
+                    <input type="hidden" name="name" th:value="${s.name}"/>
+                    <input type="hidden" name="batch"
+                           th:if="${s.batch != null}" th:value="${s.batch}"/>
+                    <button type="submit"
+                            class="saved-action saved-action-danger"
+                            onclick="return confirm('Delete this saved search?');">
+                        Delete
+                    </button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer th:replace="~{fragments/layout :: appFooter}"></footer>
+</body>
+</html>

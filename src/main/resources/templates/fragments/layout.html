@@ -28,6 +28,9 @@
             <a th:href="@{/batches}"
                th:classappend="${active == 'batches'} ? 'active' : ''"
                data-nav="true">Batches</a>
+            <a th:href="@{/saved}"
+               th:classappend="${active == 'saved'} ? 'active' : ''"
+               data-nav="true">Saved</a>
         </nav>
     </div>
     <div class="identity" th:if="${currentUser != null}">

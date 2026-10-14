@@ -52,6 +52,9 @@
         </div>
     </form>
 
+    <div th:if="${hasQuery}"
+         th:replace="~{fragments/saveSearch :: saveSearchForm('compare')}"></div>
+
     <div class="results-summary" th:if="${hasQuery}">
         <span th:text="${resultsPage.totalElements}">0</span> matching run(s)
     </div>
