@@ -66,22 +66,22 @@ public class RunQueryService {
     // Full-text phrase search
     // ---------------------------------------------------------------
     public Page<Run> searchByPhrase(String phrase, Pageable pageable) {
-        return secured.execute(() -> runRepository.searchByPhrase(phrase, pageable));
+        return secured.execute(() -> runRepository.searchByPhrase(phrase, stripSort(pageable)));
     }
 
     public Page<Run> searchByPhrase(String phrase, String batch, Pageable pageable) {
-        return secured.execute(() -> runRepository.searchByPhraseBatch(phrase, batch, pageable));
+        return secured.execute(() -> runRepository.searchByPhraseBatch(phrase, batch, stripSort(pageable)));
     }
 
     // ---------------------------------------------------------------
     // Fuzzy trigram search
     // ---------------------------------------------------------------
     public Page<Run> searchByFuzzy(String term, double threshold, Pageable pageable) {
-        return secured.execute(() -> runRepository.searchByFuzzy(term, threshold, pageable));
+        return secured.execute(() -> runRepository.searchByFuzzy(term, threshold, stripSort(pageable)));
     }
 
     public Page<Run> searchByFuzzy(String term, double threshold, String batch, Pageable pageable) {
-        return secured.execute(() -> runRepository.searchByFuzzyBatch(term, threshold, batch, pageable));
+        return secured.execute(() -> runRepository.searchByFuzzyBatch(term, threshold, batch, stripSort(pageable)));
     }
 
     // ---------------------------------------------------------------
