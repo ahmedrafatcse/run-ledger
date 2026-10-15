@@ -4,16 +4,20 @@ import tempfile
 import time
 import uuid
 import os
+import sys
 from pathlib import Path
 
 import pytest
 import requests
+
 
 # ------------------------------------------------------------
 # Global settings – will be overridden dynamically by the fixture
 # ------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 COMPOSE_FILE = PROJECT_ROOT / "docker-compose.test.yml"
+COMPOUND_DIR = PROJECT_ROOT / "test-data" / "sample-compound-runs"
+LEDGER_SCRIPT = PROJECT_ROOT / "cli" / "ledger.py"
 
 # Prevent CLI from ever auto‑starting Docker
 os.environ["RUNLEDGER_NO_DOCKER"] = "1"
@@ -111,9 +115,10 @@ def docker_stack():
     os.environ.pop("RUNLEDGER_BASE_URL", None)
     os.environ.pop("RUNLEDGER_PORT", None)
 
+
 def run_cli(*args):
     """Run the CLI in a subprocess, inheriting the environment (port, no-docker)."""
-    cmd = ["python", str(PROJECT_ROOT / "cli" / "ledger.py"), *args]
+    cmd = [sys.executable, str(LEDGER_SCRIPT), *args]
     return subprocess.run(
         cmd,
         capture_output=True,
@@ -228,19 +233,21 @@ def test_search_no_results(docker_stack, sample_folder):
 
 
 def test_multi_filter_and_returns_results():
-    compound_dir = "test-data/sample-compound-runs"
-    if not os.path.isdir(compound_dir):
-        pytest.skip(f"Folder {compound_dir} not found")
+    if not COMPOUND_DIR.is_dir():
+        pytest.skip(f"Folder {COMPOUND_DIR} not found")
 
     scan_result = subprocess.run(
-        ["python", "cli/ledger.py", "scan", compound_dir, "--batch", "compound-int"],
+        [sys.executable, str(LEDGER_SCRIPT), "scan", str(COMPOUND_DIR),
+         "--batch", "compound-int"],
         capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
     assert scan_result.returncode == 0, f"Scan failed: {scan_result.stderr}"
 
     result = subprocess.run(
-        ["python", "cli/ledger.py", "search", "--metric", "accuracy", "--op", "gt", "--value", "0.9",
-         "--metric", "loss", "--op", "lt", "--value", "0.2", "--combine", "and", "--batch", "compound-int"],
+        [sys.executable, str(LEDGER_SCRIPT), "search",
+         "--metric", "accuracy", "--op", "gt", "--value", "0.9",
+         "--metric", "loss", "--op", "lt", "--value", "0.2",
+         "--combine", "and", "--batch", "compound-int"],
         capture_output=True, text=True, encoding="utf-8", errors="replace"
     )
     assert result.returncode == 0, f"Search failed: {result.stderr}"

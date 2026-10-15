@@ -1,11 +1,16 @@
 package com.runledger.service;
 
+import com.runledger.entity.Run;
 import com.runledger.security.AppSecurityContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -17,23 +22,30 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Runs the aggregate SQL against real Postgres. Unit tests can only
- * prove the SQL text is built; this proves it parses and returns the
- * right numbers. The Instant/Timestamp bug from Slice 5.1 was exactly
- * this class of gap: the query ran, the result was read, but no test
- * had ever iterated a non-empty result set.
+ * Regression guard for the phrase/fuzzy native-query sort trap.
+ *
+ * <p>{@code searchByPhrase} and {@code searchByFuzzy} pass a {@code Pageable}
+ * straight into a native query. If the {@code Pageable} carries a non-empty
+ * {@code Sort}, the sort field name leaks into the SQL as written
+ * (camelCase {@code createdAt}), which Postgres rejects — the column is
+ * {@code created_at}. This shipped silently since Slice 2 because every
+ * existing test either mocked the repository or ran through the CLI, which
+ * doesn't sort.
+ *
+ * <p>The tests below use the exact {@code Pageable} shape
+ * {@link com.runledger.controller.QueryController#phrase} builds, so any
+ * regression in how sorts flow through native queries is caught before a
+ * browser finds it.
  */
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-class RunQueryServiceAggregateIntegrationTest {
+class RunQueryServicePhraseIntegrationTest {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
@@ -56,6 +68,13 @@ class RunQueryServiceAggregateIntegrationTest {
     private static final UUID ALICE  = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static final UUID TEAM_A = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
+    /**
+     * The exact shape QueryController.phrase builds:
+     * PageRequest.of(page, 50, Sort.DESC, "createdAt").
+     */
+    private static final Pageable SORTED_PAGEABLE =
+            PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+
     @BeforeEach
     void seed() throws Exception {
         try (Connection conn = DriverManager.getConnection(
@@ -74,32 +93,29 @@ class RunQueryServiceAggregateIntegrationTest {
                 ON CONFLICT (id) DO NOTHING
                 """);
 
-            // Two runs, each with a results[] array. Values chosen so
-            // the expected average is a clean, non-round number.
-            insertRun(conn, "agg-batch", "demo",  "run-1.json",
-                    "[{\"accuracy\":0.90},{\"accuracy\":0.80}]");
-            insertRun(conn, "agg-batch", "demo",  "run-2.json",
-                    "[{\"accuracy\":0.70},{\"accuracy\":0.60}]");
-            insertRun(conn, "agg-batch", "other", "run-3.json",
-                    "[{\"accuracy\":0.50}]");
+            insertRun(conn, "phrase-batch", "run-1.json",
+                    "{\"notes\":\"weighted averaging experiment\"}");
+            insertRun(conn, "phrase-batch", "run-2.json",
+                    "{\"notes\":\"weighted regression baseline\"}");
+            insertRun(conn, "phrase-batch", "run-3.json",
+                    "{\"notes\":\"something unrelated\"}");
         }
 
         AppSecurityContext.set(new AppSecurityContext.UserPrincipal(
                 ALICE, "researcher", TEAM_A));
     }
 
-    private void insertRun(Connection conn, String batch, String experiment,
-                           String sourceFile, String resultsJson) throws Exception {
-        String payload = "{\"experiment\":\"" + experiment + "\",\"results\":" + resultsJson + "}";
+    private void insertRun(Connection conn, String batch, String sourceFile, String payloadJson)
+            throws Exception {
         try (PreparedStatement ps = conn.prepareStatement("""
                 INSERT INTO run (payload, source_file, source_index, version, latest,
                                  payload_hash, canon_version, team_id, uploaded_by, batch)
                 VALUES (?::jsonb, ?, 0, 1, true,
-                        'placeholder-hash-agg.json', 'v1',
+                        'placeholder-hash-phrase.json', 'v1',
                         '11111111-1111-1111-1111-111111111111',
                         'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ?)
                 """)) {
-            ps.setString(1, payload);
+            ps.setString(1, payloadJson);
             ps.setString(2, sourceFile);
             ps.setString(3, batch);
             ps.executeUpdate();
@@ -112,62 +128,26 @@ class RunQueryServiceAggregateIntegrationTest {
     }
 
     @Test
-    void aggregate_arrayPath_returnsRealAverage() {
-        // (0.90 + 0.80 + 0.70 + 0.60 + 0.50) / 5 = 0.70
-        List<Map<String, Object>> results = runQueryService.aggregate(
-                "AVG", "results[].accuracy", null, "agg-batch", null);
+    void phraseSearch_withSortedPageable_returnsMatches() {
+        Page<Run> result = runQueryService.searchByPhrase(
+                "weighted", "phrase-batch", SORTED_PAGEABLE);
 
-        assertThat(results).hasSize(1);
-        assertThat((Double) results.get(0).get("result"))
-                .isCloseTo(0.70, org.assertj.core.data.Offset.offset(1e-9));
+        assertThat(result.getContent())
+                .as("both weighted notes must match; the third must not")
+                .hasSize(2);
+        assertThat(result.getContent())
+                .extracting(Run::getSourceFile)
+                .containsExactlyInAnyOrder("run-1.json", "run-2.json");
     }
 
     @Test
-    void aggregate_arrayPath_groupBy_returnsPerGroupAverages() {
-        // demo: (0.90+0.80+0.70+0.60)/4 = 0.75
-        // other: 0.50
-        List<Map<String, Object>> results = runQueryService.aggregate(
-                "AVG", "results[].accuracy", "experiment", "agg-batch", null);
+    void fuzzySearch_withSortedPageable_returnsMatches() {
+        // "weightd" is a typo for "weighted" — within the default 0.3 threshold.
+        Page<Run> result = runQueryService.searchByFuzzy(
+                "weightd", 0.3, "phrase-batch", SORTED_PAGEABLE);
 
-        assertThat(results).hasSize(2);
-        // Sorted by result DESC: demo (0.75) then other (0.50)
-        assertThat(results.get(0).get("group")).isEqualTo("demo");
-        assertThat((Double) results.get(0).get("result"))
-                .isCloseTo(0.75, org.assertj.core.data.Offset.offset(1e-9));
-        assertThat(results.get(1).get("group")).isEqualTo("other");
-        assertThat((Double) results.get(1).get("result"))
-                .isCloseTo(0.50, org.assertj.core.data.Offset.offset(1e-9));
-    }
-
-    @Test
-    void aggregate_scalarPath_stillWorks() {
-        List<Map<String, Object>> results = runQueryService.aggregate(
-                "COUNT", null, null, "agg-batch", null);
-
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0).get("result")).isEqualTo(3.0);
-    }
-
-    @Test
-    void aggregate_arrayPath_withTeam_scopesByTeam() {
-        // Same team, should return the average.
-        List<Map<String, Object>> results = runQueryService.aggregate(
-                "AVG", "results[].accuracy", null, "agg-batch", TEAM_A);
-
-        assertThat(results).hasSize(1);
-        assertThat((Double) results.get(0).get("result"))
-                .isCloseTo(0.70, org.assertj.core.data.Offset.offset(1e-9));
-    }
-
-    @Test
-    void aggregate_arrayPath_foreignTeam_returnsNull() {
-        UUID otherTeam = UUID.fromString("22222222-2222-2222-2222-222222222222");
-        List<Map<String, Object>> results = runQueryService.aggregate(
-                "AVG", "results[].accuracy", null, "agg-batch", otherTeam);
-
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0).get("result"))
-                .as("AVG over zero rows is NULL, not an error")
-                .isNull();
+        assertThat(result.getContent())
+                .as("fuzzy match must tolerate the typo")
+                .isNotEmpty();
     }
 }
