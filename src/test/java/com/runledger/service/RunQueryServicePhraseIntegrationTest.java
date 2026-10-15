@@ -68,10 +68,6 @@ class RunQueryServicePhraseIntegrationTest {
     private static final UUID ALICE  = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static final UUID TEAM_A = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
-    /**
-     * The exact shape QueryController.phrase builds:
-     * PageRequest.of(page, 50, Sort.DESC, "createdAt").
-     */
     private static final Pageable SORTED_PAGEABLE =
             PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -142,7 +138,6 @@ class RunQueryServicePhraseIntegrationTest {
 
     @Test
     void fuzzySearch_withSortedPageable_returnsMatches() {
-        // "weightd" is a typo for "weighted" — within the default 0.3 threshold.
         Page<Run> result = runQueryService.searchByFuzzy(
                 "weightd", 0.3, "phrase-batch", SORTED_PAGEABLE);
 
