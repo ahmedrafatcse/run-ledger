@@ -198,8 +198,8 @@ Naming these limits is more useful than rounding up. Each constraint is document
 
 ## Docs
 
-- [API reference](docs/api.md)
-- [Usage examples](docs/examples.md)
+- [API reference](https://github.com/ahmedrafatcse/run-ledger/blob/master/docs/api.md)
+- [Usage examples](https://github.com/ahmedrafatcse/run-ledger/blob/master/docs/examples.md)
 
 ---
 

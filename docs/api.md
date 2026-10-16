@@ -1,108 +1,37 @@
-# RunLedger REST API
+# API Reference
 
-Base URL: `http://localhost:8080/api`
+All endpoints require an `X-User-Id` header containing a valid user UUID.
+Role and team are looked up server-side; the client cannot declare them.
 
 ## Runs
 
-### Ingest a run
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/api/runs` | List runs visible to the caller. Params: `batch`, `q`, `fuzzy`, `metric`, `op`, `value`, `block`, `pointers`, `page`, `size` |
+| `POST` | `/api/runs` | Ingest a run. Body: `{ "payload": {...}, "batch": "..." }` |
+| `GET` | `/api/runs/{id}` | Fetch one run |
+| `GET` | `/api/runs/versions` | Versions of a run identity. Params: `batch`, `sourceFile`, `sourceIndex` |
+| `POST` | `/api/runs/search` | Compound AND/OR search |
+| `GET` | `/api/runs/aggregate` | `AVG` / `MAX` / `MIN` / `SUM` / `COUNT`, optional group-by |
+| `GET` | `/api/runs/metrics` | Metric keys for a batch |
 
-```http
-POST /runs
-```
+## Batches
 
-**Body:** `{"payload": { ... }, "batch": "optional-batch-name"}`  
-**Returns:** `201 Created` with the run object.
+| Method | Path | Notes |
+|---|---|---|
+| `GET` | `/api/batches` | Batches visible to the caller, grouped by team |
 
-### Get a single run
+## Saved searches
 
-```http
-GET /runs/{id}
-```
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/api/saved` | Save a search |
+| `GET` | `/api/saved` | List the caller's saved searches |
+| `GET` | `/api/saved/{name}` | Fetch one by name |
+| `DELETE` | `/api/saved/{name}` | Delete one |
 
-### Search / list runs
+## Health
 
-```http
-GET /runs
-```
-
-**Parameters (all optional):**
-
-| Param | Description |
-| ------ | ----------- |
-| `metric` | Dot-path to search (e.g., `metrics.accuracy`) |
-| `op` | `gt`, `gte`, `lt`, `lte`, `eq` |
-| `value` | Value to compare |
-| `batch` | Batch name for isolation |
-| `q` | Full-text / fuzzy phrase |
-| `fuzzy` | `true` to enable fuzzy search |
-| `block` | Block depth (0 = tightest match) |
-| `pointers` | `true` (default) to include match locations |
-| `page`, `size`, `sort` | Pagination |
-
-### Compound search
-
-```http
-POST /runs/search
-```
-
-**Body:** `{"filters": [{"metric":"...","op":"...","value":"..."}, ...], "combine": "and|or", "batch": "..."}`
-
-### Aggregate
-
-```http
-GET /runs/aggregate
-```
-
-**Parameters:**
-
-| Param | Description |
-| ------ | ----------- |
-| `agg` | `AVG`, `MAX`, `MIN`, `SUM`, `COUNT` |
-| `metric` | Field to aggregate (dot-path) |
-| `groupBy` | Optional field to group by |
-| `batch` | Optional batch filter |
-
-### Metric discovery
-
-```http
-GET /runs/metrics
-GET /runs/metrics?batch=...
-GET /runs/metrics?batch=...&verbose=true
-```
-
-### Version history
-
-```http
-GET /runs/versions?batch=...&sourceFile=...&sourceIndex=...
-```
-
-## Saved Searches
-
-### Save
-
-```http
-POST /saved
-```
-
-**Body:** `{"name": "...", "batch": "...", "paramsJson": "{...}"}`
-
-### List
-
-```http
-GET /saved
-GET /saved?batch=...
-```
-
-### Get
-
-```http
-GET /saved/{name}
-GET /saved/{name}?batch=...
-```
-
-### Delete
-
-```http
-DELETE /saved/{name}
-DELETE /saved/{name}?batch=...
-```
+| Method | Path |
+|---|---|
+| `GET` | `/actuator/health` |
