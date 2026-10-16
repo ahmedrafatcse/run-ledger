@@ -1148,6 +1148,17 @@ def cli_aggregate(args):
 # ------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="RunLedger CLI")
+    try:
+        from importlib.metadata import version as _pkg_version
+        _ver = _pkg_version("runledger-cli")
+    except Exception:
+        _ver = "unknown"
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"runledger {_ver}",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Command")
 
     # scan
