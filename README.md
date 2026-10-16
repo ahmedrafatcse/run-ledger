@@ -180,19 +180,7 @@ Demo users from `demo/seed.sql`:
 | `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` | researcher | Team B |
 | `cccccccc-cccc-cccc-cccc-cccccccccccc` | supervisor | assigned to both teams |
 
-Visit `http://localhost:8080/login` and paste an ID. For API access, pass the same ID in an `X-User-Id` header. Role and team are looked up server-side — the client cannot declare which team it belongs to, but it *can* declare which user it is, which is exactly why this stub isn't authentication.
-
----
-
-## What this doesn't claim yet
-
-- **Not tamper-evident.** The change-detection check catches a payload modified while its stored fingerprint was left unchanged. It does **not** detect a privileged database actor who rewrites both consistently. Closing that gap requires a hash chain, an independent verifier, and an external anchor. Not built.
-- **Not authenticated.** The browser login is a development stub; the API trusts an `X-User-Id` header. Neither substitutes for real authentication in a deployed system. See [Development identity](#development-identity).
-- **Not RLS on everything.** Row-Level Security is enabled for `run`, `batch_schema`, and `saved_search`. The identity and team tables (`teams`, `app_users`, `supervisor_team_assignments`) are not RLS-protected — they hold shared configuration and identity data, and access to them is controlled at the application layer.
-- **Not a SQL console.** The query interface accepts RunLedger commands (`--metric`, `--op`, `--value`, `--combine`), not arbitrary SQL statements. PostgreSQL is the engine; the query surface is purpose-built.
-- **Not multi-tenant.** One deployment serves one organization. There is no cross-organization tenancy, no per-org isolation above the team level, and no managed cloud offering.
-
-Naming these limits is more useful than rounding up. Each constraint is documented in code and covered by tests, so the scope is visible and changeable.
+Visit `http://localhost:8080/login` and paste an ID. For API access, pass the same ID in an `X-User-Id` header. Role and team are looked up server-side — the client cannot declare which team it belongs to, but it *can* declare which user it is, which is exactly why this stub isn't authentication
 
 ---
 
